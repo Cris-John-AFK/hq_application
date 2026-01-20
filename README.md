@@ -1,18 +1,78 @@
 # HQ-App
 
-A modern web application built with **Laravel**, **PostgreSQL**, and **Vue.js**.
+A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js 3**.
+
+## 🌟 Features
+- **Full-Stack Integration**: Laravel (Backend) + Vue.js (Frontend) via Vite.
+- **Database**: PostgreSQL configured efficiently.
+- **Styling**: TailwindCSS v4 for modern, responsive designs.
+- **Hybrid Support**: Supports both Blade templates and Vue components.
 
 ## 🚀 Getting Started
 
+Follow these steps to set up the project locally.
+
+### 1. Prerequisites
+- Docker (optional, if using Sail) or Local PHP/Composer/PostgreSQL setup.
+- Node.js & NPM.
+
+### 2. Installation
+```bash
+# Clone the repository
+git clone https://github.com/Cris-John-AFK/hq_application.git
+cd hq_application
+
+# Install PHP dependencies
+composer install
+
+# Install JS dependencies
+npm install
+```
+
+### 3. Configuration
+1. Copy the example env file:
+   ```bash
+   cp .env.example .env
+   ```
+2. Update `.env` with your PostgreSQL credentials:
+   ```ini
+   DB_CONNECTION=pgsql
+   DB_HOST=127.0.0.1
+   DB_PORT=5432
+   DB_DATABASE=hq_app
+   DB_USERNAME=root
+   DB_PASSWORD=
+   ```
+3. Generate the application key:
+   ```bash
+   php artisan key:generate
+   ```
+4. Run database migrations:
+   ```bash
+   php artisan migrate
+   ```
+
+### 4. Running the App
+Start the development servers:
+```bash
+# Terminal 1: Laravel Backend
+php artisan serve
+
+# Terminal 2: Vite Frontend (Hot Output)
+npm run dev
+```
+Visit `http://localhost:8000` to see the app.
+Visit `http://localhost:8000/vue` for a Vue.js demonstration.
+
+## 📚 Documentation
 Please refer to the [Developer Manual](manual.md) for detailed instructions on:
-- Setting up the PostgreSQL database.
-- Configuration.
-- Creating new pages and routes.
-- Working with Vue components.
+- Creating new Vue components.
+- Adding new Routes and Pages.
+- Detailed architectural decisions.
 
 ## Tech Stack
-- **Backend**: Laravel 12 (PHP)
-- **Frontend**: Vue.js 3 + Vite + TailwindCSS
+- **Backend**: Laravel 12 (PHP 8.2+)
+- **Frontend**: Vue.js 3, Vite, TailwindCSS
 - **Database**: PostgreSQL
 
 ---

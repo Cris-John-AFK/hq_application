@@ -21,7 +21,7 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
-            // vue: 'vue/dist/vue.esm-bundler.js', // Often needed for template compilation in browser
+            vue: 'vue/dist/vue.esm-bundler.js',
         },
     },
 });
