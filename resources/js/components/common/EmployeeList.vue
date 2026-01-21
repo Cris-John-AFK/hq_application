@@ -6,13 +6,20 @@
                 <p class="text-sm text-gray-500">Manage and view all registered employees</p>
             </div>
             
-            <div class="flex flex-col md:flex-row gap-3">
+            <div class="flex flex-col md:flex-row gap-3 items-center">
+                <button 
+                    @click="showAddModal = true"
+                    class="cursor-pointer h-10 px-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
+                >
+                    <i class="pi pi-plus"></i>
+                    Add Employee
+                </button>
                 <!-- Department Filter -->
-                <div class="relative">
-                    <i class="pi pi-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <div class="relative w-full md:w-auto">
+                    <i class="pi pi-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                     <select 
                         v-model="selectedDepartment" 
-                        class="pl-10 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-white appearance-none cursor-pointer"
+                        class="h-10 pl-10 pr-8 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-white appearance-none cursor-pointer w-full"
                     >
                         <option value="All">All Departments</option>
                         <option value="Engineering">Engineering</option>
@@ -22,13 +29,14 @@
                     </select>
                 </div>
                 <!-- Status Filter -->
-                <div class="relative">
-                    <i class="pi pi-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <div class="relative w-full md:w-auto">
+                    <i class="pi pi-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                     <select 
                         v-model="selectedStatus" 
-                        class="pl-10 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-white appearance-none cursor-pointer"
+                        class="h-10 pl-10 pr-8 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-white appearance-none cursor-pointer w-full"
                     >
                         <option value="All">All Status</option>
+                        <option value="Available">Available</option>
                         <option value="Working">Working</option>
                         <option value="Not Yet Arrived">Not Yet Arrived</option>
                         <option value="On Leave">On Leave</option>
@@ -37,13 +45,13 @@
                 </div>
 
                 <!-- Search -->
-                <div class="relative">
-                    <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <div class="relative w-full md:w-auto">
+                    <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                     <input 
                         v-model="searchQuery" 
                         type="text" 
                         placeholder="Search employees..." 
-                        class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none w-full md:w-64"
+                        class="h-10 pl-10 pr-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none w-full md:w-45"
                     >
                 </div>
             </div>
@@ -65,8 +73,13 @@
                     <tr v-for="employee in paginatedEmployees" :key="employee.id" class="hover:bg-gray-50/50 transition-colors">
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-sm">
-                                    {{ employee.initials }}
+                                <div
+                                class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-sm bg-cover bg-center"
+                                :style="employee.avatar ? { backgroundImage: `url(${employee.avatar})` } : {}"
+                                >
+                                <span v-if="!employee.avatar">
+                                    {{ getInitials(employee.name) }}
+                                </span>
                                 </div>
                                 <div>
                                     <p class="font-medium text-gray-800">{{ employee.name }}</p>
@@ -81,14 +94,11 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ employee.role }}</td>
-                        <td class="px-6 py-4">
+                        <td class="px-4 py-4">
                             <span 
                                 :class="{
-                                    'bg-green-100 text-green-700': employee.status === 'Working',
-                                    'bg-yellow-100 text-yellow-700': employee.status === 'Not Yet Arrived',
+                                    'bg-green-100 text-green-700': employee.status === 'Available',
                                     'bg-gray-100 text-gray-600': employee.status === 'On Leave',
-                                    'bg-red-100 text-red-600': employee.status === 'Absent',
-                                    'bg-red-200 text-red-600': employee.status === 'Emergency Leave'
                                 }"
                                 class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
                             >
@@ -97,6 +107,7 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 text-right relative">
+                            <!-- Action Button -->
                             <button 
                                 @click.stop="toggleActionMenu(employee.id)" 
                                 class="text-gray-400 hover:text-teal-600 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
@@ -115,16 +126,6 @@
                                         <input type="radio" name="custom-radio" :checked="employee.status === 'On Leave'" />
                                         <span class="custom-radio-checkmark"></span>
                                         On Leave
-                                    </label>
-                                    <label class="custom-radio-container" @click="updateStatus(employee.id, 'Absent')">
-                                        <input type="radio" name="custom-radio" :checked="employee.status === 'Absent'" />
-                                        <span class="custom-radio-checkmark"></span>
-                                        Absent
-                                    </label>
-                                    <label class="custom-radio-container" @click="openLeaveModal(employee.id, 'Emergency Leave')">
-                                        <input type="radio" name="custom-radio" :checked="employee.status === 'Emergency Leave'" />
-                                        <span class="custom-radio-checkmark"></span>
-                                        Emergency Leave
                                     </label>
                                 </div>
                             </div>
@@ -165,6 +166,14 @@
             </div>
         </div>
         
+
+        <!-- Add Employee Modal -->
+        <AddEmployeeModal 
+            v-model="showAddModal" 
+            :loading="isCreating"
+            @submit="handleCreateEmployee"
+        />
+
         <!-- Leave Form Modal (Reusable Component) -->
         <LeaveRequestModal 
             v-model="showLeaveModal" 
@@ -178,6 +187,8 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import LeaveRequestModal from './LeaveRequestModal.vue';
+import AddEmployeeModal from './AddEmployeeModal.vue';
+import axios from 'axios';
 
 const selectedDepartment = ref('All');
 const selectedStatus = ref('All');
@@ -185,32 +196,65 @@ const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = 10;
 const openActionMenuId = ref(null);
+const isLoading = ref(false);
 
 // Modal Logic
 const showLeaveModal = ref(false);
+const showAddModal = ref(false);
+const isCreating = ref(false);
 const leaveForm = ref({
     employeeId: null,
     type: ''
 });
 
-// Mock Data - Expanded for Pagination Demo
-const employees = ref([
-    { id: 1, name: 'John Doe', email: 'john@hq.app', initials: 'JD', empId: 'EMP-001', department: 'Engineering', role: 'Senior Developer', status: 'Working' },
-    { id: 2, name: 'Jane Smith', email: 'jane@hq.app', initials: 'JS', empId: 'EMP-002', department: 'Design', role: 'UI/UX Designer', status: 'Not Yet Arrived' },
-    { id: 3, name: 'Mike Johnson', email: 'mike@hq.app', initials: 'MJ', empId: 'EMP-003', department: 'Sales', role: 'Sales Manager', status: 'Working' },
-    { id: 4, name: 'Sarah Williams', email: 'sarah@hq.app', initials: 'SW', empId: 'EMP-004', department: 'HR', role: 'HR Specialist', status: 'Not Yet Arrived' },
-    { id: 5, name: 'Robert Brown', email: 'robert@hq.app', initials: 'RB', empId: 'EMP-005', department: 'Engineering', role: 'QA Engineer', status: 'Working' },
-    { id: 6, name: 'Emily Davis', email: 'emily@hq.app', initials: 'ED', empId: 'EMP-006', department: 'Marketing', role: 'Content Writer', status: 'Working' },
-    { id: 7, name: 'David Wilson', email: 'david@hq.app', initials: 'DW', empId: 'EMP-007', department: 'Engineering', role: 'DevOps Engineer', status: 'On Leave' },
-    { id: 8, name: 'Lisa Miller', email: 'lisa@hq.app', initials: 'LM', empId: 'EMP-008', department: 'Marketing', role: 'Marketing Manager', status: 'Not Yet Arrived' },
-    { id: 9, name: 'James Taylor', email: 'james@hq.app', initials: 'JT', empId: 'EMP-009', department: 'Sales', role: 'Sales Executive', status: 'Working' },
-    { id: 10, name: 'Patricia Anderson', email: 'patricia@hq.app', initials: 'PA', empId: 'EMP-010', department: 'HR', role: 'Recruiter', status: 'Working' },
-    { id: 11, name: 'Jennifer Thomas', email: 'jennifer@hq.app', initials: 'JT', empId: 'EMP-011', department: 'Design', role: 'Graphic Designer', status: 'Working' },
-    { id: 12, name: 'Charles Jackson', email: 'charles@hq.app', initials: 'CJ', empId: 'EMP-012', department: 'Engineering', role: 'Frontend Developer', status: 'Working' },
-    { id: 13, name: 'Linda White', email: 'linda@hq.app', initials: 'LW', empId: 'EMP-013', department: 'Sales', role: 'Account Manager', status: 'Not Yet Arrived' },
-    { id: 14, name: 'Barbara Harris', email: 'barbara@hq.app', initials: 'BH', empId: 'EMP-014', department: 'Engineering', role: 'Backend Developer', status: 'Working' },
-    { id: 15, name: 'Paul Martin', email: 'paul@hq.app', initials: 'PM', empId: 'EMP-015', department: 'Marketing', role: 'SEO Specialist', status: 'On Leave' },
-]);
+// Employee Data
+const employees = ref([]);
+
+const fetchEmployees = async () => {
+    isLoading.value = true;
+    try {
+        const response = await axios.get('/api/users');
+        employees.value = response.data.map(user => ({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            avatar: user.avatar_url, // Use the full URL provided by the backend accessor
+            empId: user.id_number || 'N/A',
+            department: user.department || 'N/A',
+            role: user.position || (user.role === 'admin' ? 'Administrator' : 'Employee'),
+            status: user.status || 'Available',
+            position: user.position
+        }));
+    } catch (error) {
+        console.error('Failed to fetch employees:', error);
+    } finally {
+        isLoading.value = false;
+    }
+};
+
+const getInitials = (name) => {
+    return name
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+};
+
+const handleCreateEmployee = async (formData) => {
+    isCreating.value = true;
+    try {
+        await axios.post('/api/users', formData);
+        showAddModal.value = false;
+        await fetchEmployees(); // Refresh list
+        // Could show success toast here
+    } catch (error) {
+        console.error('Failed to create employee:', error);
+        alert('Failed to create employee. Please try again.');
+    } finally {
+        isCreating.value = false;
+    }
+};
 
 const filteredEmployees = computed(() => {
     return employees.value.filter(employee => {
@@ -263,11 +307,13 @@ const toggleActionMenu = (id) => {
 };
 
 const updateStatus = (id, newStatus) => {
+    // Optimistic update
     const employee = employees.value.find(e => e.id === id);
     if (employee) {
         employee.status = newStatus;
         openActionMenuId.value = null; // Close menu after selection
     }
+    // In real app, call API here to persist status
 };
 
 const openLeaveModal = (id, type) => {
@@ -296,6 +342,7 @@ const closeActionMenu = () => {
 };
 
 onMounted(() => {
+    fetchEmployees();
     document.addEventListener('click', closeActionMenu);
 });
 

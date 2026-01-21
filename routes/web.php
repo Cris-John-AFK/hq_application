@@ -24,6 +24,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/user', [AuthController::class, 'user']);
     Route::post('/api/user/avatar', [\App\Http\Controllers\UserController::class, 'uploadAvatar']);
     Route::put('/api/user', [\App\Http\Controllers\UserController::class, 'update']);
+    Route::get('/api/users', [\App\Http\Controllers\UserController::class, 'index']);
+    Route::post('/api/users', [\App\Http\Controllers\UserController::class, 'store']);
     // Catch-all meant for Vue Router
     Route::get('/{any}', function () {
         return view('dashboard');

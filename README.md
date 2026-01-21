@@ -12,19 +12,19 @@ A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js
 - **Professional Sidebar**: Neumorphism design with image logo support, active state indicators, and smooth transitions.
 - **Real-time Clock**: 12-hour format clock in the topbar with live updates.
 - **Admin Modules**: 
-  - Employee List with search, filter, and pagination
+  - Employee List with search, filter, pagination, and **Add Employee** functionality
   - Leave request management with custom radio button UI
   - Attendance tracking and reporting
   - Modern stacked area chart with ApexCharts showing attendance trends
   - Dynamic calendar with month navigation and event tooltips
 - **User Modules**:
   - Personal dashboard with quick stats
-  - Profile page with **Photo Upload** and **Edit Profile** details
+  - Profile page with **Photo Upload**, **Edit Profile**, and **Password Change** details with **Upload Confirmation**
   - Attendance history
   - Leave request submission
 - **Reusable Components**:
   - `LeaveRequestModal.vue` - Google Forms-style modal for leave requests
-  - `EventCalendar.vue` - Interactive calendar with event management
+  - `EventCalendar.vue` - Compact, interactive calendar with highlighted events
   - `EmployeeList.vue` - Advanced employee management table
   - `AttendanceChart.vue` - Interactive line chart for attendance trends (Present, Absent, Late, Leave) with date filtering
 - **Routing**: **Vue Router 4** for seamless SPA navigation.

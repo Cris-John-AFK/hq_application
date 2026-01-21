@@ -1,13 +1,13 @@
 <template>
     <div class="flex h-screen bg-gray-50">
         <!-- Sidebar -->
-        <!-- Sidebar -->
+
         <aside 
             class="w-72 bg-[#0f172a] text-slate-300 flex flex-col transition-all duration-300 transform fixed md:relative z-30 h-full border-r border-slate-800 shadow-xl" 
             :class="{ '-translate-x-full md:translate-x-0': !isSidebarOpen }"
         >
             <!-- Logo Area -->
-            <a href="/dashboard" class="h-16 flex items-center px-8 border-b border-slate-800 hover:bg-slate-800/30 transition-colors group">
+            <router-link to="/dashboard" class="h-16 flex items-center px-8 border-b border-slate-800 hover:bg-slate-800/30 transition-colors group">
                 <div class="relative w-10 h-10 mr-4 transform transition-transform group-hover:scale-105">
                     <!-- Placeholder Logo: Replace src with your actual logo path (e.g., /images/logo.png) -->
                     <img 
@@ -20,7 +20,7 @@
                     <h1 class="text-xl font-bold text-white tracking-tight">HQ App</h1>
                     <p class="text-[10px] font-semibold text-teal-500 uppercase tracking-widest leading-none mt-0.5">Management</p>
                 </div>
-            </a>
+            </router-link>
 
             <!-- Navigation -->
             <nav class="flex-1 overflow-y-auto py-8">
@@ -51,6 +51,7 @@
             </nav>
 
             <!-- User Profile -->
+            <router-link to="/profile">
             <div class="p-4 border-t border-slate-800 bg-[#0f172a]">
                 <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/80 transition-colors cursor-pointer group">
                     <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-teal-900/20 ring-2 ring-slate-900 group-hover:ring-teal-500/30 transition-all overflow-hidden">
@@ -67,6 +68,7 @@
                     <i class="pi pi-chevron-right text-xs text-slate-500 group-hover:text-white transition-colors"></i>
                 </div>
             </div>
+            </router-link>
         </aside>
 
         <!-- Main Content -->
@@ -89,10 +91,13 @@
                         <i class="pi pi-clock text-sm"></i>
                         <span class="tabular-nums text-sm font-bold tracking-tight">{{ currentTime }}</span>
                     </div>
-
+                    <!-- Calendar -->
                     <div class="flex items-center gap-4">
-                        <button class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
-                            <i class="pi pi-bell text-lg"></i>
+                        <button 
+                            @click="toggleCalendar"
+                            class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                        >
+                            <i class="pi pi-calendar text-lg"></i>
                             <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
                         </button>
                         
@@ -121,6 +126,32 @@
             @click="isSidebarOpen = false"
             class="fixed inset-0 bg-black/50 z-20 md:hidden"
         ></div>
+
+        <!-- Calendar Modal -->
+        <div 
+            v-if="isCalendarOpen"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            @click.self="isCalendarOpen = false"
+        >
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+                <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                        <i class="pi pi-calendar text-teal-600"></i>
+                        Calendar & Events
+                    </h3>
+                    <button 
+                        @click="isCalendarOpen = false"
+                        class="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500"
+                    >
+                        <i class="pi pi-times"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6 overflow-y-auto">
+                    <EventCalendar />
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -128,6 +159,7 @@
     import { ref, computed, onMounted, onUnmounted } from 'vue';
     import { useAuthStore } from '../stores/auth';
     import { useRoute } from 'vue-router';
+    import EventCalendar from '../components/common/EventCalendar.vue';
 
     const route = useRoute();
     const title = computed(() => route.meta.title?.split(' - ').pop() || '');
@@ -161,6 +193,11 @@
 
     const authStore = useAuthStore();
     const isSidebarOpen = ref(false); // Default logic: hidden on mobile, effectively ignored on desktop by CSS
+    const isCalendarOpen = ref(false);
+
+    const toggleCalendar = () => {
+        isCalendarOpen.value = !isCalendarOpen.value;
+    };
 
     const handleLogout = () => {
         authStore.logout();
