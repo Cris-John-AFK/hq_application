@@ -53,8 +53,9 @@
             <!-- User Profile -->
             <div class="p-4 border-t border-slate-800 bg-[#0f172a]">
                 <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/80 transition-colors cursor-pointer group">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-teal-900/20 ring-2 ring-slate-900 group-hover:ring-teal-500/30 transition-all">
-                        {{ user?.name?.charAt(0) || 'U' }}
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-teal-900/20 ring-2 ring-slate-900 group-hover:ring-teal-500/30 transition-all overflow-hidden">
+                        <img v-if="user?.avatar_url" :src="user.avatar_url" alt="Profile" class="w-full h-full object-cover">
+                        <span v-else>{{ user?.name?.charAt(0) || 'U' }}</span>
                     </div>
                     <div class="overflow-hidden flex-1">
                         <p class="text-sm font-bold text-white truncate">{{ user?.name }}</p>
@@ -179,7 +180,7 @@
             return [
                 { label: 'Dashboard', icon: 'pi-home', href: '/dashboard' },
                 { label: 'My Profile', icon: 'pi-user', href: '/profile' },
-                { label: 'My Attendance', icon: 'pi-clock', href: '/attendance' },
+                { label: 'My Attendance', icon: 'pi-clock', href: '/my-attendance' },
                 { label: 'Leave Requests', icon: 'pi-calendar-plus', href: '/leave-requests' },
             ];
         }

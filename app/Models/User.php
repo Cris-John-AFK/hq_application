@@ -24,6 +24,7 @@ class User extends Authenticatable
         'role',
         'position',
         'id_number',
+        'avatar',
     ];
 
     /**
@@ -48,4 +49,16 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Get the URL to the user's avatar.
+     */
+    protected function avatarUrl(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: fn () => $this->avatar ? asset('storage/' . $this->avatar) : null,
+        );
+    }
+
+    protected $appends = ['avatar_url'];
 }

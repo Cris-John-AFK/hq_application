@@ -7,6 +7,7 @@ import router from './router';
 import ExampleComponent from './components/ExampleComponent.vue';
 import LoginForm from './components/login/loginForm.vue';
 import Dashboard from './components/Dashboard.vue';
+import VueApexCharts from 'vue3-apexcharts';
 
 const app = createApp({});
 const pinia = createPinia();
@@ -17,5 +18,6 @@ app.use(router);
 app.component('example-component', ExampleComponent);
 app.component('login-form', LoginForm);
 app.component('dashboard-component', Dashboard);
+app.component('apexchart', VueApexCharts);
 
 app.mount('#app');
