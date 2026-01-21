@@ -122,10 +122,28 @@
                                 @click.stop
                             >
                                 <div class="custom-radio-group">
+                                    <button 
+                                        @click="handleViewLeaves(employee)"
+                                        class="custom-radio-container w-full text-left hover:text-teal-400 group"
+                                    >
+                                        <i class="pi pi-calendar-times mr-3"></i>
+                                        <span>View Leaves</span>
+                                    </button>
+
+                                    <button 
+                                        @click="handleChangePassword(employee)"
+                                        class="custom-radio-container w-full text-left hover:text-teal-400 group"
+                                    >
+                                        <i class="pi pi-key mr-3"></i>
+                                        <span>Change Password</span>
+                                    </button>
+
+                                    <div class="h-px bg-gray-600 my-1 mx-2 opacity-30"></div>
+
                                     <label class="custom-radio-container" @click="openLeaveModal(employee.id, 'On Leave')">
                                         <input type="radio" name="custom-radio" :checked="employee.status === 'On Leave'" />
                                         <span class="custom-radio-checkmark"></span>
-                                        On Leave
+                                        Mark On Leave
                                     </label>
                                 </div>
                             </div>
@@ -304,6 +322,18 @@ const toggleActionMenu = (id) => {
     } else {
         openActionMenuId.value = id;
     }
+};
+
+const handleViewLeaves = (employee) => {
+    openActionMenuId.value = null;
+    alert(`View Leave Requests for ${employee.name} - Feature coming soon!`);
+    // Navigate to leaves page or open modal
+};
+
+const handleChangePassword = (employee) => {
+    openActionMenuId.value = null;
+    alert(`Change Password for ${employee.name} - Feature coming soon!`);
+    // Open password change modal
 };
 
 const updateStatus = (id, newStatus) => {

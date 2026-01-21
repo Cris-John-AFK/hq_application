@@ -12,7 +12,8 @@ A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js
 - **Professional Sidebar**: Neumorphism design with image logo support, active state indicators, and smooth transitions.
 - **Real-time Clock**: 12-hour format clock in the topbar with live updates.
 - **Admin Modules**: 
-  - Employee List with search, filter, pagination, and **Add Employee** functionality
+  - Employee List with search, filter, pagination, and **Add Employee** functionality (Manual ID `HQI-XXXX`)
+  - Enhanced Action Menu: View Leaves, Change Password, Mark On Leave
   - Leave request management with custom radio button UI
   - Attendance tracking and reporting
   - Modern stacked area chart with ApexCharts showing attendance trends
@@ -108,6 +109,7 @@ The app uses a hybrid authentication system:
 2. **Axios** sends credentials to Laravel.
 3. Laravel validates and starts a session.
 4. **Pinia** updates the user state and redirects to `/dashboard`.
+5. **Vue Router Guards** ensure protected routes cannot be accessed without valid authentication, redirecting unauthenticated users to `/login`.
 
 Visit `http://localhost:8000` to see the app.
 Visit `http://localhost:8000/vue` for a Vue.js demonstration.

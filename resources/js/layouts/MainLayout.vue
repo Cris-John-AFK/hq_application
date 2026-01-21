@@ -95,10 +95,10 @@
                     <div class="flex items-center gap-4">
                         <button 
                             @click="toggleCalendar"
-                            class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                            class="relative p-1 bg-gray-50 border border-gray-200 rounded-lg text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
                         >
                             <i class="pi pi-calendar text-lg"></i>
-                            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                            <span class="ml-2 text-sm font-medium text-gray-600">Calendar</span>
                         </button>
                         
                         <div class="w-px h-6 bg-gray-200"></div>

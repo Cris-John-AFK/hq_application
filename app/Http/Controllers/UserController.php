@@ -26,6 +26,7 @@ class UserController extends Controller
             'department' => 'required|string|max:255',
             'role' => 'required|string|in:admin,user',
             'position' => 'nullable|string|max:255',
+            'id_number' => 'required|string|unique:users,id_number|max:20',
         ]);
 
         // Generate Email: firstname@hq.app
@@ -40,11 +41,6 @@ class UserController extends Controller
             $email = Str::lower($firstName) . $count . '@hq.app';
         }
 
-        // Generate ID Number (EMP-XXX)
-        $lastUser = User::latest('id')->first();
-        $nextId = $lastUser ? $lastUser->id + 1 : 1;
-        $idNumber = 'EMP-' . str_pad($nextId, 3, '0', STR_PAD_LEFT);
-
         $user = User::create([
             'name' => $validated['name'],
             'email' => $email,
@@ -52,7 +48,7 @@ class UserController extends Controller
             'department' => $validated['department'],
             'role' => $validated['role'],
             'position' => $validated['position'] ?? $validated['role'], // Default position to role if empty
-            'id_number' => $idNumber,
+            'id_number' => $validated['id_number'],
             'status' => 'Available',
         ]);
 

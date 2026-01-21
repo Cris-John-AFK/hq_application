@@ -43,41 +43,49 @@
                     </select>
                 </div>
 
-                <!-- Role & Position -->
+                <!-- Role & Employee ID -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
                         <select 
                             v-model="form.role" 
-                            class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all bg-white appearance-none cursor-pointer"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-white transition-all"
                             required
                         >
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
+                            <option value="user">Employee</option>
+                            <option value="admin">Administrator</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Employee ID</label>
                         <input 
-                            v-model="form.position" 
+                            v-model="form.id_number" 
                             type="text" 
-                            placeholder="e.g. Developer"
-                            class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
+                            placeholder="HQI-XXXX"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all uppercase"
+                            required
                         >
                     </div>
                 </div>
 
+                <!-- Position -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Position / Job Title</label>
+                    <input 
+                        v-model="form.position" 
+                        type="text" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
+                        required
+                    >
+                </div>
+
                 <!-- Info Message -->
-                <div class="bg-blue-50 text-blue-700 text-sm p-3 rounded-xl flex gap-2 items-start">
-                    <i class="pi pi-info-circle mt-0.5"></i>
-                    <div>
-                        <p class="font-medium">Auto-generated Credentials:</p>
-                        <ul class="list-disc list-inside text-xs mt-1 opacity-80">
-                            <li>Email: firstname@hq.app</li>
-                            <li>Default Password: password</li>
-                            <li>Employee ID will be auto-assigned.</li>
-                        </ul>
-                    </div>
+                <div class="bg-blue-50 text-blue-700 p-4 rounded-xl text-sm">
+                    <p class="font-medium">Auto-generated Credentials:</p>
+                    <ul class="list-disc list-inside text-xs mt-1 opacity-80">
+                        <li>Email: firstname@hq.app</li>
+                        <li>Default Password: password</li>
+                    </ul>
                 </div>
 
                 <!-- Actions -->
@@ -115,9 +123,10 @@ const emit = defineEmits(['update:modelValue', 'submit']);
 
 const form = reactive({
     name: '',
-    department: '',
+    department: 'Engineering',
     role: 'user',
-    position: ''
+    position: '',
+    id_number: ''
 });
 
 // Reset form when modal opens
