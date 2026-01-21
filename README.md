@@ -7,6 +7,10 @@ A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js
 - **Database**: PostgreSQL configured efficiently.
 - **Styling**: TailwindCSS v4 for modern, responsive designs.
 - **Hybrid Support**: Supports both Blade templates and Vue components.
+- **Role-Based Dashboards**: Distinct views for Admin and User roles managed by `Dashboard.vue`.
+- **Universal Layout**: shared `MainLayout.vue` with responsive Sidebar and Topbar for consistent UX.
+- **Advanced Lists**: `EmployeeList.vue` with searching and filtering capabilities.
+- **Data Visualization**: Integrated **Chart.js** for attendance analytics.
 
 ## 🚀 Getting Started
 
@@ -43,16 +47,22 @@ npm install
    DB_USERNAME=root
    DB_PASSWORD=
    ```
-3. Generate the application key:
+3. Generate the key and seed the database:
    ```bash
    php artisan key:generate
+   php artisan migrate:fresh --seed
    ```
-4. Run database migrations:
-   ```bash
-   php artisan migrate
-   ```
+   > **Note**: The `--seed` command creates default Admin and User accounts.
 
-### 4. Running the App
+### 4. Default Credentials
+Use these accounts to log in at `http://localhost:8000/login`:
+
+| Role  | Email           | Password |
+| :---  | :---            | :---     |
+| **Admin** | `admin@hq.app`  | `password` |
+| **User**  | `user@hq.app`   | `password` |
+
+### 5. Running the App
 Start the development servers:
 ```bash
 # Terminal 1: Laravel Backend
@@ -61,6 +71,19 @@ php artisan serve
 # Terminal 2: Vite Frontend (Hot Output)
 npm run dev
 ```
+
+## 🔐 Authentication & Roles
+The app uses a hybrid authentication system:
+- **Backend**: Laravel Session Auth (Stateful).
+- **Frontend**: Vue.js + **Pinia** for state management.
+- **Roles**: Users are assigned roles (`admin` or `user`) which determine their access level.
+
+### Logic Flow
+1. User submits login form (Vue).
+2. **Axios** sends credentials to Laravel.
+3. Laravel validates and starts a session.
+4. **Pinia** updates the user state and redirects to `/dashboard`.
+
 Visit `http://localhost:8000` to see the app.
 Visit `http://localhost:8000/vue` for a Vue.js demonstration.
 
