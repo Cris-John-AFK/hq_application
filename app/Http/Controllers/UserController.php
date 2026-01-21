@@ -111,4 +111,23 @@ class UserController extends Controller
             'user' => $user
         ]);
     }
+    public function changeUserPassword(Request $request, $id)
+    {
+        // Only allow admin to do this
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $user = User::findOrFail($id);
+
+        $validated = $request->validate([
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        return response()->json(['message' => 'Password updated successfully']);
+    }
 }

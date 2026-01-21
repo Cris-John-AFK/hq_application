@@ -53,10 +53,10 @@ const routes = [
         meta: { title: 'HQ Inc. - Reports Page', requiresAuth: true }
     },
     {
-        path: '/settings',
-        name: 'Settings',
-        component: Settings,
-        meta: { title: 'HQ Inc. - Settings Page', requiresAuth: true }
+        path: '/manage-leaves',
+        name: 'ManageLeaves',
+        component: Settings, // We'll reuse Settings component for now, rename it later
+        meta: { title: 'HQ Inc. - Manage Leaves', requiresAuth: true }
     },
     // User Routes
     {

@@ -13,7 +13,8 @@ A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js
 - **Real-time Clock**: 12-hour format clock in the topbar with live updates.
 - **Admin Modules**: 
   - Employee List with search, filter, pagination, and **Add Employee** functionality (Manual ID `HQI-XXXX`)
-  - Enhanced Action Menu: View Leaves, Change Password, Mark On Leave
+  - **Inline Action Buttons**: View Leaves, **Change Password** (with confirmation), Mark On Leave
+  - **Manage Leaves** page (replaces Settings) for leave request management
   - Leave request management with custom radio button UI
   - Attendance tracking and reporting
   - Modern stacked area chart with ApexCharts showing attendance trends

@@ -26,6 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/api/user', [\App\Http\Controllers\UserController::class, 'update']);
     Route::get('/api/users', [\App\Http\Controllers\UserController::class, 'index']);
     Route::post('/api/users', [\App\Http\Controllers\UserController::class, 'store']);
+    Route::put('/api/users/{id}/password', [\App\Http\Controllers\UserController::class, 'changeUserPassword']);
     // Catch-all meant for Vue Router
     Route::get('/{any}', function () {
         return response()

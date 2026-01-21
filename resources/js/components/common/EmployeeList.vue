@@ -61,16 +61,16 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                        <th class="px-6 py-4 font-semibold">Employee</th>
+                        <th class="px-8 py-4 font-semibold">Employee</th>
                         <th class="px-6 py-4 font-semibold">ID</th>
                         <th class="px-6 py-4 font-semibold">Department</th>
                         <th class="px-6 py-4 font-semibold">Role</th>
                         <th class="px-6 py-4 font-semibold">Status</th>
-                        <th class="px-6 py-4 font-semibold text-right">Actions</th>
+                        <th class="px-13 py-4 font-semibold text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    <tr v-for="employee in paginatedEmployees" :key="employee.id" class="hover:bg-gray-50/50 transition-colors">
+                    <tr v-for="(employee, index) in paginatedEmployees" :key="employee.id" class="hover:bg-gray-50/50 transition-colors">
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
                                 <div
@@ -106,45 +106,53 @@
                                 {{ employee.status }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-right relative">
-                            <!-- Action Button -->
-                            <button 
-                                @click.stop="toggleActionMenu(employee.id)" 
-                                class="text-gray-400 hover:text-teal-600 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
-                            >
-                                <i class="pi pi-ellipsis-v"></i>
-                            </button>
-
-                            <!-- Action Menu -->
-                            <div 
-                                v-if="openActionMenuId === employee.id" 
-                                class="absolute right-0 top-full mt-2 z-50 mr-6 origin-top-right"
-                                @click.stop
-                            >
-                                <div class="custom-radio-group">
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <!-- View Leaves -->
+                                <div class="relative group">
                                     <button 
-                                        @click="handleViewLeaves(employee)"
-                                        class="custom-radio-container w-full text-left hover:text-teal-400 group"
+                                        @click="handleViewLeaves(employee)" 
+                                        class="cursor-pointer w-8 h-8 rounded-full bg-teal-50 text-teal-600 hover:bg-teal-100 flex items-center justify-center transition-colors"
                                     >
-                                        <i class="pi pi-calendar-times mr-3"></i>
-                                        <span>View Leaves</span>
+                                        <i class="pi pi-calendar text-xs"></i>
                                     </button>
+                                    <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                        View Leaves
+                                        <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></span>
+                                    </span>
+                                </div>
 
+                                <!-- Change Password -->
+                                <div class="relative group">
                                     <button 
-                                        @click="handleChangePassword(employee)"
-                                        class="custom-radio-container w-full text-left hover:text-teal-400 group"
+                                        @click="handleChangePassword(employee)" 
+                                        class="cursor-pointer w-8 h-8 rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 flex items-center justify-center transition-colors"
                                     >
-                                        <i class="pi pi-key mr-3"></i>
-                                        <span>Change Password</span>
+                                        <i class="pi pi-key text-xs"></i>
                                     </button>
+                                    <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                        Change Password
+                                        <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></span>
+                                    </span>
+                                </div>
 
-                                    <div class="h-px bg-gray-600 my-1 mx-2 opacity-30"></div>
-
-                                    <label class="custom-radio-container" @click="openLeaveModal(employee.id, 'On Leave')">
-                                        <input type="radio" name="custom-radio" :checked="employee.status === 'On Leave'" />
-                                        <span class="custom-radio-checkmark"></span>
+                                <!-- Mark On Leave -->
+                                <div class="relative group">
+                                    <button 
+                                        @click="openLeaveModal(employee.id, 'On Leave')"
+                                        :class="[
+                                            'cursor-pointer w-8 h-8 rounded-full flex items-center justify-center transition-colors',
+                                            employee.status === 'On Leave' 
+                                                ? 'bg-orange-100 text-orange-600 hover:bg-orange-200' 
+                                                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                                        ]"
+                                    >
+                                        <i class="pi pi-clock text-xs"></i>
+                                    </button>
+                                    <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
                                         Mark On Leave
-                                    </label>
+                                        <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></span>
+                                    </span>
                                 </div>
                             </div>
                         </td>
@@ -199,6 +207,14 @@
             :employee-name="getEmployeeName(leaveForm.employeeId)"
             @submit="handleLeaveSubmit"
         />
+
+        <!-- Change Password Modal -->
+        <ChangePasswordModal 
+            v-model="showPasswordModal"
+            :employee-id="selectedEmployee?.id"
+            :employee-name="selectedEmployee?.name"
+            @success="handlePasswordChanged"
+        />
     </div>
 </template>
 
@@ -206,6 +222,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import LeaveRequestModal from './LeaveRequestModal.vue';
 import AddEmployeeModal from './AddEmployeeModal.vue';
+import ChangePasswordModal from './ChangePasswordModal.vue';
 import axios from 'axios';
 
 const selectedDepartment = ref('All');
@@ -219,11 +236,13 @@ const isLoading = ref(false);
 // Modal Logic
 const showLeaveModal = ref(false);
 const showAddModal = ref(false);
+const showPasswordModal = ref(false);
 const isCreating = ref(false);
 const leaveForm = ref({
     employeeId: null,
     type: ''
 });
+const selectedEmployee = ref(null);
 
 // Employee Data
 const employees = ref([]);
@@ -331,9 +350,13 @@ const handleViewLeaves = (employee) => {
 };
 
 const handleChangePassword = (employee) => {
-    openActionMenuId.value = null;
-    alert(`Change Password for ${employee.name} - Feature coming soon!`);
-    // Open password change modal
+    selectedEmployee.value = employee;
+    showPasswordModal.value = true;
+};
+
+const handlePasswordChanged = () => {
+    alert('Password updated successfully!');
+    // Optionally refresh employee list or show toast notification
 };
 
 const updateStatus = (id, newStatus) => {

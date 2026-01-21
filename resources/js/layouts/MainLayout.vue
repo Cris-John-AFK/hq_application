@@ -211,7 +211,7 @@
                 { label: 'Attendance', icon: 'pi-calendar-clock', href: '/attendance' },
                 { label: 'Schedules', icon: 'pi-calendar', href: '/schedules' },
                 { label: 'Reports', icon: 'pi-chart-bar', href: '/reports' },
-                { label: 'Settings', icon: 'pi-cog', href: '/settings' },
+                { label: 'Manage Leaves', icon: 'pi-calendar-times', href: '/manage-leaves' },
             ];
         } else {
             return [
