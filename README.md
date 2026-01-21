@@ -8,11 +8,34 @@ A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js
 - **Styling**: TailwindCSS v4 for modern, responsive designs.
 - **Hybrid Support**: Supports both Blade templates and Vue components.
 - **Role-Based Dashboards**: Distinct views for Admin and User roles managed by `Dashboard.vue`.
-- **Universal Layout**: shared `MainLayout.vue` with responsive Sidebar and Topbar for consistent UX.
-- **Modules**: placeholder "working" modules for Employees, Attendance, Schedules, Reports, Settings.
+- **Universal Layout**: Shared `MainLayout.vue` with responsive Sidebar and Topbar for consistent UX.
+- **Professional Sidebar**: Neumorphism design with image logo support, active state indicators, and smooth transitions.
+- **Real-time Clock**: 12-hour format clock in the topbar with live updates.
+- **Admin Modules**: 
+  - Employee List with search, filter, and pagination
+  - Leave request management with custom radio button UI
+  - Attendance tracking and reporting
+  - Modern stacked area chart with ApexCharts showing attendance trends
+  - Dynamic calendar with month navigation and event tooltips
+- **User Modules**:
+  - Personal dashboard with quick stats
+  - Profile page with **Photo Upload** and **Edit Profile** details
+  - Attendance history
+  - Leave request submission
+- **Reusable Components**:
+  - `LeaveRequestModal.vue` - Google Forms-style modal for leave requests
+  - `EventCalendar.vue` - Interactive calendar with event management
+  - `EmployeeList.vue` - Advanced employee management table
+  - `AttendanceChart.vue` - Interactive line chart for attendance trends (Present, Absent, Late, Leave) with date filtering
 - **Routing**: **Vue Router 4** for seamless SPA navigation.
-- **Advanced Lists**: `EmployeeList.vue` with searching and filtering capabilities.
-- **Data Visualization**: Integrated **Chart.js** for attendance analytics.
+- **Data Visualization**: 
+  - **Chart.js** for beautiful, responsive line charts
+  - Interactive tooltips and custom legends
+  - Dynamic time-period filtering (Daily, Weekly, Monthly) with date pickers
+  - Smooth animations and gradient styling
+- **State Management**: **Pinia** for centralized auth and app state.
+
+
 
 ## 🚀 Getting Started
 
@@ -89,6 +112,54 @@ The app uses a hybrid authentication system:
 Visit `http://localhost:8000` to see the app.
 Visit `http://localhost:8000/vue` for a Vue.js demonstration.
 
+## 📁 Component Structure
+
+The Vue.js components are organized as follows:
+
+```
+resources/js/components/
+├── admin/              # Admin-specific components
+│   └── LeaveRequests.vue
+├── user/               # User-specific components
+│   ├── Dashboard.vue
+│   ├── Profile.vue
+│   ├── Attendance.vue
+│   └── LeaveRequests.vue
+├── common/             # Shared/reusable components
+│   ├── LeaveRequestModal.vue  # Reusable leave request form
+│   ├── EventCalendar.vue      # Interactive calendar
+│   └── EmployeeList.vue       # Employee management table
+├── login/              # Authentication components
+│   └── LoginForm.vue
+└── Dashboard.vue       # Main dashboard router
+```
+
+### Key Components
+
+- **LeaveRequestModal.vue**: A reusable Google Forms-style modal for submitting leave requests. Used by both admin (for employees) and users (for themselves).
+- **EventCalendar.vue**: Dynamic calendar with month navigation, event tooltips, and today's date highlighting.
+- **EmployeeList.vue**: Advanced table with search, filtering by department/status, pagination, and inline status management.
+
+## 🛣️ Routing
+
+The application uses **Vue Router 4** with separate routes for admin and user roles:
+
+### Admin Routes
+- `/dashboard` - Admin dashboard
+- `/employees` - Employee management
+- `/attendance` - Attendance tracking (admin view)
+- `/schedules` - Schedule management
+- `/reports` - Reports and analytics
+- `/settings` - Application settings
+
+### User Routes
+- `/dashboard` - User dashboard
+- `/profile` - Personal profile
+- `/my-attendance` - Personal attendance history
+- `/leave-requests` - Submit and view leave requests
+
+All routes are defined in `resources/js/router/index.js` and automatically set page titles via navigation guards.
+
 ## 📚 Documentation
 Please refer to the [Developer Manual](manual.md) for detailed instructions on:
 - Creating new Vue components.
@@ -97,7 +168,8 @@ Please refer to the [Developer Manual](manual.md) for detailed instructions on:
 
 ## Tech Stack
 - **Backend**: Laravel 12 (PHP 8.2+)
-- **Frontend**: Vue.js 3, Vite, TailwindCSS
+- **Frontend**: Vue.js 3, Vite, TailwindCSS v4
+- **Charts**: Chart.js (via chart.js package)
 - **Database**: PostgreSQL
 
 ---

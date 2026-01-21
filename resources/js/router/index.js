@@ -1,11 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Dashboard from '../components/Dashboard.vue';
 import Employees from '../components/admin/Employees.vue';
-import Attendance from '../components/admin/Attendance.vue';
+import AdminAttendance from '../components/admin/Attendance.vue';
 import Schedules from '../components/admin/Schedules.vue';
 import Reports from '../components/admin/Reports.vue';
 import Settings from '../components/admin/Settings.vue';
 import LoginForm from '../components/login/loginForm.vue';
+
+// User Components
+import UserDashboard from '../components/user/UserDashboard.vue';
+import UserProfile from '../components/user/Profile.vue';
+import UserAttendance from '../components/user/Attendance.vue';
+import UserLeaveRequests from '../components/user/LeaveRequests.vue';
 
 const routes = [
     {
@@ -20,6 +26,7 @@ const routes = [
         component: Dashboard,
         meta: { title: 'HQ Inc. - Dashboard Page' }
     },
+    // Admin Routes
     {
         path: '/employees',
         name: 'Employees',
@@ -29,7 +36,7 @@ const routes = [
     {
         path: '/attendance',
         name: 'Attendance',
-        component: Attendance,
+        component: AdminAttendance,
         meta: { title: 'HQ Inc. - Attendance Page' }
     },
     {
@@ -49,6 +56,25 @@ const routes = [
         name: 'Settings',
         component: Settings,
         meta: { title: 'HQ Inc. - Settings Page' }
+    },
+    // User Routes
+    {
+        path: '/profile',
+        name: 'Profile',
+        component: UserProfile,
+        meta: { title: 'HQ Inc. - My Profile' }
+    },
+    {
+        path: '/my-attendance',
+        name: 'MyAttendance',
+        component: UserAttendance,
+        meta: { title: 'HQ Inc. - My Attendance' }
+    },
+    {
+        path: '/leave-requests',
+        name: 'LeaveRequests',
+        component: UserLeaveRequests,
+        meta: { title: 'HQ Inc. - Leave Requests' }
     }
 ];
 

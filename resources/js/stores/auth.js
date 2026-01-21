@@ -28,5 +28,14 @@ export const useAuthStore = defineStore('auth', {
             this.isAuthenticated = false;
             window.location.href = '/login'; // Redirect to login page
         },
+        async updateUser(userData) {
+            try {
+                const response = await axios.put('/api/user', userData);
+                this.user = response.data.user; // Update local user state
+                return response.data;
+            } catch (error) {
+                throw error;
+            }
+        },
     },
 });

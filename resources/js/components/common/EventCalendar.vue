@@ -33,7 +33,7 @@
             </span>
         </div>
         
-        <div class="grid grid-cols-7 gap-1">
+        <div class="grid grid-cols-7 gap-1 mb-15">
             <div 
                 v-for="(date, index) in calendarDays" 
                 :key="index" 
