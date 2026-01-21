@@ -22,7 +22,8 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/api/user', [AuthController::class, 'user']);
-    Route::get('/dashboard', function () {
+    // Catch-all meant for Vue Router
+    Route::get('/{any}', function () {
         return view('dashboard');
-    });
+    })->where('any', '.*');
 });

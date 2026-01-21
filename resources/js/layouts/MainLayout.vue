@@ -10,10 +10,10 @@
             <nav class="flex-1 overflow-y-auto py-6">
                 <ul class="space-y-1 px-4">
                     <li v-for="item in menuItems" :key="item.label">
-                        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors group">
+                        <router-link :to="item.href" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors group" active-class="bg-slate-800 text-white">
                             <i :class="`pi ${item.icon} text-slate-400 group-hover:text-teal-400`"></i>
                             <span class="font-medium">{{ item.label }}</span>
-                        </a>
+                        </router-link>
                     </li>
                 </ul>
             </nav>
@@ -41,9 +41,7 @@
 
                 <!-- Breadcrumbs / Title Placeholder -->
                 <div class="hidden md:flex items-center gap-2 text-sm text-gray-500">
-                    <span>Dashboard</span>
-                    <i class="pi pi-angle-right text-xs"></i>
-                    <span class="font-medium text-gray-800">Overview</span>
+                    <span>{{ title }}</span>
                 </div>
 
                 <!-- Right Actions -->
@@ -83,6 +81,10 @@
 <script setup>
     import { ref, computed } from 'vue';
     import { useAuthStore } from '../stores/auth';
+    import { useRoute } from 'vue-router';
+
+    const route = useRoute();
+    const title = computed(() => route.meta.title?.split(' - ').pop() || '');
 
     const props = defineProps({
         user: Object

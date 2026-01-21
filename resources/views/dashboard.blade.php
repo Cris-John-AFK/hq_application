@@ -9,7 +9,7 @@
 </head>
 <body class="bg-gray-100">
     <div id="app">
-        <dashboard-component></dashboard-component>
+        <router-view></router-view>
     </div>
 </body>
 </html>

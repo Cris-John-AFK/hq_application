@@ -9,6 +9,8 @@ A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js
 - **Hybrid Support**: Supports both Blade templates and Vue components.
 - **Role-Based Dashboards**: Distinct views for Admin and User roles managed by `Dashboard.vue`.
 - **Universal Layout**: shared `MainLayout.vue` with responsive Sidebar and Topbar for consistent UX.
+- **Modules**: placeholder "working" modules for Employees, Attendance, Schedules, Reports, Settings.
+- **Routing**: **Vue Router 4** for seamless SPA navigation.
 - **Advanced Lists**: `EmployeeList.vue` with searching and filtering capabilities.
 - **Data Visualization**: Integrated **Chart.js** for attendance analytics.
 
