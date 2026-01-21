@@ -2,7 +2,7 @@
     <div class="flex h-screen bg-gray-50">
         <!-- Sidebar -->
         <aside class="w-64 bg-slate-900 text-white flex flex-col transition-all duration-300 transform fixed md:relative z-30 h-full" :class="{ '-translate-x-full md:translate-x-0': !isSidebarOpen }">
-            <a href="/dashboard" class="p-6 flex items-center gap-3 border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+            <a href="/dashboard" class="p-4 flex items-center gap-3 border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
                 <div class="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center font-bold text-white">HQ</div>
                 <h1 class="text-xl font-bold tracking-wider">HQ App</h1>
             </a>
@@ -44,22 +44,30 @@
                     <span>{{ title }}</span>
                 </div>
 
-                <!-- Right Actions -->
-                <div class="flex items-center gap-4">
-                    <button class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
-                        <i class="pi pi-bell text-lg"></i>
-                        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-                    </button>
-                    
-                    <div class="w-px h-6 bg-gray-200"></div>
+                <!-- Clock and Right Actions -->
+                <div class="flex items-center gap-6">
+                    <!-- Real-time Clock -->
+                    <div class="hidden md:flex items-center gap-2 text-teal-600 font-medium bg-teal-50 px-3 py-1.5 rounded-lg border border-teal-100 shadow-sm">
+                        <i class="pi pi-clock text-sm"></i>
+                        <span class="tabular-nums text-sm font-bold tracking-tight">{{ currentTime }}</span>
+                    </div>
 
-                    <button 
-                        @click="handleLogout" 
-                        class="cursor-pointer flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors text-sm font-medium"
-                    >
-                        <span>Logout</span>
-                        <i class="pi pi-sign-out"></i>
-                    </button>
+                    <div class="flex items-center gap-4">
+                        <button class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+                            <i class="pi pi-bell text-lg"></i>
+                            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                        </button>
+                        
+                        <div class="w-px h-6 bg-gray-200"></div>
+    
+                        <button 
+                            @click="handleLogout" 
+                            class="cursor-pointer flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors text-sm font-medium"
+                        >
+                            <span>Logout</span>
+                            <i class="pi pi-sign-out"></i>
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -79,12 +87,35 @@
 </template>
 
 <script setup>
-    import { ref, computed } from 'vue';
+    import { ref, computed, onMounted, onUnmounted } from 'vue';
     import { useAuthStore } from '../stores/auth';
     import { useRoute } from 'vue-router';
 
     const route = useRoute();
     const title = computed(() => route.meta.title?.split(' - ').pop() || '');
+    
+    // Time Logic
+    const currentTime = ref('');
+    let timeInterval;
+
+    const updateTime = () => {
+        const now = new Date();
+        currentTime.value = now.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit',
+            hour12: true 
+        });
+    };
+
+    onMounted(() => {
+        updateTime();
+        timeInterval = setInterval(updateTime, 1000);
+    });
+
+    onUnmounted(() => {
+        if (timeInterval) clearInterval(timeInterval);
+    });
 
     const props = defineProps({
         user: Object

@@ -21,6 +21,19 @@
                         <option value="HR">Human Resources</option>
                     </select>
                 </div>
+                <!-- Status Filter -->
+                <div class="relative">
+                    <i class="pi pi-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <select 
+                        v-model="selectedStatus" 
+                        class="pl-10 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-white appearance-none cursor-pointer"
+                    >
+                        <option value="All">All Status</option>
+                        <option value="Working">Working</option>
+                        <option value="Not Yet Arrived">Not Yet Arrived</option>
+                        <option value="On Leave">On Leave</option>
+                    </select>
+                </div>
 
                 <!-- Search -->
                 <div class="relative">
@@ -70,9 +83,9 @@
                         <td class="px-6 py-4">
                             <span 
                                 :class="{
-                                    'bg-green-100 text-green-700': employee.status === 'Active',
-                                    'bg-yellow-100 text-yellow-700': employee.status === 'On Leave',
-                                    'bg-gray-100 text-gray-600': employee.status === 'Offline'
+                                    'bg-green-100 text-green-700': employee.status === 'Working',
+                                    'bg-yellow-100 text-yellow-700': employee.status === 'Not Yet Arrived',
+                                    'bg-gray-100 text-gray-600': employee.status === 'On Leave'
                                 }"
                                 class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
                             >
@@ -127,26 +140,27 @@
 import { ref, computed, watch } from 'vue';
 
 const selectedDepartment = ref('All');
+const selectedStatus = ref('All');
 const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = 10;
 
 // Mock Data - Expanded for Pagination Demo
 const employees = ref([
-    { id: 1, name: 'John Doe', email: 'john@hq.app', initials: 'JD', empId: 'EMP-001', department: 'Engineering', role: 'Senior Developer', status: 'Active' },
-    { id: 2, name: 'Jane Smith', email: 'jane@hq.app', initials: 'JS', empId: 'EMP-002', department: 'Design', role: 'UI/UX Designer', status: 'On Leave' },
-    { id: 3, name: 'Mike Johnson', email: 'mike@hq.app', initials: 'MJ', empId: 'EMP-003', department: 'Sales', role: 'Sales Manager', status: 'Active' },
-    { id: 4, name: 'Sarah Williams', email: 'sarah@hq.app', initials: 'SW', empId: 'EMP-004', department: 'HR', role: 'HR Specialist', status: 'Active' },
-    { id: 5, name: 'Robert Brown', email: 'robert@hq.app', initials: 'RB', empId: 'EMP-005', department: 'Engineering', role: 'QA Engineer', status: 'Offline' },
-    { id: 6, name: 'Emily Davis', email: 'emily@hq.app', initials: 'ED', empId: 'EMP-006', department: 'Marketing', role: 'Content Writer', status: 'Active' },
-    { id: 7, name: 'David Wilson', email: 'david@hq.app', initials: 'DW', empId: 'EMP-007', department: 'Engineering', role: 'DevOps Engineer', status: 'Active' },
-    { id: 8, name: 'Lisa Miller', email: 'lisa@hq.app', initials: 'LM', empId: 'EMP-008', department: 'Marketing', role: 'Marketing Manager', status: 'On Leave' },
-    { id: 9, name: 'James Taylor', email: 'james@hq.app', initials: 'JT', empId: 'EMP-009', department: 'Sales', role: 'Sales Executive', status: 'Active' },
-    { id: 10, name: 'Patricia Anderson', email: 'patricia@hq.app', initials: 'PA', empId: 'EMP-010', department: 'HR', role: 'Recruiter', status: 'Active' },
-    { id: 11, name: 'Jennifer Thomas', email: 'jennifer@hq.app', initials: 'JT', empId: 'EMP-011', department: 'Design', role: 'Graphic Designer', status: 'Active' },
-    { id: 12, name: 'Charles Jackson', email: 'charles@hq.app', initials: 'CJ', empId: 'EMP-012', department: 'Engineering', role: 'Frontend Developer', status: 'Offline' },
-    { id: 13, name: 'Linda White', email: 'linda@hq.app', initials: 'LW', empId: 'EMP-013', department: 'Sales', role: 'Account Manager', status: 'Active' },
-    { id: 14, name: 'Barbara Harris', email: 'barbara@hq.app', initials: 'BH', empId: 'EMP-014', department: 'Engineering', role: 'Backend Developer', status: 'Active' },
+    { id: 1, name: 'John Doe', email: 'john@hq.app', initials: 'JD', empId: 'EMP-001', department: 'Engineering', role: 'Senior Developer', status: 'Working' },
+    { id: 2, name: 'Jane Smith', email: 'jane@hq.app', initials: 'JS', empId: 'EMP-002', department: 'Design', role: 'UI/UX Designer', status: 'Not Yet Arrived' },
+    { id: 3, name: 'Mike Johnson', email: 'mike@hq.app', initials: 'MJ', empId: 'EMP-003', department: 'Sales', role: 'Sales Manager', status: 'Working' },
+    { id: 4, name: 'Sarah Williams', email: 'sarah@hq.app', initials: 'SW', empId: 'EMP-004', department: 'HR', role: 'HR Specialist', status: 'Not Yet Arrived' },
+    { id: 5, name: 'Robert Brown', email: 'robert@hq.app', initials: 'RB', empId: 'EMP-005', department: 'Engineering', role: 'QA Engineer', status: 'Working' },
+    { id: 6, name: 'Emily Davis', email: 'emily@hq.app', initials: 'ED', empId: 'EMP-006', department: 'Marketing', role: 'Content Writer', status: 'Working' },
+    { id: 7, name: 'David Wilson', email: 'david@hq.app', initials: 'DW', empId: 'EMP-007', department: 'Engineering', role: 'DevOps Engineer', status: 'On Leave' },
+    { id: 8, name: 'Lisa Miller', email: 'lisa@hq.app', initials: 'LM', empId: 'EMP-008', department: 'Marketing', role: 'Marketing Manager', status: 'Not Yet Arrived' },
+    { id: 9, name: 'James Taylor', email: 'james@hq.app', initials: 'JT', empId: 'EMP-009', department: 'Sales', role: 'Sales Executive', status: 'Working' },
+    { id: 10, name: 'Patricia Anderson', email: 'patricia@hq.app', initials: 'PA', empId: 'EMP-010', department: 'HR', role: 'Recruiter', status: 'Working' },
+    { id: 11, name: 'Jennifer Thomas', email: 'jennifer@hq.app', initials: 'JT', empId: 'EMP-011', department: 'Design', role: 'Graphic Designer', status: 'Working' },
+    { id: 12, name: 'Charles Jackson', email: 'charles@hq.app', initials: 'CJ', empId: 'EMP-012', department: 'Engineering', role: 'Frontend Developer', status: 'Working' },
+    { id: 13, name: 'Linda White', email: 'linda@hq.app', initials: 'LW', empId: 'EMP-013', department: 'Sales', role: 'Account Manager', status: 'Not Yet Arrived' },
+    { id: 14, name: 'Barbara Harris', email: 'barbara@hq.app', initials: 'BH', empId: 'EMP-014', department: 'Engineering', role: 'Backend Developer', status: 'Working' },
     { id: 15, name: 'Paul Martin', email: 'paul@hq.app', initials: 'PM', empId: 'EMP-015', department: 'Marketing', role: 'SEO Specialist', status: 'On Leave' },
 ]);
 
@@ -160,17 +174,23 @@ const filteredEmployees = computed(() => {
     });
 });
 
+const filteredByStatus = computed(() => {
+    return filteredEmployees.value.filter(employee => {
+        return employee.status === selectedStatus.value || selectedStatus.value === 'All';
+    });
+});
+
 // Pagination Logic
-const totalPages = computed(() => Math.ceil(filteredEmployees.value.length / itemsPerPage));
+const totalPages = computed(() => Math.ceil(filteredByStatus.value.length / itemsPerPage));
 
 const paginatedEmployees = computed(() => {
     const start = (currentPage.value - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    return filteredEmployees.value.slice(start, end);
+    return filteredByStatus.value.slice(start, end);
 });
 
-const startEntry = computed(() => filteredEmployees.value.length === 0 ? 0 : (currentPage.value - 1) * itemsPerPage + 1);
-const endEntry = computed(() => Math.min(currentPage.value * itemsPerPage, filteredEmployees.value.length));
+const startEntry = computed(() => filteredByStatus.value.length === 0 ? 0 : (currentPage.value - 1) * itemsPerPage + 1);
+const endEntry = computed(() => Math.min(currentPage.value * itemsPerPage, filteredByStatus.value.length));
 
 const nextPage = () => {
     if (currentPage.value < totalPages.value) currentPage.value++;
