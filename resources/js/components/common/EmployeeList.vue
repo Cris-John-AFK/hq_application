@@ -85,7 +85,9 @@
                                 :class="{
                                     'bg-green-100 text-green-700': employee.status === 'Working',
                                     'bg-yellow-100 text-yellow-700': employee.status === 'Not Yet Arrived',
-                                    'bg-gray-100 text-gray-600': employee.status === 'On Leave'
+                                    'bg-gray-100 text-gray-600': employee.status === 'On Leave',
+                                    'bg-red-100 text-red-600': employee.status === 'Absent',
+                                    'bg-red-200 text-red-600': employee.status === 'Emergency Leave'
                                 }"
                                 class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
                             >
@@ -93,10 +95,38 @@
                                 {{ employee.status }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-right">
-                            <button class="text-gray-400 hover:text-teal-600 transition-colors cursor-pointer">
+                        <td class="px-6 py-4 text-right relative">
+                            <button 
+                                @click.stop="toggleActionMenu(employee.id)" 
+                                class="text-gray-400 hover:text-teal-600 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
+                            >
                                 <i class="pi pi-ellipsis-v"></i>
                             </button>
+
+                            <!-- Action Menu -->
+                            <div 
+                                v-if="openActionMenuId === employee.id" 
+                                class="absolute right-0 top-full mt-2 z-50 mr-6 origin-top-right"
+                                @click.stop
+                            >
+                                <div class="custom-radio-group">
+                                    <label class="custom-radio-container" @click="openLeaveModal(employee.id, 'On Leave')">
+                                        <input type="radio" name="custom-radio" :checked="employee.status === 'On Leave'" />
+                                        <span class="custom-radio-checkmark"></span>
+                                        On Leave
+                                    </label>
+                                    <label class="custom-radio-container" @click="updateStatus(employee.id, 'Absent')">
+                                        <input type="radio" name="custom-radio" :checked="employee.status === 'Absent'" />
+                                        <span class="custom-radio-checkmark"></span>
+                                        Absent
+                                    </label>
+                                    <label class="custom-radio-container" @click="openLeaveModal(employee.id, 'Emergency Leave')">
+                                        <input type="radio" name="custom-radio" :checked="employee.status === 'Emergency Leave'" />
+                                        <span class="custom-radio-checkmark"></span>
+                                        Emergency Leave
+                                    </label>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     <tr v-if="filteredEmployees.length === 0">
@@ -133,17 +163,131 @@
                 </button>
             </div>
         </div>
+        
+        <!-- Leave Form Modal (Google Forms Style) -->
+        <div v-if="showLeaveModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in" @click.self="closeLeaveModal">
+            <!-- Backdrop -->
+            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+            
+            <!-- Modal Container -->
+            <div class="wrapper relative z-10 w-full max-w-lg max-h-[90vh] flex flex-col bg-[#f0f2f5] rounded-xl overflow-hidden shadow-2xl" @click.stop>
+                <!-- Purple Top Bar -->
+                <div class="h-2.5 bg-[#673ab7] w-full shrink-0"></div>
+                
+                <!-- Scrollable Content -->
+                <div class="overflow-y-auto p-6 space-y-4">
+                    <!-- Header Section -->
+                    <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm relative">
+                        <div class="heading text-2xl text-gray-800">{{ leaveForm.type }} Request</div>
+                        <p class="text-sm text-gray-600 mt-2">For <span class="font-medium">{{ getEmployeeName(leaveForm.employeeId) }}</span></p>
+                        <hr class="my-4 border-gray-200"/>
+                        <div class="text-xs text-[#d93025]" v-if="formError">* {{ formError }}</div>
+                        <div class="text-xs text-gray-500" v-else>* Indicates required question</div>
+                    </div>
+
+                    <!-- Question Section -->
+                    <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm">
+                        <div class="mb-4">
+                            <span class="text-base font-medium text-gray-800">Reason for Leave</span>
+                            <span class="text-[#d93025] ml-1">*</span>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div v-for="reason in leaveReasons" :key="reason">
+                                <label class="flex items-center cursor-pointer py-2 group relative">
+                                    <input type="radio" v-model="leaveForm.selectedReason" :value="reason" name="leaveReason" class="peer absolute opacity-0">
+                                    <div class="relative w-5 h-5 border-2 border-[#5f6368] rounded-full peer-checked:border-[#673ab7] transition-all flex-shrink-0">
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <div class="w-3 h-3 bg-[#673ab7] rounded-full opacity-0 peer-checked:opacity-100 transition-opacity duration-200"></div>
+                                        </div>
+                                        <div class="absolute -inset-3 rounded-full bg-[#673ab7] opacity-0 group-hover:opacity-[0.04] transition-opacity"></div>
+                                    </div>
+                                    <span class="ml-3 text-sm text-gray-700 select-none">{{ reason }}</span>
+                                </label>
+                            </div>
+
+                            <!-- Others Option -->
+                            <div>
+                                <label class="flex items-center cursor-pointer py-2 group relative">
+                                    <input type="radio" v-model="leaveForm.selectedReason" value="Others" name="leaveReason" class="peer absolute opacity-0">
+                                    <div class="relative w-5 h-5 border-2 border-[#5f6368] rounded-full peer-checked:border-[#673ab7] transition-all flex-shrink-0">
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <div class="w-3 h-3 bg-[#673ab7] rounded-full opacity-0 peer-checked:opacity-100 transition-opacity duration-200"></div>
+                                        </div>
+                                        <div class="absolute -inset-3 rounded-full bg-[#673ab7] opacity-0 group-hover:opacity-[0.04] transition-opacity"></div>
+                                    </div>
+                                    <span class="ml-3 text-sm text-gray-700 select-none">Others</span>
+                                </label>
+                                <div v-if="leaveForm.selectedReason === 'Others'" class="ml-8 mt-2">
+                                    <input 
+                                        type="text" 
+                                        v-model="leaveForm.otherReasonText" 
+                                        class="w-full border-b border-gray-300 outline-none py-1 text-sm focus:border-[#673ab7] transition-colors bg-transparent placeholder-gray-400" 
+                                        placeholder="Please specify reason..."
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Evidence Section -->
+                    <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-base font-medium text-gray-800">Evidence / Attachment</span>
+                            <span class="text-xs text-gray-500">(Optional)</span>
+                        </div>
+                        <div class="border-2 border-dashed border-gray-200 rounded-lg p-6 hover:bg-gray-50 transition-colors text-center cursor-pointer relative group">
+                            <input type="file" @change="handleFileUpload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                            <div class="group-hover:scale-105 transition-transform duration-200">
+                                <i class="pi pi-cloud-upload text-3xl text-[#673ab7] mb-3 block"></i>
+                                <span class="text-sm text-gray-600 block" v-if="!leaveForm.file">Drag file here or click to upload</span>
+                                <span class="text-sm text-[#673ab7] font-medium block truncate px-4" v-else>{{ leaveForm.file.name }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="bg-[#f0f2f5] p-4 flex justify-between items-center shrink-0 border-t border-gray-200">
+                    <div @click="closeLeaveModal" class="btn-text cursor-pointer text-[#673ab7] text-sm font-medium hover:bg-[#673ab7]/10 px-4 py-2 rounded transition-colors">
+                        Cancel
+                    </div>
+                    <button @click="submitLeaveForm" class="bg-[#673ab7] text-white px-6 py-2 rounded text-sm font-medium hover:bg-[#5e35b1] shadow-sm transition-all active:scale-95">
+                        Submit
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 
 const selectedDepartment = ref('All');
 const selectedStatus = ref('All');
 const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = 10;
+const openActionMenuId = ref(null);
+
+// Modal Logic
+const showLeaveModal = ref(false);
+const formError = ref('');
+const leaveForm = ref({
+    employeeId: null,
+    type: '',
+    selectedReason: '',
+    otherReasonText: '',
+    file: null
+});
+
+const leaveReasons = [
+    'Sick Leave',
+    'Vacation Leave',
+    'Personal Emergency',
+    'Medical Appointment'
+];
 
 // Mock Data - Expanded for Pagination Demo
 const employees = ref([
@@ -204,4 +348,168 @@ const prevPage = () => {
 watch([selectedDepartment, searchQuery], () => {
     currentPage.value = 1;
 });
+
+// Action Menu Logic
+const toggleActionMenu = (id) => {
+    if (openActionMenuId.value === id) {
+        openActionMenuId.value = null;
+    } else {
+        openActionMenuId.value = id;
+    }
+};
+
+const updateStatus = (id, newStatus) => {
+    const employee = employees.value.find(e => e.id === id);
+    if (employee) {
+        employee.status = newStatus;
+        openActionMenuId.value = null; // Close menu after selection
+    }
+};
+
+const openLeaveModal = (id, type) => {
+    openActionMenuId.value = null;
+    leaveForm.value = {
+        employeeId: id,
+        type: type,
+        selectedReason: '',
+        otherReasonText: '',
+        file: null
+    };
+    formError.value = '';
+    showLeaveModal.value = true;
+};
+
+const closeLeaveModal = () => {
+    showLeaveModal.value = false;
+};
+
+const handleFileUpload = (event) => {
+    leaveForm.value.file = event.target.files[0];
+};
+
+const submitLeaveForm = () => {
+    if (!leaveForm.value.selectedReason) {
+        formError.value = 'Please select a reason for leave.';
+        return;
+    }
+    
+    if (leaveForm.value.selectedReason === 'Others' && !leaveForm.value.otherReasonText) {
+        formError.value = 'Please specify the reason.';
+        return;
+    }
+
+    // Update status
+    updateStatus(leaveForm.value.employeeId, leaveForm.value.type);
+    closeLeaveModal();
+    // In a real app, you would send the file and reason to the backend here
+};
+
+const getEmployeeName = (id) => {
+    const emp = employees.value.find(e => e.id === id);
+    return emp ? emp.name : 'Employee';
+};
+
+const closeActionMenu = () => {
+    openActionMenuId.value = null;
+};
+
+onMounted(() => {
+    document.addEventListener('click', closeActionMenu);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', closeActionMenu);
+});
 </script>
+
+<style scoped>
+/* From Uiverse.io by kyle1dev */ 
+.custom-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 280px; 
+  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.95); 
+  padding: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+}
+
+.custom-radio-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 12px 20px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition:
+    background-color 0.3s ease,
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: #f1f5f9; 
+  user-select: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.custom-radio-container:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  transform: scale(1.02);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.custom-radio-container input[type="radio"] {
+  opacity: 0;
+  position: absolute;
+}
+
+.custom-radio-checkmark {
+  position: relative;
+  height: 20px;
+  width: 20px;
+  border: 2px solid #cbd5e1; 
+  border-radius: 50%;
+  background-color: transparent;
+  transition:
+    background-color 0.4s ease,
+    transform 0.4s ease,
+    border-color 0.4s ease;
+  margin-right: 12px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.custom-radio-container input[type="radio"]:checked + .custom-radio-checkmark {
+  background-color: #14b8a6; 
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.2);
+  transform: scale(1.1);
+  animation: pulse 0.6s forwards;
+}
+
+.custom-radio-checkmark::after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.custom-radio-container input[type="radio"]:checked + .custom-radio-checkmark::after {
+  display: block;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes pulse {
+  0% { transform: scale(1.1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1.1); }
+}
+</style>

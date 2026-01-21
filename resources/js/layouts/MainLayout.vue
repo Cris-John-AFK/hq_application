@@ -1,32 +1,69 @@
 <template>
     <div class="flex h-screen bg-gray-50">
         <!-- Sidebar -->
-        <aside class="w-64 bg-slate-900 text-white flex flex-col transition-all duration-300 transform fixed md:relative z-30 h-full" :class="{ '-translate-x-full md:translate-x-0': !isSidebarOpen }">
-            <a href="/dashboard" class="p-4 flex items-center gap-3 border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
-                <div class="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center font-bold text-white">HQ</div>
-                <h1 class="text-xl font-bold tracking-wider">HQ App</h1>
+        <!-- Sidebar -->
+        <aside 
+            class="w-72 bg-[#0f172a] text-slate-300 flex flex-col transition-all duration-300 transform fixed md:relative z-30 h-full border-r border-slate-800 shadow-xl" 
+            :class="{ '-translate-x-full md:translate-x-0': !isSidebarOpen }"
+        >
+            <!-- Logo Area -->
+            <a href="/dashboard" class="h-16 flex items-center px-8 border-b border-slate-800 hover:bg-slate-800/30 transition-colors group">
+                <div class="relative w-10 h-10 mr-4 transform transition-transform group-hover:scale-105">
+                    <!-- Placeholder Logo: Replace src with your actual logo path (e.g., /images/logo.png) -->
+                    <img 
+                        src="https://placehold.co/100x100/14b8a6/ffffff?text=HQ" 
+                        alt="HQ Logo" 
+                        class="w-full h-full object-cover rounded-xl shadow-lg shadow-teal-500/20"
+                    />
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-white tracking-tight">HQ App</h1>
+                    <p class="text-[10px] font-semibold text-teal-500 uppercase tracking-widest leading-none mt-0.5">Management</p>
+                </div>
             </a>
 
-            <nav class="flex-1 overflow-y-auto py-6">
-                <ul class="space-y-1 px-4">
+            <!-- Navigation -->
+            <nav class="flex-1 overflow-y-auto py-8">
+                <div class="px-6 mb-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Main Menu</div>
+                <ul class="space-y-2 px-4">
                     <li v-for="item in menuItems" :key="item.label">
-                        <router-link :to="item.href" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors group" active-class="bg-slate-800 text-white">
-                            <i :class="`pi ${item.icon} text-slate-400 group-hover:text-teal-400`"></i>
-                            <span class="font-medium">{{ item.label }}</span>
+                        <router-link 
+                            :to="item.href" 
+                            class="relative flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 group font-medium text-sm" 
+                            active-class="bg-gradient-to-r from-teal-600/10 to-transparent text-teal-400"
+                            :class="[
+                                $route.path === item.href 
+                                    ? '' 
+                                    : 'hover:bg-slate-800/50 hover:text-white'
+                            ]"
+                        >
+                            <!-- Active Indicator Border -->
+                            <span 
+                                v-if="$route.path === item.href" 
+                                class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-teal-500 rounded-r-full shadow-[0_0_10px_rgba(20,184,166,0.5)]"
+                            ></span>
+                            
+                            <i :class="[`pi ${item.icon} text-lg transition-colors`, $route.path === item.href ? 'text-teal-400' : 'text-slate-500 group-hover:text-teal-400']"></i>
+                            <span class="relative z-10">{{ item.label }}</span>
                         </router-link>
                     </li>
                 </ul>
             </nav>
 
-            <div class="p-4 border-t border-slate-800">
-                <div class="flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-800/50">
-                    <div class="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-sm font-bold">
+            <!-- User Profile -->
+            <div class="p-4 border-t border-slate-800 bg-[#0f172a]">
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/80 transition-colors cursor-pointer group">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-teal-900/20 ring-2 ring-slate-900 group-hover:ring-teal-500/30 transition-all">
                         {{ user?.name?.charAt(0) || 'U' }}
                     </div>
-                    <div class="overflow-hidden">
-                        <p class="text-sm font-medium truncate">{{ user?.name }}</p>
-                        <p class="text-xs text-slate-400 capitalize">{{ user?.role }}</p>
+                    <div class="overflow-hidden flex-1">
+                        <p class="text-sm font-bold text-white truncate">{{ user?.name }}</p>
+                        <p class="text-xs text-slate-400 capitalize flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                            {{ user?.role }}
+                        </p>
                     </div>
+                    <i class="pi pi-chevron-right text-xs text-slate-500 group-hover:text-white transition-colors"></i>
                 </div>
             </div>
         </aside>
