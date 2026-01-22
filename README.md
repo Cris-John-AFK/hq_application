@@ -18,27 +18,71 @@ A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js
       - Recent Attendance (Time In/Out tracking with profile avatars)
       - Recent Leaves (Status-based cards with initials/avatar support)
     - Two-column responsive layout for optimal space usage with automatic data fetching on mount
-  - Employee List with search, filter, pagination, and **Add Employee** functionality (Manual ID `HQI-XXXX`)
-  - **Inline Action Buttons**: View Leaves, **Change Password** (with confirmation), Mark On Leave
-  - **Instant Tooltips**: Fast-appearing custom tooltips for better UX
+  - **Employee Management**:
+    - Employee List with search, filter, pagination, and **Add Employee** functionality (Manual ID `HQI-XXXX`)
+    - **Edit Employee Details**: Comprehensive modal for updating employee information including:
+      - Name, Department, Position, Role
+      - Employment Status (Probationary/Regular)
+      - **Unified Leave Credits**: Single consolidated leave credit balance (replaces separate SIL/Sick/Vacation/Emergency credits)
+    - **Inline Action Buttons**: Edit Details, View Leaves, **Change Password** (with confirmation), Mark On Leave
+    - **Instant Tooltips**: Fast-appearing custom tooltips for better UX
   - **Manage Leaves** (Comprehensive HR Module):
     - Detailed tracking of Employee, Status, Leave Type (SIL, Maternity, Emergency, etc.)
     - **Digital Personnel Leave Authorization Form**:
       - Exact digital replica of the physical "Personnel Leave Authorization Form"
       - **Fields**: Date Filed (Auto/Manual), Request For (Leave/Halfday/Undertime/OB), Leave Type (SIL, Solo Parent, VAWS, etc.)
-      - **Smart Inputs**: Auto-calculation of days based on date range, conditional time inputs for Undertime
+      - **Smart Date Restrictions**: 
+        - Date picker only allows current date and future dates (no past dates)
+        - Prevents backdating of leave requests
+        - **Auto-sync for Single-Day Requests**: Halfday and Undertime requests automatically sync From/To dates to ensure single-day selection
+      - **Inclusive Day Calculation**: 
+        - Automatically calculates total days **including weekends**
+        - Accurate count from start date to end date (both inclusive)
+      - **Hours Tracking**: Always-visible hours input with start/end time fields for all request types
       - **Rich Validation**: Ensures all required fields (Reason, Dates, Type) are filled before submission
+    - **Automated Credit Management**:
+      - **Precision Numeric Calculation**: Uses strict numeric parsing to ensure accurate credit comparisons (replaces unreliable string comparisons)
+      - **Real-Time Credit Calculation**: Admin modal displays dynamic credit math using **Service Incentive Leave (SIL)** terminology:
+        - **Total of SIL**: Shows current available credits
+        - **Total SIL Balance**: Shows projected balance after approval
+        - **Visual Math Display**: Shows calculation breakdown (e.g., `12.00 - 3.00 = 9.00`)
+        - **Visual Validation**: Green "Sufficient Credits" box with remaining balance
+        - **Live Stats Dashboard**: Instant overview of Pending, Approved, Rejected, Cancelled, and Total requests.
+      - **Admin Controls**:
+        - Mark leaves as "With Pay" or "Unpaid"
+        - **No. of Days Paid**: Explicitly specify the number of days to be credited as paid for each request
+        - **View Employee Leaves**: Directly view all leave history for a specific employee from the Employee List page
+        - Approve/Reject/Cancel with internal admin remarks
+      - **Enhanced User Experience**:
+        - **Dashboard Activity Pagination**: "Recent Attendance" and "Recent Leaves" now support clean pagination (5 per page) to prevent clutter
+        - **Pending Notifications**: Real-time pulse notification for pending leave requests on the dashboard tab and "New" badges on list items
+        - **Employee Insight Hero**: High-impact visual summary at the top of filtered leave views (shows avatar, status, ID, and live SIL balance)
+        - **Live Balance Tracking**: SIL credits are visible directly in the Employee List table for instant reference
+      - **Exportable Reporting**:
+        - Generate comprehensive **CSV Reports** of leave history
+        - Includes employee details, **Department**, **Position**, date ranges, leave types, status, and **Latest SIL Balance** for payroll auditing
+      - **Personnel Management Enhancements**:
+        - Clarified terminology: "Account Type" (Admin vs Standard) is now distinct from "Position/Job Title"
+        - System Admin badges integrated into employee lists for quick identification
+      - Leave credits are **automatically deducted** when a request is approved
+      - Credits are **restored** if an approved request is cancelled or rejected
+      - **Flexible Approval**: Admins can approve requests even with insufficient credits (allows negative balance)
+      - Credit shortage warnings help admins make informed decisions
     - **Backtracking & Reporting**: Backtrack all usage, detailed duration logging
     - **Real-Time Data**:
-        - Dashboard cards instantly reflect actual Sick/Vacation/Emergency credit balances from the database
+        - Dashboard cards instantly reflect actual SIL credit balances from the database
         - "Latest Leave Status" widget automatically updates with the most recent filing info
-        - **Admin Analytics**: Admin Dashboard and Manage Leaves page display real-time counts for Pending, Approved, Rejected, and On-Leave employees
+        - **Admin Analytics**: Admin Dashboard and Manage Leaves page display real-time counts for Pending, Approved, Rejected, Cancelled, and On-Leave employees
         - **Recent Leaves Feed**: Admin dashboard shows the 5 most recent leave requests dynamically, including relative timestamps (e.g. "2 hrs ago")
     - **Navigation & UX**:
         - **Deep Linking**: Click on any recent leave request to instantly jump to the Leave Management page with that request opened for review
-        - **Smart Avatars**: Auto-generated initials or uploaded photos displayed consistently
-    - **Admin Controls**: Mark leaves as "With Pay" or "Unpaid", approve/reject with remarks
-    - **Leave Credits**: SIL balance tracking and employment status (Regular/Probationary) visibility
+        - **Smart Avatars**: Auto-generated initials or uploaded photos displayed consistently across all views
+        - **Dynamic Action Buttons**: 
+          - Pending requests show Approve/Reject buttons
+          - Approved requests show Cancel button
+          - Cancelled requests show Approve/Reject buttons for reconsideration
+    - **Admin Controls**: Mark leaves as "With Pay" or "Unpaid", approve/reject/cancel with remarks
+    - **Leave Credits**: Unified leave balance tracking with employment status (Regular/Probationary) visibility
     - **Secure Role-Based Access**: Admin-only route protection prevents unauthorized access
     - Advanced filtering by status, type, and search
   - Leave request management with internal workflow
@@ -46,14 +90,15 @@ A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js
   - Modern stacked area chart with ApexCharts showing attendance trends
   - **Enhanced Calendar Modal**: Two-column layout with calendar and Today's Schedule sidebar
 - **User Modules**:
-  - Personal dashboard with quick stats
+  - Personal dashboard with quick stats showing **unified leave credits balance**
   - Profile page with **Photo Upload**, **Edit Profile**, and **Password Change** details with **Upload Confirmation**
   - Attendance history
-  - Leave request submission
+  - Leave request submission with smart date validation and automatic day calculation
 - **Reusable Components**:
-  - `LeaveRequestModal.vue` - Google Forms-style modal for leave requests
+  - `LeaveRequestModal.vue` - Google Forms-style modal for leave requests with date restrictions and inclusive day counting
   - `EventCalendar.vue` - Compact, interactive calendar with highlighted events and Today's Schedule
   - `ChangePasswordModal.vue` - Admin password change modal with confirmation
+  - `EditEmployeeModal.vue` - Comprehensive employee editing interface with leave credit management
   - `EmployeeList.vue` - Advanced employee management table
   - `AttendanceChart.vue` - Interactive line chart for attendance trends (Present, Absent, Late, Leave) with date filtering
 - **Routing**: **Vue Router 4** for seamless SPA navigation.
@@ -66,6 +111,11 @@ A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js
 
 ## ⚡ Performance & Optimization
 - **Database Indexing**: Implemented global indexing on frequently queried columns (`name`, `id_number`, `department`, `status`, `role`, `position`) to ensure <50ms query times even with large datasets.
+- **Simplified Data Model**: Consolidated leave credits from 4 separate columns (SIL, Sick, Vacation, Emergency) into a single `leave_credits` field for:
+  - Reduced database complexity
+  - Faster queries and updates
+  - Simplified business logic
+  - Easier credit management
 - **Frontend Optimization**: 
   - Efficient component lazy loading
   - Debounced search inputs to reduce API calls

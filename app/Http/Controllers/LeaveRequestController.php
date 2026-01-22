@@ -12,7 +12,15 @@ class LeaveRequestController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = LeaveRequest::with('user:id,name,department,avatar,employment_status,sil_credits');
+        $query = LeaveRequest::with('user:id,name,department,avatar,employment_status,leave_credits');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('user', function($q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('employee_id', 'ilike', "%{$search}%");
+            });
+        }
 
         if ($user->role !== 'admin') {
             $query->where('user_id', $user->id);
@@ -71,12 +79,27 @@ class LeaveRequestController extends Controller
         $validated = $request->validate([
             'status' => 'sometimes|in:Pending,Approved,Rejected,Cancelled',
             'is_paid' => 'sometimes|boolean',
+            'days_paid' => 'nullable|numeric|min:0',
             'admin_remarks' => 'nullable|string'
         ]);
 
+        $oldStatus = $leaveRequest->status;
         $leaveRequest->update($validated);
 
-        // Logic for deducting credits could go here later if automated
+        // Deduct credits when status changes to Approved
+        if (isset($validated['status']) && $validated['status'] === 'Approved' && $oldStatus !== 'Approved') {
+            $user = $leaveRequest->user;
+            $daysToDeduct = $leaveRequest->days_taken;
+            
+            // Deduct credits (allow negative balance if insufficient)
+            $user->decrement('leave_credits', $daysToDeduct);
+        }
+        
+        // Restore credits if status changes from Approved to something else
+        if (isset($validated['status']) && $validated['status'] !== 'Approved' && $oldStatus === 'Approved') {
+            $user = $leaveRequest->user;
+            $user->increment('leave_credits', $leaveRequest->days_taken);
+        }
 
         return response()->json($leaveRequest);
     }
@@ -117,7 +140,7 @@ class LeaveRequestController extends Controller
             ->count();
         
         // For Dashboard "Recent"
-        $recent = LeaveRequest::with('user:id,name,avatar')->latest()->take(5)->get();
+        $recent = LeaveRequest::with('user:id,name,id_number,avatar')->latest()->take(20)->get();
 
         // On Leave Today
         $onLeaveToday = LeaveRequest::where('status', 'Approved')
@@ -136,5 +159,74 @@ class LeaveRequestController extends Controller
             'recent' => $recent,
             'on_leave_today' => $onLeaveToday
         ]);
+    }
+    public function export(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $query = LeaveRequest::with('user:id,name,id_number,leave_credits');
+
+        // Apply filters if provided
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('leave_type')) {
+            $query->where('leave_type', $request->leave_type);
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('user', function($q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('id_number', 'ilike', "%{$search}%");
+            });
+        }
+
+        $requests = $query->latest()->get();
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=leave_report_" . now()->format('Y-m-d_His') . ".csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = [
+            'Request ID', 'Employee ID', 'Employee Name', 'Department', 'Position', 
+            'Leave Type', 'Request Type', 'From Date', 'To Date', 'Days Taken', 
+            'Status', 'Is Paid', 'No. of Days Paid', 'Reason', 'Admin Remarks', 'Latest SIL Balance'
+        ];
+
+        $callback = function() use($requests, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($requests as $req) {
+                fputcsv($file, [
+                    $req->id,
+                    $req->user->id_number ?? 'N/A',
+                    $req->user->name,
+                    $req->user->department ?? 'N/A',
+                    $req->user->position ?? 'N/A',
+                    $req->leave_type,
+                    $req->request_type,
+                    $req->from_date ? $req->from_date->format('Y-m-d') : '',
+                    $req->to_date ? $req->to_date->format('Y-m-d') : ($req->from_date ? $req->from_date->format('Y-m-d') : ''),
+                    $req->days_taken,
+                    $req->status,
+                    $req->is_paid ? 'YES' : 'NO',
+                    $req->days_paid,
+                    $req->reason,
+                    $req->admin_remarks,
+                    $req->user->leave_credits
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

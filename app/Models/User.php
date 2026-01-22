@@ -31,10 +31,7 @@ class User extends Authenticatable
         'status',
         'avatar',
         'employment_status',
-        'sil_credits',
-        'sick_credits',
-        'vacation_credits',
-        'emergency_credits',
+        'leave_credits',
     ];
 
     public function leaveRequests()
@@ -62,10 +59,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'sil_credits' => 'decimal:2',
-            'sick_credits' => 'decimal:2',
-            'vacation_credits' => 'decimal:2',
-            'emergency_credits' => 'decimal:2',
+            'leave_credits' => 'decimal:2',
         ];
     }
 

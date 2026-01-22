@@ -19,6 +19,7 @@ class LeaveRequest extends Model
         'reason',
         'status',
         'is_paid',
+        'days_paid',
         'admin_remarks'
     ];
 
@@ -28,6 +29,7 @@ class LeaveRequest extends Model
         'from_date' => 'date',
         'to_date' => 'date',
         'days_taken' => 'decimal:2',
+        'days_paid' => 'decimal:2',
     ];
 
     public function user()

@@ -21,13 +21,11 @@
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-gray-500">Leave</p>
-                                <p class="text-3xl font-bold text-gray-800 mt-1">{{ Number(user.sick_credits || 0) }}</p>
+                                <p class="text-sm text-gray-500">Leave Credits</p>
+                                <p class="text-3xl font-bold text-gray-800 mt-1">{{ Number(user.leave_credits || 0) }}</p>
                                 <p class="text-xs text-gray-400 mt-1">days remaining</p>
                             </div>
-                            <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                                <i class="pi pi-heart text-blue-600 text-xl"></i>
-                            </div>
+
                         </div>
                     </div>
                 </div>

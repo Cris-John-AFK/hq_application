@@ -64,9 +64,10 @@
                         <th class="px-8 py-4 font-semibold">Employee</th>
                         <th class="px-6 py-4 font-semibold">ID</th>
                         <th class="px-6 py-4 font-semibold">Department</th>
-                        <th class="px-6 py-4 font-semibold">Role</th>
+                        <th class="px-6 py-4 font-semibold">Position</th>
                         <th class="px-6 py-4 font-semibold">Status</th>
-                        <th class="px-13 py-4 font-semibold text-right">Actions</th>
+                        <th class="px-6 py-4 font-semibold text-center whitespace-nowrap">SIL Credits</th>
+                        <th class="px-12 py-4 font-semibold text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -82,7 +83,10 @@
                                 </span>
                                 </div>
                                 <div>
-                                    <p class="font-medium text-gray-800">{{ employee.name }}</p>
+                                    <div class="flex items-center gap-2">
+                                        <p class="font-medium text-gray-800">{{ employee.name }}</p>
+                                        <span v-if="employee.role === 'admin'" class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-bold rounded uppercase tracking-tighter shadow-sm border border-blue-200">Admin</span>
+                                    </div>
                                     <p class="text-xs text-gray-500">{{ employee.email }}</p>
                                 </div>
                             </div>
@@ -93,21 +97,41 @@
                                 {{ employee.department }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ employee.role }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ employee.position }}</td>
                         <td class="px-4 py-4">
                             <span 
                                 :class="{
                                     'bg-green-100 text-green-700': employee.status === 'Available',
                                     'bg-gray-100 text-gray-600': employee.status === 'On Leave',
+                                    'bg-blue-100 text-blue-600': employee.status === 'Working',
+                                    'bg-red-100 text-red-600': employee.status === 'Absent',
                                 }"
                                 class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
                             >
-                                <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
                                 {{ employee.status }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-sm font-black bg-teal-50 text-teal-700 border border-teal-100 min-w-[3rem] justify-center shadow-sm">
+                                {{ Number(employee.leave_credits) % 1 === 0 ? Number(employee.leave_credits).toFixed(0) : employee.leave_credits }}
                             </span>
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
+                                <!-- Edit Employee -->
+                                <div class="relative group">
+                                    <button 
+                                        @click="openEditModal(employee)" 
+                                        class="cursor-pointer w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors"
+                                    >
+                                        <i class="pi pi-pencil text-xs"></i>
+                                    </button>
+                                    <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                        Edit Details
+                                        <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></span>
+                                    </span>
+                                </div>
+
                                 <!-- View Leaves -->
                                 <div class="relative group">
                                     <button 
@@ -130,9 +154,9 @@
                                     >
                                         <i class="pi pi-key text-xs"></i>
                                     </button>
-                                    <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                    <span class="absolute bottom-full mb-2 right-0 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
                                         Change Password
-                                        <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></span>
+                                        <span class="absolute top-full right-4 border-4 border-transparent border-t-gray-800"></span>
                                     </span>
                                 </div>
 
@@ -149,9 +173,9 @@
                                     >
                                         <i class="pi pi-clock text-xs"></i>
                                     </button>
-                                    <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                    <span class="absolute bottom-full mb-2 right-0 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
                                         Mark On Leave
-                                        <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></span>
+                                        <span class="absolute top-full right-2 border-4 border-transparent border-t-gray-800"></span>
                                     </span>
                                 </div>
                             </div>
@@ -200,6 +224,14 @@
             @submit="handleCreateEmployee"
         />
 
+        <!-- Edit Employee Modal -->
+        <EditEmployeeModal 
+            v-model="showEditModal" 
+            :employee="selectedEmployee"
+            :loading="isEditing"
+            @submit="handleUpdateEmployee"
+        />
+
         <!-- Leave Form Modal (Reusable Component) -->
         <LeaveRequestModal 
             v-model="showLeaveModal" 
@@ -220,11 +252,14 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import LeaveRequestModal from './LeaveRequestModal.vue';
 import AddEmployeeModal from './AddEmployeeModal.vue';
+import EditEmployeeModal from './EditEmployeeModal.vue';
 import ChangePasswordModal from './ChangePasswordModal.vue';
 import axios from 'axios';
 
+const router = useRouter();
 const selectedDepartment = ref('All');
 const selectedStatus = ref('All');
 const searchQuery = ref('');
@@ -236,8 +271,10 @@ const isLoading = ref(false);
 // Modal Logic
 const showLeaveModal = ref(false);
 const showAddModal = ref(false);
+const showEditModal = ref(false);
 const showPasswordModal = ref(false);
 const isCreating = ref(false);
+const isEditing = ref(false);
 const leaveForm = ref({
     employeeId: null,
     type: ''
@@ -258,9 +295,10 @@ const fetchEmployees = async () => {
             avatar: user.avatar_url, // Use the full URL provided by the backend accessor
             empId: user.id_number || 'N/A',
             department: user.department || 'N/A',
-            role: user.position || (user.role === 'admin' ? 'Administrator' : 'Employee'),
+            role: user.role, // admin or user
             status: user.status || 'Available',
-            position: user.position
+            position: user.position || 'Employee',
+            leave_credits: user.leave_credits || 0
         }));
     } catch (error) {
         console.error('Failed to fetch employees:', error);
@@ -345,8 +383,7 @@ const toggleActionMenu = (id) => {
 
 const handleViewLeaves = (employee) => {
     openActionMenuId.value = null;
-    alert(`View Leave Requests for ${employee.name} - Feature coming soon!`);
-    // Navigate to leaves page or open modal
+    router.push({ path: '/manage-leaves', query: { user_id: employee.id } });
 };
 
 const handleChangePassword = (employee) => {
@@ -392,6 +429,44 @@ const getEmployeeName = (id) => {
 
 const closeActionMenu = () => {
     openActionMenuId.value = null;
+};
+
+const openEditModal = (employee) => {
+    selectedEmployee.value = employee;
+    showEditModal.value = true;
+};
+
+const handleUpdateEmployee = async (formData) => {
+    isEditing.value = true;
+    try {
+        const payload = {
+            name: formData.name,
+            department: formData.department,
+            role: formData.role,
+            position: formData.position,
+            id_number: formData.id_number,
+            employment_status: formData.employment_status,
+            leave_credits: formData.leave_credits
+        };
+
+        const response = await axios.put(`/api/users/${formData.id}`, payload);
+        
+        // Update local list
+        const idx = employees.value.findIndex(e => e.id === formData.id);
+        if (idx !== -1) {
+            // Merge response data (updated user) into existing employee object
+            // Ensure avatar_url and other computed props are kept or updated
+            employees.value[idx] = { ...employees.value[idx], ...response.data };
+        }
+        
+        showEditModal.value = false;
+        alert('Employee updated successfully');
+    } catch (error) {
+        console.error('Update failed:', error);
+        alert(error.response?.data?.message || 'Failed to update employee');
+    } finally {
+        isEditing.value = false;
+    }
 };
 
 onMounted(() => {

@@ -10,15 +10,71 @@
                     </div>
                     <button 
                         @click="exportReport" 
-                        class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                        class="flex items-center gap-2 px-4 py-2 bg-teal-600 border border-teal-500 text-white rounded-lg hover:bg-teal-700 transition-colors shadow-sm font-semibold"
                     >
                         <i class="pi pi-download"></i>
-                        <span>Export Report</span>
+                        <span>{{ filters.user_id ? 'Export Employee Record' : 'Export General Report' }}</span>
                     </button>
                 </div>
 
+                <!-- Employee Insight Hero (Visible when filtered) -->
+                <div v-if="filters.user_id && filteredEmployeeData" class="mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div class="bg-gradient-to-r from-teal-600 to-teal-800 rounded-2xl shadow-xl overflow-hidden text-white">
+                        <div class="p-6 flex flex-col md:flex-row items-center gap-8 relative">
+                            <!-- User Backdrop Decor -->
+                            <div class="absolute right-0 top-0 opacity-10 pointer-events-none">
+                                <i class="pi pi-user text-[200px]"></i>
+                            </div>
+
+                            <div class="relative group">
+                                <div 
+                                    class="w-32 h-32 rounded-2xl bg-white/20 backdrop-blur-md border-4 border-white/30 flex items-center justify-center text-4xl font-bold overflow-hidden shadow-2xl transition-transform group-hover:scale-105 duration-300"
+                                    :style="filteredEmployeeData.avatar ? { backgroundImage: `url(${filteredEmployeeData.avatar_url || filteredEmployeeData.avatar})`, backgroundSize: 'cover' } : {}"
+                                >
+                                    <span v-if="!filteredEmployeeData.avatar">{{ getInitials(filteredEmployeeData.name) }}</span>
+                                </div>
+                                <div class="absolute -bottom-2 -right-2 px-3 py-1 bg-white text-teal-800 text-[10px] font-bold rounded-lg shadow-lg uppercase tracking-widest border border-teal-100">
+                                    {{ filteredEmployeeData.status || 'Available' }}
+                                </div>
+                            </div>
+
+                            <div class="flex-1 text-center md:text-left">
+                                <div class="flex flex-col md:flex-row md:items-center gap-3 mb-2">
+                                    <h2 class="text-3xl font-black tracking-tight">{{ filteredEmployeeData.name }}</h2>
+                                    <span class="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold uppercase tracking-wider border border-white/20">
+                                        ID: {{ filteredEmployeeData.id_number }}
+                                    </span>
+                                </div>
+                                <p class="text-teal-50/80 font-medium mb-4 flex items-center justify-center md:justify-start gap-2">
+                                    <i class="pi pi-briefcase text-sm"></i>
+                                    {{ filteredEmployeeData.position || 'Staff member' }} • {{ filteredEmployeeData.department }}
+                                </p>
+                                
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10 group hover:bg-white/20 transition-all">
+                                        <p class="text-[10px] text-teal-100/70 uppercase font-bold tracking-widest mb-1">Available SIL</p>
+                                        <p class="text-2xl font-black">{{ filteredEmployeeData.leave_credits }} <span class="text-sm font-normal opacity-70">Days</span></p>
+                                    </div>
+                                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10 group hover:bg-white/20 transition-all">
+                                        <p class="text-[10px] text-teal-100/70 uppercase font-bold tracking-widest mb-1">Total Filed</p>
+                                        <p class="text-2xl font-black">{{ requests.length }} <span class="text-sm font-normal opacity-70">Times</span></p>
+                                    </div>
+                                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10 group hover:bg-white/20 transition-all">
+                                        <p class="text-[10px] text-teal-100/70 uppercase font-bold tracking-widest mb-1">Status</p>
+                                        <p class="text-2xl font-black capitalize">{{ filteredEmployeeData.employment_status || 'Regular' }}</p>
+                                    </div>
+                                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10 group hover:bg-white/20 transition-all">
+                                        <p class="text-[10px] text-teal-100/70 uppercase font-bold tracking-widest mb-1">Current</p>
+                                        <p class="text-2xl font-black">{{ filteredEmployeeData.status || 'Active' }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Metric Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                     <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
                         <div class="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 text-xl font-bold">
                             {{ pendingCount }}
@@ -35,6 +91,15 @@
                         <div>
                             <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Approved</h3>
                             <p class="text-lg font-bold text-gray-800">This Month</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center text-red-500 text-xl font-bold">
+                            {{ rejectedCount }}
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Rejected</h3>
+                            <p class="text-lg font-bold text-gray-800">Requests</p>
                         </div>
                     </div>
                      <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
@@ -77,13 +142,27 @@
                     </select>
                     <select v-model="filters.type" class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 bg-white min-w-[150px]">
                         <option value="">All Leave Types</option>
-                         <option value="SIL">SIL (Service Incentive)</option>
+                        <option value="SIL">SIL (Service Incentive)</option>
                         <option value="Sick">Sick Leave</option>
                         <option value="Vacation">Vacation Leave</option>
                         <option value="Emergency">Emergency Leave</option>
                         <option value="Maternity">Maternity Leave</option>
                         <option value="Paternity">Paternity Leave</option>
+                        <option value="Solo Parent">Solo Parent</option>
+                        <option value="VAWS">VAWS</option>
+                        <option value="Magna Carta">Magna Carta</option>
+                        <option value="Official Business">Official Business</option>
+                        <option value="Others">Others</option>
                     </select>
+                    
+                    <!-- User Filter Indicator -->
+                    <div v-if="filters.user_id" class="flex items-center gap-2 px-3 py-2 bg-teal-50 text-teal-700 rounded-lg border border-teal-200 text-xs font-bold animate-in fade-in slide-in-from-right-2">
+                        <i class="pi pi-user"></i>
+                        <span>Filtered by Employee</span>
+                        <button @click="filters.user_id = ''" class="ml-1 p-1 hover:bg-teal-100 rounded-full transition-colors cursor-pointer" title="Clear employee filter">
+                            <i class="pi pi-times text-[10px]"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Table -->
@@ -216,13 +295,44 @@
                                     </div>
 
                                     <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                                        <h4 class="text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">Leave Credits (SIL)</h4>
-                                        <div class="flex justify-between items-end">
-                                            <div>
-                                                <span class="text-3xl font-bold text-blue-600">{{ selectedRequest.user?.sil_credits || 0 }}</span>
-                                                <span class="text-sm text-blue-400 font-medium ml-1">days available</span>
+                                        <h4 class="text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">Service Incentive Leave (SIL)</h4>
+                                        <div class="space-y-2">
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-sm text-gray-600">Total of SIL:</span>
+                                                <span class="text-xl font-bold text-blue-600">{{ Number(selectedRequest.user?.leave_credits || 0).toFixed(2) }} days</span>
                                             </div>
-                                            <i class="pi pi-wallet text-blue-200 text-4xl"></i>
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-sm text-gray-600">Request Duration:</span>
+                                                <span class="text-xl font-bold text-gray-700">{{ Number(selectedRequest.days_taken || 0).toFixed(2) }} days</span>
+                                            </div>
+                                            <div class="border-t border-blue-200 pt-2 mt-2">
+                                                <div v-if="Number(selectedRequest.user?.leave_credits || 0) >= Number(selectedRequest.days_taken || 0)" class="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                                    <div class="flex items-center gap-2 text-green-700 mb-1">
+                                                        <i class="pi pi-check-circle"></i>
+                                                        <span class="font-bold text-sm text-green-700">Sufficient Credits</span>
+                                                    </div>
+                                                    <div class="flex justify-between items-center mt-1">
+                                                        <span class="text-xs text-green-600 font-medium">Math: {{ Number(selectedRequest.user?.leave_credits || 0).toFixed(2) }} - {{ Number(selectedRequest.days_taken || 0).toFixed(2) }} =</span>
+                                                        <span class="text-lg font-bold text-green-600">
+                                                            {{ (Number(selectedRequest.user?.leave_credits || 0) - Number(selectedRequest.days_taken || 0)).toFixed(2) }} 
+                                                        </span>
+                                                    </div>
+                                                    <p class="text-[10px] text-green-600 font-bold mt-1 text-right italic uppercase tracking-wider">Total SIL Balance</p>
+                                                </div>
+                                                <div v-else class="bg-red-50 border border-red-200 rounded-lg p-3">
+                                                    <div class="flex items-center gap-2 text-red-700 mb-1">
+                                                        <i class="pi pi-exclamation-triangle"></i>
+                                                        <span class="font-bold text-sm">Insufficient Credits</span>
+                                                    </div>
+                                                    <div class="flex justify-between items-center mt-1 text-red-700">
+                                                        <span class="text-xs font-medium">Math: {{ Number(selectedRequest.user?.leave_credits || 0).toFixed(2) }} - {{ Number(selectedRequest.days_taken || 0).toFixed(2) }} =</span>
+                                                        <span class="text-lg font-bold">
+                                                            {{ (Number(selectedRequest.user?.leave_credits || 0) - Number(selectedRequest.days_taken || 0)).toFixed(2) }}
+                                                        </span>
+                                                    </div>
+                                                    <p class="text-[10px] text-red-600 font-bold mt-1 text-right italic uppercase tracking-wider">Warning: Negative Balance Output</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -300,6 +410,23 @@
                                                 </div>
                                             </div>
 
+                                            <div class="p-3 rounded-lg border border-gray-200">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">No. of Days Paid</label>
+                                                    <span class="text-[10px] text-gray-400 italic">Adjust if partially paid</span>
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <input 
+                                                        type="number" 
+                                                        step="0.5" 
+                                                        v-model="selectedRequest.days_paid"
+                                                        class="w-full p-2 border border-gray-200 rounded-lg font-bold text-gray-800 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-center"
+                                                        placeholder="0.00"
+                                                    >
+                                                    <span class="text-sm font-medium text-gray-500">Days</span>
+                                                </div>
+                                            </div>
+
                                             <!-- Remarks -->
                                             <div>
                                                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Admin Remarks</label>
@@ -367,12 +494,14 @@ const adminRemarks = ref('');
 const filters = ref({
     search: '',
     status: '',
-    type: ''
+    type: '',
+    user_id: ''
 });
 
 const stats = ref({
     pending: 0,
     approved: 0,
+    rejected: 0,
     approved_this_month: 0,
     scheduled: 0,
     total_all_time: 0
@@ -380,8 +509,15 @@ const stats = ref({
 // Metrics from API
 const pendingCount = computed(() => stats.value.pending);
 const approvedCount = computed(() => stats.value.approved_this_month);
+const rejectedCount = computed(() => stats.value.rejected);
 const scheduledCount = computed(() => stats.value.cancelled); // Mapped to cancelled as per user change
 const totalCount = computed(() => stats.value.total_all_time);
+
+const filteredEmployeeData = computed(() => {
+    if (!filters.value.user_id || requests.value.length === 0) return null;
+    // Assuming all requests in filtered list belong to the same user
+    return requests.value[0]?.user;
+});
 
 const fetchStats = async () => {
     try {
@@ -394,12 +530,20 @@ const fetchStats = async () => {
 
 onMounted(async () => {
     authStore.fetchUser();
+    
+    // Check for query params
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('user_id');
+    const hlId = urlParams.get('highlight');
+    
+    if (userId) {
+        filters.value.user_id = userId;
+    }
+    
     await fetchRequests();
     fetchStats();
 
     // Check for highlight param
-    const params = new URLSearchParams(window.location.search);
-    const hlId = params.get('highlight');
     if (hlId) {
         let target = requests.value.find(r => r.id == hlId);
         if (!target) {
@@ -424,7 +568,9 @@ const fetchRequests = async () => {
         const params = {
             page: page.value,
             status: filters.value.status,
-            // Add other filters as query params
+            leave_type: filters.value.type,
+            search: filters.value.search,
+            user_id: filters.value.user_id
         };
         const response = await axios.get('/api/leave-requests', { params });
         requests.value = response.data.data;
@@ -453,7 +599,10 @@ const formatTime = (t) => {
 
 // Modal Logic
 const viewDetails = (req) => {
-    selectedRequest.value = { ...req }; // clone
+    selectedRequest.value = { 
+        ...req,
+        days_paid: req.days_paid || req.days_taken || 0
+    }; // clone
     adminRemarks.value = req.admin_remarks || '';
 };
 
@@ -473,6 +622,7 @@ const updateStatus = async (newStatus) => {
         const payload = {
             status: newStatus,
             is_paid: selectedRequest.value.is_paid,
+            days_paid: selectedRequest.value.days_paid || 0,
             admin_remarks: adminRemarks.value
         };
         
@@ -494,6 +644,13 @@ const updateStatus = async (newStatus) => {
 };
 
 const exportReport = () => {
-    alert("Export functionality coming soon! (Backend CSV generation)");
+    const params = new URLSearchParams({
+        search: filters.value.search,
+        status: filters.value.status,
+        leave_type: filters.value.type,
+        user_id: filters.value.user_id || ''
+    });
+    
+    window.location.href = `/api/leave-requests/export?${params.toString()}`;
 };
 </script>

@@ -106,11 +106,11 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">From Date <span class="text-red-500">*</span></label>
-                                <input type="date" v-model="form.fromDate" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all">
+                                <input type="date" v-model="form.fromDate" :min="today" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">To Date <span class="text-red-500">*</span></label>
-                                <input type="date" v-model="form.toDate" :min="form.fromDate" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all">
+                                <input type="date" v-model="form.toDate" :min="form.fromDate || today" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all">
                             </div>
                         </div>
 
@@ -119,32 +119,30 @@
                              <div>
                                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">No. of Days</label>
                                 <div class="flex items-center gap-2">
-                                    <input type="number" step="0.5" v-model="form.numberOfDays" class="w-24 p-2 border border-gray-300 rounded font-bold text-gray-800 text-center focus:ring-purple-500 outline-none">
+                                    <input readonly type="number" step="0.5" v-model="form.numberOfDays" class="w-24 p-2 border border-gray-300 rounded font-bold text-gray-800 text-center focus:ring-purple-500 outline-none">
                                     <span class="text-sm text-gray-500">days</span>
                                 </div>
                             </div>
                             
-                            <!-- Conditional Hours input for Undertime/Halfday -->
-                            <transition name="slide-fade">
-                                <div v-if="['Undertime', 'Halfday'].includes(form.requestType)">
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1 mt-3">No. of Hours</label>
-                                    <div class="flex items-center gap-2">
-                                        <input type="number" step="0.5" v-model="form.numberOfHours" class="w-24 p-2 border border-gray-300 rounded font-bold text-gray-800 text-center focus:ring-purple-500 outline-none">
-                                        <span class="text-sm text-gray-500">hours</span>
+                            <!-- Hours input - Always visible -->
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1 mt-3">No. of Hours</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" step="0.5" v-model="form.numberOfHours" class="w-24 p-2 border border-gray-300 rounded font-bold text-gray-800 text-center focus:ring-purple-500 outline-none">
+                                    <span class="text-sm text-gray-500">hours</span>
+                                </div>
+                                
+                                <div class="mt-3 grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-[10px] uppercase text-gray-400 font-bold">Start Time</label>
+                                        <input type="time" v-model="form.startTime" class="w-full p-1.5 text-sm border rounded">
                                     </div>
-                                    
-                                    <div class="mt-3 grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="text-[10px] uppercase text-gray-400 font-bold">Start Time</label>
-                                            <input type="time" v-model="form.startTime" class="w-full p-1.5 text-sm border rounded">
-                                        </div>
-                                         <div>
-                                            <label class="text-[10px] uppercase text-gray-400 font-bold">End Time</label>
-                                            <input type="time" v-model="form.endTime" class="w-full p-1.5 text-sm border rounded">
-                                        </div>
+                                     <div>
+                                        <label class="text-[10px] uppercase text-gray-400 font-bold">End Time</label>
+                                        <input type="time" v-model="form.endTime" class="w-full p-1.5 text-sm border rounded">
                                     </div>
                                 </div>
-                            </transition>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -219,14 +217,60 @@ const form = ref({
 const requestTypes = ['Leave', 'Halfday', 'Undertime', 'Official Business'];
 const leaveTypes = ['SIL', 'Solo Parent', 'Maternity', 'VAWS', 'Paternity', 'Magna Carta', 'Emergency'];
 
-// Auto-calc number of days
-watch([() => form.value.fromDate, () => form.value.toDate], ([start, end]) => {
+// Get today's date in YYYY-MM-DD format for min attribute
+const today = computed(() => {
+    const now = new Date();
+    return now.toISOString().split('T')[0];
+});
+
+// Watch requestType to sync dates for Halfday/Undertime
+watch(() => form.value.requestType, (newType) => {
+    if (newType === 'Halfday' || newType === 'Undertime') {
+        // If fromDate is set, sync toDate to match
+        if (form.value.fromDate) {
+            form.value.toDate = form.value.fromDate;
+        }
+    }
+});
+
+// Watch fromDate to sync toDate for Halfday/Undertime
+watch(() => form.value.fromDate, (newFromDate) => {
+    if ((form.value.requestType === 'Halfday' || form.value.requestType === 'Undertime') && newFromDate) {
+        form.value.toDate = newFromDate;
+    }
+});
+
+// Watch toDate to sync fromDate for Halfday/Undertime
+watch(() => form.value.toDate, (newToDate) => {
+    if ((form.value.requestType === 'Halfday' || form.value.requestType === 'Undertime') && newToDate) {
+        form.value.fromDate = newToDate;
+    }
+});
+
+// Auto-calc number of days (INCLUDING weekends as requested)
+watch([() => form.value.fromDate, () => form.value.toDate, () => form.value.requestType], ([start, end, type]) => {
     if (start && end) {
         const s = new Date(start);
         const e = new Date(end);
+        
+        // Reset hours to avoid timezone/time diff issues
+        s.setHours(0, 0, 0, 0);
+        e.setHours(0, 0, 0, 0);
+
+        if (s > e) {
+            form.value.numberOfDays = 0;
+            return;
+        }
+
+        // Calculate total days INCLUDING weekends
         const diffTime = Math.abs(e - s);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
-        if (!isNaN(diffDays) && diffDays > 0) {
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end dates
+        
+        if (type === 'Halfday') {
+             form.value.numberOfDays = 0.5;
+        } else if (type === 'Undertime') {
+            form.value.numberOfDays = 0;
+        } else {
             form.value.numberOfDays = diffDays;
         }
     }

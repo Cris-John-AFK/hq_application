@@ -3,9 +3,9 @@
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <!-- Header -->
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                <h3 class="font-bold text-gray-800 text-lg">Add New Employee</h3>
+                <h3 class="font-bold text-gray-800 text-lg">Edit Employee Details</h3>
                 <button 
-                    @click="$emit('update:modelValue', false)"
+                    @click="closeModal"
                     class="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
                     <i class="pi pi-times"></i>
@@ -20,7 +20,6 @@
                     <input 
                         v-model="form.name" 
                         type="text" 
-                        placeholder="e.g. John Doe"
                         class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
                         required
                     >
@@ -50,8 +49,8 @@
                         <input 
                             v-model="form.position" 
                             type="text" 
-                            placeholder="e.g. Software Engineer"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
+                            placeholder="e.g. Software Engineer"
                             required
                         >
                     </div>
@@ -65,18 +64,16 @@
                             <option value="user">Standard User</option>
                             <option value="admin">System Admin</option>
                         </select>
-                        <p class="text-[10px] text-gray-400 mt-1">Standard = Employee Dashboard access</p>
+                        <p class="text-[10px] text-gray-400 mt-1">Admin has full dashboard access</p>
                     </div>
                 </div>
 
-                <!-- ID & Status -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Employee ID</label>
                         <input 
                             v-model="form.id_number" 
                             type="text" 
-                            placeholder="HQI-XXXX"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all uppercase"
                             required
                         >
@@ -94,20 +91,28 @@
                     </div>
                 </div>
 
-                <!-- Info Message -->
-                <div class="bg-blue-50 text-blue-700 p-4 rounded-xl text-sm">
-                    <p class="font-medium">Auto-generated Credentials:</p>
-                    <ul class="list-disc list-inside text-xs mt-1 opacity-80">
-                        <li>Email: firstname@hq.app</li>
-                        <li>Default Password: password</li>
-                    </ul>
+                <!-- Leave Credits Section -->
+                <div class="border-t border-gray-200 pt-4 mt-2">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">Leave Credits</h4>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Total Leave Credits (Days)</label>
+                        <input 
+                            v-model.number="form.leave_credits" 
+                            type="number" 
+                            step="0.5"
+                            min="0"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
+                            placeholder="e.g., 15"
+                        >
+                        <p class="text-xs text-gray-500 mt-1">Available leave days for this employee</p>
+                    </div>
                 </div>
 
                 <!-- Actions -->
                 <div class="flex justify-end gap-3 mt-6">
                     <button 
                         type="button" 
-                        @click="$emit('update:modelValue', false)"
+                        @click="closeModal"
                         class="cursor-pointer px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl font-medium transition-colors"
                     >
                         Cancel
@@ -118,7 +123,7 @@
                         class="cursor-pointer px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-medium shadow-lg shadow-teal-200 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         <i v-if="loading" class="pi pi-spin pi-spinner"></i>
-                        <span>{{ loading ? 'Creating...' : 'Create Employee' }}</span>
+                        <span>{{ loading ? 'Updating...' : 'Save Changes' }}</span>
                     </button>
                 </div>
             </form>
@@ -131,32 +136,39 @@ import { reactive, watch } from 'vue';
 
 const props = defineProps({
     modelValue: Boolean,
-    loading: Boolean
+    loading: Boolean,
+    employee: Object
 });
 
 const emit = defineEmits(['update:modelValue', 'submit']);
 
 const form = reactive({
     name: '',
-    department: 'Engineering',
-    role: 'user',
+    department: '',
+    role: '',
     position: '',
     id_number: '',
-    employment_status: 'Probationary'
+    employment_status: '',
+    leave_credits: 0
 });
 
-// Reset form when modal opens
-watch(() => props.modelValue, (newVal) => {
-    if (newVal) {
-        form.name = '';
-        form.department = '';
-        form.role = 'user';
-        form.position = '';
-        form.employment_status = 'Probationary';
+watch(() => props.employee, (emp) => {
+    if (emp) {
+        form.name = emp.name;
+        form.department = emp.department;
+        form.role = emp.role;
+        form.position = emp.position;
+        form.id_number = emp.id_number || emp.empId;
+        form.employment_status = emp.employment_status || 'Probationary';
+        form.leave_credits = emp.leave_credits || 0;
     }
-});
+}, { immediate: true });
+
+const closeModal = () => {
+    emit('update:modelValue', false);
+};
 
 const handleSubmit = () => {
-    emit('submit', { ...form });
+    emit('submit', { id: props.employee.id, ...form });
 };
 </script>

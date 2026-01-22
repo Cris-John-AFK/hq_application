@@ -27,6 +27,7 @@ class UserController extends Controller
             'role' => 'required|string|in:admin,user',
             'position' => 'nullable|string|max:255',
             'id_number' => 'required|string|unique:users,id_number|max:20',
+            'employment_status' => 'required|string|in:Probationary,Regular',
         ]);
 
         // Generate Email: firstname@hq.app
@@ -50,6 +51,7 @@ class UserController extends Controller
             'position' => $validated['position'] ?? $validated['role'], // Default position to role if empty
             'id_number' => $validated['id_number'],
             'status' => 'Available',
+            'employment_status' => $validated['employment_status'],
         ]);
 
         return response()->json([
@@ -58,6 +60,28 @@ class UserController extends Controller
             'generated_email' => $email,
             'default_password' => 'password'
         ], 201);
+    }
+
+    public function updateEmployee(Request $request, $id)
+    {
+        if (Auth::user()->role !== 'admin') {
+             return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $user = User::findOrFail($id);
+        
+        $validated = $request->validate([
+             'name' => 'sometimes|string|max:255',
+             'department' => 'sometimes|string',
+             'position' => 'sometimes|string',
+             'employment_status' => 'sometimes|string|in:Probationary,Regular',
+             'role' => 'sometimes|string|in:admin,user',
+             'id_number' => 'sometimes|string|max:20|unique:users,id_number,' . $id,
+             'leave_credits' => 'sometimes|numeric|min:0',
+        ]);
+
+        $user->update($validated);
+        return response()->json($user);
     }
     public function uploadAvatar(Request $request)
     {
