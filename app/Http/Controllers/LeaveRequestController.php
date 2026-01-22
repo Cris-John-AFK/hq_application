@@ -19,15 +19,23 @@ class LeaveRequestController extends Controller
         }
 
         // Filtering
-        if ($request->has('status')) {
+        if ($request->filled('id')) {
+            $query->where('id', $request->id);
+        }
+
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
         
-        if ($request->has('user_id') && $user->role === 'admin') {
+        if ($request->filled('leave_type')) {
+            $query->where('leave_type', $request->leave_type);
+        }
+        
+        if ($request->filled('user_id') && $user->role === 'admin') {
             $query->where('user_id', $request->user_id);
         }
         
-        if ($request->has('month')) {
+        if ($request->filled('month')) {
             $query->whereMonth('from_date', $request->month);
         }
 
@@ -37,6 +45,7 @@ class LeaveRequestController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'date_filed' => 'nullable|date',
             'leave_type' => 'required|string',
             'request_type' => 'required|string',
             'from_date' => 'required|date',
@@ -83,5 +92,49 @@ class LeaveRequestController extends Controller
         // Calculate usage summary here if needed
         
         return response()->json($history);
+    }
+
+    public function stats()
+    {
+        if (Auth::user()->role !== 'admin') {
+             return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $pending = LeaveRequest::where('status', 'Pending')->count();
+        $approved = LeaveRequest::where('status', 'Approved')->count();
+        $rejected = LeaveRequest::where('status', 'Rejected')->count();
+        $cancelled = LeaveRequest::where('status', 'Cancelled')->count();
+
+        // For Manage Leaves - "Approved This Month"
+        $approvedThisMonth = LeaveRequest::where('status', 'Approved')
+            ->whereMonth('from_date', now()->month)
+            ->whereYear('from_date', now()->year)
+            ->count();
+        
+        // For Manage Leaves - "Scheduled Upcoming"
+        $scheduled = LeaveRequest::where('status', 'Approved')
+            ->where('from_date', '>', now())
+            ->count();
+        
+        // For Dashboard "Recent"
+        $recent = LeaveRequest::with('user:id,name,avatar')->latest()->take(5)->get();
+
+        // On Leave Today
+        $onLeaveToday = LeaveRequest::where('status', 'Approved')
+            ->whereDate('from_date', '<=', now())
+            ->whereDate('to_date', '>=', now())
+            ->count();
+
+        return response()->json([
+            'pending' => $pending,
+            'approved' => $approved,
+            'rejected' => $rejected,
+            'cancelled' => $cancelled,
+            'approved_this_month' => $approvedThisMonth,
+            'scheduled' => $scheduled,
+            'total_all_time' => LeaveRequest::count(),
+            'recent' => $recent,
+            'on_leave_today' => $onLeaveToday
+        ]);
     }
 }

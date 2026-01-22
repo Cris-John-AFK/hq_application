@@ -6,11 +6,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
+
+    protected $appends = ['avatar_url'];
 
     /**
      * The attributes that are mass assignable.
@@ -29,6 +32,9 @@ class User extends Authenticatable
         'avatar',
         'employment_status',
         'sil_credits',
+        'sick_credits',
+        'vacation_credits',
+        'emergency_credits',
     ];
 
     public function leaveRequests()
@@ -56,6 +62,10 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'sil_credits' => 'decimal:2',
+            'sick_credits' => 'decimal:2',
+            'vacation_credits' => 'decimal:2',
+            'emergency_credits' => 'decimal:2',
         ];
     }
 
@@ -65,9 +75,7 @@ class User extends Authenticatable
     protected function avatarUrl(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
         return \Illuminate\Database\Eloquent\Casts\Attribute::make(
-            get: fn () => $this->avatar ? asset('storage/' . $this->avatar) : null,
+            get: fn () => $this->avatar ? Storage::url($this->avatar) : null,
         );
     }
-
-    protected $appends = ['avatar_url'];
 }

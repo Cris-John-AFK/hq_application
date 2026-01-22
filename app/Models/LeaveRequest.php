@@ -8,6 +8,7 @@ class LeaveRequest extends Model
 {
     protected $fillable = [
         'user_id',
+        'date_filed',
         'leave_type',
         'request_type',
         'from_date',
@@ -23,6 +24,7 @@ class LeaveRequest extends Model
 
     protected $casts = [
         'is_paid' => 'boolean',
+        'date_filed' => 'date',
         'from_date' => 'date',
         'to_date' => 'date',
         'days_taken' => 'decimal:2',

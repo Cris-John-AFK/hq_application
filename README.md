@@ -23,8 +23,20 @@ A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js
   - **Instant Tooltips**: Fast-appearing custom tooltips for better UX
   - **Manage Leaves** (Comprehensive HR Module):
     - Detailed tracking of Employee, Status, Leave Type (SIL, Maternity, Emergency, etc.)
-    - Request Types: Leave, Halfday, Undertime, Official Business with specific time tracking
+    - **Digital Personnel Leave Authorization Form**:
+      - Exact digital replica of the physical "Personnel Leave Authorization Form"
+      - **Fields**: Date Filed (Auto/Manual), Request For (Leave/Halfday/Undertime/OB), Leave Type (SIL, Solo Parent, VAWS, etc.)
+      - **Smart Inputs**: Auto-calculation of days based on date range, conditional time inputs for Undertime
+      - **Rich Validation**: Ensures all required fields (Reason, Dates, Type) are filled before submission
     - **Backtracking & Reporting**: Backtrack all usage, detailed duration logging
+    - **Real-Time Data**:
+        - Dashboard cards instantly reflect actual Sick/Vacation/Emergency credit balances from the database
+        - "Latest Leave Status" widget automatically updates with the most recent filing info
+        - **Admin Analytics**: Admin Dashboard and Manage Leaves page display real-time counts for Pending, Approved, Rejected, and On-Leave employees
+        - **Recent Leaves Feed**: Admin dashboard shows the 5 most recent leave requests dynamically, including relative timestamps (e.g. "2 hrs ago")
+    - **Navigation & UX**:
+        - **Deep Linking**: Click on any recent leave request to instantly jump to the Leave Management page with that request opened for review
+        - **Smart Avatars**: Auto-generated initials or uploaded photos displayed consistently
     - **Admin Controls**: Mark leaves as "With Pay" or "Unpaid", approve/reject with remarks
     - **Leave Credits**: SIL balance tracking and employment status (Regular/Probationary) visibility
     - **Secure Role-Based Access**: Admin-only route protection prevents unauthorized access

@@ -29,6 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/api/users/{id}/password', [\App\Http\Controllers\UserController::class, 'changeUserPassword']);
     
     // Leave Routes
+    Route::get('/api/leave-stats', [\App\Http\Controllers\LeaveRequestController::class, 'stats']);
     Route::get('/api/leave-requests', [\App\Http\Controllers\LeaveRequestController::class, 'index']);
     Route::post('/api/leave-requests', [\App\Http\Controllers\LeaveRequestController::class, 'store']);
     Route::put('/api/leave-requests/{leaveRequest}', [\App\Http\Controllers\LeaveRequestController::class, 'update']);

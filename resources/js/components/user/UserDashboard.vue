@@ -35,8 +35,23 @@
                         
                         <!-- User Specific Card -->
                             <div class="bg-teal-50 p-6 rounded-xl border border-teal-100">
-                            <h3 class="text-sm font-semibold text-teal-600 uppercase tracking-wider mb-2">Latest Leave Request Status</h3>
-                            <p class="text-gray-600">January 21, 2026 | Emergency Reasons</p>
+                                <h3 class="text-sm font-semibold text-teal-600 uppercase tracking-wider mb-2">Latest Leave Request Status</h3>
+                                <div v-if="latestRequest">
+                                    <p class="text-gray-800 font-medium">{{ formatDate(latestRequest.date_filed) }}</p>
+                                    <p class="text-gray-600 text-sm mt-1 truncate">{{ latestRequest.leave_type }}</p>
+                                    <span class="inline-block mt-2 px-2 py-0.5 rounded text-xs font-bold capitalize"
+                                          :class="{
+                                            'bg-yellow-100 text-yellow-700': latestRequest.status === 'Pending',
+                                            'bg-green-100 text-green-700': latestRequest.status === 'Approved',
+                                            'bg-red-100 text-red-700': latestRequest.status === 'Rejected'
+                                          }">
+                                        {{ latestRequest.status }}
+                                    </span>
+                                </div>
+                                <div v-else>
+                                    <p class="text-gray-500 italic text-sm">No recent leave requests.</p>
+                                </div>
+                            
                             <!-- From Uiverse.io by adamgiebl --> 
                             <button 
                                 class="cssbuttons-io-button mt-5"
@@ -75,14 +90,36 @@
 <script setup>
     import { useAuthStore } from '../../stores/auth';
     import { storeToRefs } from 'pinia';
-    import { ref } from 'vue';
+    import { ref, onMounted } from 'vue';
+    import axios from 'axios';
 
     const authStore = useAuthStore();
     const { user } = storeToRefs(authStore);
+    const latestRequest = ref(null);
 
     const openLeaveRequest = () => {
         window.location.href = '/leave-requests';
     };
+
+    const formatDate = (date) => {
+        if(!date) return '';
+        return new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    };
+
+    onMounted(async () => {
+        if (!user.value) {
+           await authStore.fetchUser();
+        }
+        
+        try {
+            const response = await axios.get('/api/leave-requests');
+            if(response.data.data && response.data.data.length > 0) {
+                latestRequest.value = response.data.data[0];
+            }
+        } catch (error) {
+            console.error('Failed to fetch latest request', error);
+        }
+    });
 </script>
 
 <style>

@@ -42,8 +42,8 @@
                             {{ scheduledCount }}
                         </div>
                         <div>
-                            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Scheduled</h3>
-                            <p class="text-lg font-bold text-gray-800">Upcoming</p>
+                            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Cancelled</h3>
+                            <p class="text-lg font-bold text-gray-800">Requests</p>
                         </div>
                     </div>
                      <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
@@ -120,7 +120,7 @@
                                     <td class="p-4">
                                         <div class="flex items-center gap-3">
                                             <div class="w-10 h-10 rounded-full bg-gray-100 overflow-hidden ring-2 ring-transparent group-hover:ring-teal-500/20 transition-all">
-                                                <img v-if="request.user?.avatar" :src="request.user.avatar" class="w-full h-full object-cover">
+                                                <img v-if="request.user?.avatar_url" :src="request.user.avatar_url" class="w-full h-full object-cover">
                                                 <div v-else class="w-full h-full flex items-center justify-center bg-teal-100 text-teal-600 font-bold text-sm">
                                                     {{ getInitials(request.user?.name) }}
                                                 </div>
@@ -203,7 +203,7 @@
                                 <div class="lg:col-span-1 space-y-6">
                                     <div class="text-center p-6 bg-gray-50 rounded-xl border border-gray-200">
                                         <div class="w-20 h-20 mx-auto rounded-full bg-white p-1 shadow-sm mb-3">
-                                            <img v-if="selectedRequest.user?.avatar" :src="selectedRequest.user.avatar" class="w-full h-full rounded-full object-cover">
+                                            <img v-if="selectedRequest.user?.avatar_url" :src="selectedRequest.user.avatar_url" class="w-full h-full rounded-full object-cover">
                                             <div v-else class="w-full h-full rounded-full bg-teal-100 flex items-center justify-center text-teal-600 text-2xl font-bold">
                                                 {{ getInitials(selectedRequest.user?.name) }}
                                             </div>
@@ -315,17 +315,26 @@
                                             <div class="flex gap-3 pt-2">
                                                 <button 
                                                     @click="updateStatus('Approved')" 
-                                                    class="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold shadow-sm shadow-green-200 transition-all active:scale-95"
+                                                    class="cursor-pointer flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold shadow-sm shadow-green-200 transition-all active:scale-95"
                                                     v-if="selectedRequest.status !== 'Approved'"
                                                 >
                                                     Approve Request
                                                 </button>
+                                                
                                                 <button 
                                                     @click="updateStatus('Rejected')"
-                                                    class="flex-1 py-2.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg font-bold transition-all active:scale-95"
-                                                    v-if="selectedRequest.status !== 'Rejected'"
+                                                    class="cursor-pointer flex-1 py-2.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg font-bold transition-all active:scale-95"
+                                                    v-if="selectedRequest.status === 'Pending' || selectedRequest.status === 'Cancelled'"
                                                 >
                                                     Reject Request
+                                                </button>
+
+                                                <button 
+                                                    @click="updateStatus('Cancelled')"
+                                                    class="cursor-pointer flex-1 py-2.5 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg font-bold transition-all active:scale-95"
+                                                    v-if="selectedRequest.status === 'Approved'"
+                                                >
+                                                    Cancel Request
                                                 </button>
                                             </div>
                                         </div>
@@ -350,11 +359,6 @@ import MainLayout from '../../layouts/MainLayout.vue';
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
-onMounted(() => {
-    authStore.fetchUser();
-    fetchRequests();
-});
-
 const requests = ref([]);
 const loading = ref(false);
 const page = ref(1);
@@ -366,11 +370,53 @@ const filters = ref({
     type: ''
 });
 
-// Metrics Mockup (Real apps would compute this from API)
-const pendingCount = computed(() => requests.value.filter(r => r.status === 'Pending').length);
-const approvedCount = computed(() => requests.value.filter(r => r.status === 'Approved').length);
-const scheduledCount = ref(0); // This would come from backend logic
-const totalCount = computed(() => requests.value.length);
+const stats = ref({
+    pending: 0,
+    approved: 0,
+    approved_this_month: 0,
+    scheduled: 0,
+    total_all_time: 0
+});
+// Metrics from API
+const pendingCount = computed(() => stats.value.pending);
+const approvedCount = computed(() => stats.value.approved_this_month);
+const scheduledCount = computed(() => stats.value.cancelled); // Mapped to cancelled as per user change
+const totalCount = computed(() => stats.value.total_all_time);
+
+const fetchStats = async () => {
+    try {
+        const response = await axios.get('/api/leave-stats');
+        stats.value = response.data;
+    } catch (e) {
+        console.error("Fetch stats failed", e);
+    }
+};
+
+onMounted(async () => {
+    authStore.fetchUser();
+    await fetchRequests();
+    fetchStats();
+
+    // Check for highlight param
+    const params = new URLSearchParams(window.location.search);
+    const hlId = params.get('highlight');
+    if (hlId) {
+        let target = requests.value.find(r => r.id == hlId);
+        if (!target) {
+             try {
+                const res = await axios.get('/api/leave-requests', { params: { id: hlId } });
+                if (res.data.data && res.data.data.length > 0) {
+                    target = res.data.data[0];
+                }
+             } catch(e) {}
+        }
+        if (target) {
+            viewDetails(target);
+            // Optional: Remove query param to clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
+});
 
 const fetchRequests = async () => {
     loading.value = true;
@@ -438,6 +484,7 @@ const updateStatus = async (newStatus) => {
             requests.value[idx] = { ...requests.value[idx], ...payload, updated_at: new Date() };
         }
         
+        fetchStats(); // Refresh headers
         closeModal();
         // Show Toast Success
     } catch (e) {

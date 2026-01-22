@@ -25,7 +25,7 @@
                 />
                 <StatCard 
                     icon="pi-clock" 
-                    value="0" 
+                    :value="leaveStats.on_leave_today" 
                     label="On Leave" 
                     iconBgClass="bg-yellow-50"
                     iconTextClass="text-yellow-500"
@@ -38,52 +38,52 @@
             <div class="lg:col-span-1">
                 <div class="grid grid-cols-2 gap-3">
                     <!-- Pending Leave Card (Compact) -->
-                    <div class="group relative bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200/50 hover:border-amber-300 transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/10 hover:-translate-y-0.5 cursor-pointer">
+                    <div class="group relative bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200/50 hover:border-amber-300 transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/10 hover:-translate-y-0.5">
                         <div class="flex flex-col items-center text-center space-y-2">
                             <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                                 <i class="pi pi-clock text-white text-lg"></i>
                             </div>
                             <div>
-                                <p class="text-2xl font-bold text-gray-800">16</p>
+                                <p class="text-2xl font-bold text-gray-800">{{ leaveStats.pending }}</p>
                                 <p class="text-xs font-medium text-gray-600">Pending</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Approved Leave Card (Compact) -->
-                    <div class="group relative bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-200/50 hover:border-emerald-300 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10 hover:-translate-y-0.5 cursor-pointer">
+                    <div class="group relative bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-200/50 hover:border-emerald-300 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10 hover:-translate-y-0.5">
                         <div class="flex flex-col items-center text-center space-y-2">
                             <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                                 <i class="pi pi-check-circle text-white text-lg"></i>
                             </div>
                             <div>
-                                <p class="text-2xl font-bold text-gray-800">16</p>
+                                <p class="text-2xl font-bold text-gray-800">{{ leaveStats.approved }}</p>
                                 <p class="text-xs font-medium text-gray-600">Approved</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Rejected Leave Card (Compact) -->
-                    <div class="group relative bg-gradient-to-br from-rose-50 to-pink-50 rounded-xl p-4 border border-rose-200/50 hover:border-rose-300 transition-all duration-300 hover:shadow-lg hover:shadow-rose-500/10 hover:-translate-y-0.5 cursor-pointer">
+                    <div class="group relative bg-gradient-to-br from-rose-50 to-pink-50 rounded-xl p-4 border border-rose-200/50 hover:border-rose-300 transition-all duration-300 hover:shadow-lg hover:shadow-rose-500/10 hover:-translate-y-0.5">
                         <div class="flex flex-col items-center text-center space-y-2">
                             <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                                 <i class="pi pi-times-circle text-white text-lg"></i>
                             </div>
                             <div>
-                                <p class="text-2xl font-bold text-gray-800">0</p>
+                                <p class="text-2xl font-bold text-gray-800">{{ leaveStats.rejected }}</p>
                                 <p class="text-xs font-medium text-gray-600">Rejected</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Cancelled Leave Card (Compact) -->
-                    <div class="group relative bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl p-4 border border-slate-200/50 hover:border-slate-300 transition-all duration-300 hover:shadow-lg hover:shadow-slate-500/10 hover:-translate-y-0.5 cursor-pointer">
+                    <div class="group relative bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl p-4 border border-slate-200/50 hover:border-slate-300 transition-all duration-300 hover:shadow-lg hover:shadow-slate-500/10 hover:-translate-y-0.5">
                         <div class="flex flex-col items-center text-center space-y-2">
                             <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-slate-400 to-gray-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                                 <i class="pi pi-ban text-white text-lg"></i>
                             </div>
                             <div>
-                                <p class="text-2xl font-bold text-gray-800">0</p>
+                                <p class="text-2xl font-bold text-gray-800">{{ leaveStats.cancelled }}</p>
                                 <p class="text-xs font-medium text-gray-600">Cancelled</p>
                             </div>
                         </div>
@@ -161,7 +161,12 @@
                                 <i class="pi pi-info-circle mb-2 block text-xl"></i>
                                 <p class="text-xs">No recent leave requests found.</p>
                             </div>
-                            <div v-for="leave in recentLeaves" :key="leave.id" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div 
+                                v-for="leave in recentLeaves" 
+                                :key="leave.id" 
+                                class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                                @click="goToRequest(leave.id)"
+                            >
                                 <div class="flex items-center gap-3">
                                     <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center overflow-hidden ring-2 ring-white">
                                         <img v-if="leave.avatar" :src="leave.avatar" class="w-full h-full object-cover">
@@ -169,7 +174,9 @@
                                     </div>
                                     <div>
                                         <p class="font-medium text-gray-800 text-sm">{{ leave.name }}</p>
-                                        <p class="text-xs text-gray-500">{{ leave.type }} • {{ leave.duration }}</p>
+                                        <p class="text-xs text-gray-500">
+                                            {{ leave.type }} • {{ leave.duration }} • <span class="text-teal-600 font-medium">{{ leave.timeAgo }}</span>
+                                        </p>
                                     </div>
                                 </div>
                                 <div>
@@ -257,19 +264,34 @@
         }
     };
 
-    onMounted(() => {
-        fetchEmployees();
-        fetchTotalUsers();
-    });
-
     // Tab state
     const activeTab = ref('attendance');
 
-    // Recent Attendance Data (Derived from real employees)
+    const leaveStats = ref({
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        cancelled: 0,
+        on_leave_today: 0,
+        recent: []
+    });
+
+    const fetchLeaveStats = async () => {
+        try {
+            const res = await axios.get('/api/leave-stats');
+            leaveStats.value = res.data;
+        } catch (e) { console.error(e); }
+    };
+
+    onMounted(() => {
+        fetchEmployees();
+        fetchTotalUsers();
+        fetchLeaveStats();
+    });
+
+    // Recent Attendance Data (Derived from real employees - still mock logic for now)
     const recentAttendance = computed(() => {
         if (employees.value.length === 0) return [];
-        
-        // Pick first 4 employees for visualization
         return employees.value.slice(0, 4).map(emp => ({
             id: emp.id,
             name: emp.name,
@@ -281,22 +303,37 @@
         }));
     });
 
-    // Recent Leaves Data (Derived from real employees)
+    // Recent Leaves Data (From API)
     const recentLeaves = computed(() => {
-        if (employees.value.length === 0) return [];
-        
-        // Pick some employees and assign random leave types for display
-        const types = ['Sick Leave', 'Vacation', 'Personal', 'Emergency'];
-        const statuses = ['Approved', 'Pending', 'Rejected'];
-        
-        return employees.value.slice(0, 4).map((emp, index) => ({
-            id: emp.id,
-            name: emp.name,
-            initials: emp.initials,
-            avatar: emp.avatar,
-            type: types[index % types.length],
-            duration: (index + 1) + ' days',
-            status: statuses[index % statuses.length]
+        return leaveStats.value.recent.map(leave => ({
+            id: leave.id,
+            name: leave.user?.name || 'Unknown',
+            initials: getInitials(leave.user?.name),
+            avatar: leave.user?.avatar_url,
+            type: leave.leave_type,
+            duration: leave.days_taken + ' days',
+            status: leave.status,
+            timeAgo: timeAgo(leave.created_at || leave.date_filed)
         }));
     });
+
+    const timeAgo = (dateParam) => {
+        if (!dateParam) return null;
+        const date = new Date(dateParam);
+        const now = new Date();
+        const seconds = Math.round((now - date) / 1000);
+        const minutes = Math.round(seconds / 60);
+        const hours = Math.round(minutes / 60);
+        const days = Math.round(hours / 24);
+
+        if (seconds < 60) return 'Just now';
+        else if (minutes < 60) return `${minutes} min${minutes > 1 ? 's' : ''} ago`;
+        else if (hours < 24) return `${hours} hr${hours > 1 ? 's' : ''} ago`;
+        else if (days === 1) return 'Yesterday';
+        else return `${days} days ago`;
+    };
+
+    const goToRequest = (id) => {
+        window.location.href = `/manage-leaves?highlight=${id}`;
+    };
 </script>
