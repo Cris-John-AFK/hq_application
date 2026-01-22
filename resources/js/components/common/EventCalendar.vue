@@ -1,5 +1,5 @@
 <template>
-    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 relative max-w-sm mx-auto">
+    <div class="bg-gray-200 p-4 rounded-2xl shadow-sm border border-gray-100 relative max-w-sm mx-auto">
         <div class="flex justify-between items-center mb-3">
             <h3 class="text-base font-bold text-gray-800">Calendar</h3>
             <div @click="toggleMonthPicker" class="text-sm font-medium text-gray-600 cursor-pointer hover:text-teal-600 flex items-center gap-1 select-none">

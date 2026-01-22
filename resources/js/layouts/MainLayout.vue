@@ -148,7 +148,62 @@
                 </div>
                 
                 <div class="p-6 overflow-y-auto">
-                    <EventCalendar />
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Calendar Section -->
+                        <div>
+                            <EventCalendar />
+                        </div>
+
+                        <!-- Today's Schedule Section -->
+                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                            <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <i class="pi pi-list text-teal-600"></i>
+                                Today's Schedule
+                            </h4>
+
+                            <!-- Today's Date -->
+                            <div class="mb-4 pb-3 border-b border-gray-200">
+                                <p class="text-sm text-gray-500">{{ todayFormatted }}</p>
+                            </div>
+
+                            <!-- Appointments List -->
+                            <div class="space-y-3">
+                                <div v-if="todaySchedule.length === 0" class="text-center py-8 text-gray-400">
+                                    <i class="pi pi-calendar-times text-3xl mb-2"></i>
+                                    <p class="text-sm">No events scheduled for today</p>
+                                </div>
+
+                                <div 
+                                    v-for="item in todaySchedule" 
+                                    :key="item.id"
+                                    class="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:border-teal-300 transition-colors"
+                                >
+                                    <div 
+                                        :class="[
+                                            'w-2 h-2 rounded-full mt-1.5 flex-shrink-0',
+                                            item.type === 'leave' ? 'bg-orange-500' : 'bg-teal-500'
+                                        ]"
+                                    ></div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium text-gray-800 text-sm">{{ item.title }}</p>
+                                        <p class="text-xs text-gray-500 mt-0.5">{{ item.description }}</p>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span 
+                                                :class="[
+                                                    'text-xs px-2 py-0.5 rounded-full font-medium',
+                                                    item.type === 'leave' 
+                                                        ? 'bg-orange-100 text-orange-700' 
+                                                        : 'bg-teal-100 text-teal-700'
+                                                ]"
+                                            >
+                                                {{ item.type === 'leave' ? 'Leave' : 'Event' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -202,6 +257,42 @@
     const handleLogout = () => {
         authStore.logout();
     };
+
+    // Today's Schedule Data
+    const todayFormatted = computed(() => {
+        const today = new Date();
+        return today.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+    });
+
+    // Sample schedule data - replace with API call in production
+    const todaySchedule = computed(() => {
+        // This would typically come from an API
+        return [
+            {
+                id: 1,
+                type: 'event',
+                title: 'Team Meeting',
+                description: '10:00 AM - Conference Room A'
+            },
+            {
+                id: 2,
+                type: 'leave',
+                title: 'John Doe - Sick Leave',
+                description: 'Full Day'
+            },
+            {
+                id: 3,
+                type: 'event',
+                title: 'Project Review',
+                description: '2:00 PM - Online'
+            }
+        ];
+    });
 
     const menuItems = computed(() => {
         if (props.user?.role === 'admin') {

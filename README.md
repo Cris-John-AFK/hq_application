@@ -12,13 +12,20 @@ A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js
 - **Professional Sidebar**: Neumorphism design with image logo support, active state indicators, and smooth transitions.
 - **Real-time Clock**: 12-hour format clock in the topbar with live updates.
 - **Admin Modules**: 
+  - **Enhanced Dashboard**:
+    - Compact leave status cards (Pending, Approved, Rejected, Cancelled) with gradient backgrounds
+    - Tabbed Recent Activity Panel displaying **real-time employee data**:
+      - Recent Attendance (Time In/Out tracking with profile avatars)
+      - Recent Leaves (Status-based cards with initials/avatar support)
+    - Two-column responsive layout for optimal space usage with automatic data fetching on mount
   - Employee List with search, filter, pagination, and **Add Employee** functionality (Manual ID `HQI-XXXX`)
   - **Inline Action Buttons**: View Leaves, **Change Password** (with confirmation), Mark On Leave
+  - **Instant Tooltips**: Fast-appearing custom tooltips for better UX
   - **Manage Leaves** page (replaces Settings) for leave request management
   - Leave request management with custom radio button UI
   - Attendance tracking and reporting
   - Modern stacked area chart with ApexCharts showing attendance trends
-  - Dynamic calendar with month navigation and event tooltips
+  - **Enhanced Calendar Modal**: Two-column layout with calendar and Today's Schedule sidebar
 - **User Modules**:
   - Personal dashboard with quick stats
   - Profile page with **Photo Upload**, **Edit Profile**, and **Password Change** details with **Upload Confirmation**
@@ -26,7 +33,8 @@ A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js
   - Leave request submission
 - **Reusable Components**:
   - `LeaveRequestModal.vue` - Google Forms-style modal for leave requests
-  - `EventCalendar.vue` - Compact, interactive calendar with highlighted events
+  - `EventCalendar.vue` - Compact, interactive calendar with highlighted events and Today's Schedule
+  - `ChangePasswordModal.vue` - Admin password change modal with confirmation
   - `EmployeeList.vue` - Advanced employee management table
   - `AttendanceChart.vue` - Interactive line chart for attendance trends (Present, Absent, Late, Leave) with date filtering
 - **Routing**: **Vue Router 4** for seamless SPA navigation.
@@ -36,6 +44,13 @@ A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js
   - Dynamic time-period filtering (Daily, Weekly, Monthly) with date pickers
   - Smooth animations and gradient styling
 - **State Management**: **Pinia** for centralized auth and app state.
+
+## ⚡ Performance & Optimization
+- **Database Indexing**: Implemented global indexing on frequently queried columns (`name`, `id_number`, `department`, `status`, `role`, `position`) to ensure <50ms query times even with large datasets.
+- **Frontend Optimization**: 
+  - Efficient component lazy loading
+  - Debounced search inputs to reduce API calls
+  - Optimized asset bundling with Vite
 
 
 
