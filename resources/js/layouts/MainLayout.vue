@@ -17,7 +17,7 @@
                     />
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold text-white tracking-tight">HQ App</h1>
+                    <h1 class="text-xl font-bold text-white tracking-tight">HatQ Inc.</h1>
                     <p class="text-[10px] font-semibold text-teal-500 uppercase tracking-widest leading-none mt-0.5">Management</p>
                 </div>
             </router-link>
