@@ -6,13 +6,20 @@
                 <p class="text-sm text-gray-500">Manage and view all registered employees</p>
             </div>
             
-            <div class="flex flex-col md:flex-row gap-3">
+            <div class="flex flex-col md:flex-row gap-3 items-center">
+                <button 
+                    @click="showAddModal = true"
+                    class="cursor-pointer h-10 px-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
+                >
+                    <i class="pi pi-plus"></i>
+                    Add Employee
+                </button>
                 <!-- Department Filter -->
-                <div class="relative">
-                    <i class="pi pi-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <div class="relative w-full md:w-auto">
+                    <i class="pi pi-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                     <select 
                         v-model="selectedDepartment" 
-                        class="pl-10 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-white appearance-none cursor-pointer"
+                        class="h-10 pl-10 pr-8 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-white appearance-none cursor-pointer w-full"
                     >
                         <option value="All">All Departments</option>
                         <option value="Engineering">Engineering</option>
@@ -22,13 +29,14 @@
                     </select>
                 </div>
                 <!-- Status Filter -->
-                <div class="relative">
-                    <i class="pi pi-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <div class="relative w-full md:w-auto">
+                    <i class="pi pi-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                     <select 
                         v-model="selectedStatus" 
-                        class="pl-10 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-white appearance-none cursor-pointer"
+                        class="h-10 pl-10 pr-8 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-white appearance-none cursor-pointer w-full"
                     >
                         <option value="All">All Status</option>
+                        <option value="Available">Available</option>
                         <option value="Working">Working</option>
                         <option value="Not Yet Arrived">Not Yet Arrived</option>
                         <option value="On Leave">On Leave</option>
@@ -37,13 +45,13 @@
                 </div>
 
                 <!-- Search -->
-                <div class="relative">
-                    <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <div class="relative w-full md:w-auto">
+                    <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                     <input 
                         v-model="searchQuery" 
                         type="text" 
                         placeholder="Search employees..." 
-                        class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none w-full md:w-64"
+                        class="h-10 pl-10 pr-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none w-full md:w-45"
                     >
                 </div>
             </div>
@@ -53,23 +61,32 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                        <th class="px-6 py-4 font-semibold">Employee</th>
+                        <th class="px-8 py-4 font-semibold">Employee</th>
                         <th class="px-6 py-4 font-semibold">ID</th>
                         <th class="px-6 py-4 font-semibold">Department</th>
-                        <th class="px-6 py-4 font-semibold">Role</th>
+                        <th class="px-6 py-4 font-semibold">Position</th>
                         <th class="px-6 py-4 font-semibold">Status</th>
-                        <th class="px-6 py-4 font-semibold text-right">Actions</th>
+                        <th class="px-6 py-4 font-semibold text-center whitespace-nowrap">SIL Credits</th>
+                        <th class="px-12 py-4 font-semibold text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    <tr v-for="employee in paginatedEmployees" :key="employee.id" class="hover:bg-gray-50/50 transition-colors">
+                    <tr v-for="(employee, index) in paginatedEmployees" :key="employee.id" class="hover:bg-gray-50/50 transition-colors">
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-sm">
-                                    {{ employee.initials }}
+                                <div
+                                class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-sm bg-cover bg-center"
+                                :style="employee.avatar ? { backgroundImage: `url(${employee.avatar})` } : {}"
+                                >
+                                <span v-if="!employee.avatar">
+                                    {{ getInitials(employee.name) }}
+                                </span>
                                 </div>
                                 <div>
-                                    <p class="font-medium text-gray-800">{{ employee.name }}</p>
+                                    <div class="flex items-center gap-2">
+                                        <p class="font-medium text-gray-800">{{ employee.name }}</p>
+                                        <span v-if="employee.role === 'admin'" class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-bold rounded uppercase tracking-tighter shadow-sm border border-blue-200">Admin</span>
+                                    </div>
                                     <p class="text-xs text-gray-500">{{ employee.email }}</p>
                                 </div>
                             </div>
@@ -80,52 +97,86 @@
                                 {{ employee.department }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ employee.role }}</td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ employee.position }}</td>
+                        <td class="px-4 py-4">
                             <span 
                                 :class="{
-                                    'bg-green-100 text-green-700': employee.status === 'Working',
-                                    'bg-yellow-100 text-yellow-700': employee.status === 'Not Yet Arrived',
+                                    'bg-green-100 text-green-700': employee.status === 'Available',
                                     'bg-gray-100 text-gray-600': employee.status === 'On Leave',
+                                    'bg-blue-100 text-blue-600': employee.status === 'Working',
                                     'bg-red-100 text-red-600': employee.status === 'Absent',
-                                    'bg-red-200 text-red-600': employee.status === 'Emergency Leave'
                                 }"
                                 class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
                             >
-                                <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
                                 {{ employee.status }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-right relative">
-                            <button 
-                                @click.stop="toggleActionMenu(employee.id)" 
-                                class="text-gray-400 hover:text-teal-600 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
-                            >
-                                <i class="pi pi-ellipsis-v"></i>
-                            </button>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-sm font-black bg-teal-50 text-teal-700 border border-teal-100 min-w-[3rem] justify-center shadow-sm">
+                                {{ Number(employee.leave_credits) % 1 === 0 ? Number(employee.leave_credits).toFixed(0) : employee.leave_credits }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <!-- Edit Employee -->
+                                <div class="relative group">
+                                    <button 
+                                        @click="openEditModal(employee)" 
+                                        class="cursor-pointer w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors"
+                                    >
+                                        <i class="pi pi-pencil text-xs"></i>
+                                    </button>
+                                    <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                        Edit Details
+                                        <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></span>
+                                    </span>
+                                </div>
 
-                            <!-- Action Menu -->
-                            <div 
-                                v-if="openActionMenuId === employee.id" 
-                                class="absolute right-0 top-full mt-2 z-50 mr-6 origin-top-right"
-                                @click.stop
-                            >
-                                <div class="custom-radio-group">
-                                    <label class="custom-radio-container" @click="openLeaveModal(employee.id, 'On Leave')">
-                                        <input type="radio" name="custom-radio" :checked="employee.status === 'On Leave'" />
-                                        <span class="custom-radio-checkmark"></span>
-                                        On Leave
-                                    </label>
-                                    <label class="custom-radio-container" @click="updateStatus(employee.id, 'Absent')">
-                                        <input type="radio" name="custom-radio" :checked="employee.status === 'Absent'" />
-                                        <span class="custom-radio-checkmark"></span>
-                                        Absent
-                                    </label>
-                                    <label class="custom-radio-container" @click="openLeaveModal(employee.id, 'Emergency Leave')">
-                                        <input type="radio" name="custom-radio" :checked="employee.status === 'Emergency Leave'" />
-                                        <span class="custom-radio-checkmark"></span>
-                                        Emergency Leave
-                                    </label>
+                                <!-- View Leaves -->
+                                <div class="relative group">
+                                    <button 
+                                        @click="handleViewLeaves(employee)" 
+                                        class="cursor-pointer w-8 h-8 rounded-full bg-teal-50 text-teal-600 hover:bg-teal-100 flex items-center justify-center transition-colors"
+                                    >
+                                        <i class="pi pi-calendar text-xs"></i>
+                                    </button>
+                                    <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                        View Leaves
+                                        <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></span>
+                                    </span>
+                                </div>
+
+                                <!-- Change Password -->
+                                <div class="relative group">
+                                    <button 
+                                        @click="handleChangePassword(employee)" 
+                                        class="cursor-pointer w-8 h-8 rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 flex items-center justify-center transition-colors"
+                                    >
+                                        <i class="pi pi-key text-xs"></i>
+                                    </button>
+                                    <span class="absolute bottom-full mb-2 right-0 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                        Change Password
+                                        <span class="absolute top-full right-4 border-4 border-transparent border-t-gray-800"></span>
+                                    </span>
+                                </div>
+
+                                <!-- Mark On Leave -->
+                                <div class="relative group">
+                                    <button 
+                                        @click="openLeaveModal(employee.id, 'On Leave')"
+                                        :class="[
+                                            'cursor-pointer w-8 h-8 rounded-full flex items-center justify-center transition-colors',
+                                            employee.status === 'On Leave' 
+                                                ? 'bg-orange-100 text-orange-600 hover:bg-orange-200' 
+                                                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                                        ]"
+                                    >
+                                        <i class="pi pi-clock text-xs"></i>
+                                    </button>
+                                    <span class="absolute bottom-full mb-2 right-0 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                        Mark On Leave
+                                        <span class="absolute top-full right-2 border-4 border-transparent border-t-gray-800"></span>
+                                    </span>
                                 </div>
                             </div>
                         </td>
@@ -165,6 +216,22 @@
             </div>
         </div>
         
+
+        <!-- Add Employee Modal -->
+        <AddEmployeeModal 
+            v-model="showAddModal" 
+            :loading="isCreating"
+            @submit="handleCreateEmployee"
+        />
+
+        <!-- Edit Employee Modal -->
+        <EditEmployeeModal 
+            v-model="showEditModal" 
+            :employee="selectedEmployee"
+            :loading="isEditing"
+            @submit="handleUpdateEmployee"
+        />
+
         <!-- Leave Form Modal (Reusable Component) -->
         <LeaveRequestModal 
             v-model="showLeaveModal" 
@@ -172,45 +239,97 @@
             :employee-name="getEmployeeName(leaveForm.employeeId)"
             @submit="handleLeaveSubmit"
         />
+
+        <!-- Change Password Modal -->
+        <ChangePasswordModal 
+            v-model="showPasswordModal"
+            :employee-id="selectedEmployee?.id"
+            :employee-name="selectedEmployee?.name"
+            @success="handlePasswordChanged"
+        />
     </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import LeaveRequestModal from './LeaveRequestModal.vue';
+import AddEmployeeModal from './AddEmployeeModal.vue';
+import EditEmployeeModal from './EditEmployeeModal.vue';
+import ChangePasswordModal from './ChangePasswordModal.vue';
+import axios from 'axios';
 
+const router = useRouter();
 const selectedDepartment = ref('All');
 const selectedStatus = ref('All');
 const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = 10;
 const openActionMenuId = ref(null);
+const isLoading = ref(false);
 
 // Modal Logic
 const showLeaveModal = ref(false);
+const showAddModal = ref(false);
+const showEditModal = ref(false);
+const showPasswordModal = ref(false);
+const isCreating = ref(false);
+const isEditing = ref(false);
 const leaveForm = ref({
     employeeId: null,
     type: ''
 });
+const selectedEmployee = ref(null);
 
-// Mock Data - Expanded for Pagination Demo
-const employees = ref([
-    { id: 1, name: 'John Doe', email: 'john@hq.app', initials: 'JD', empId: 'EMP-001', department: 'Engineering', role: 'Senior Developer', status: 'Working' },
-    { id: 2, name: 'Jane Smith', email: 'jane@hq.app', initials: 'JS', empId: 'EMP-002', department: 'Design', role: 'UI/UX Designer', status: 'Not Yet Arrived' },
-    { id: 3, name: 'Mike Johnson', email: 'mike@hq.app', initials: 'MJ', empId: 'EMP-003', department: 'Sales', role: 'Sales Manager', status: 'Working' },
-    { id: 4, name: 'Sarah Williams', email: 'sarah@hq.app', initials: 'SW', empId: 'EMP-004', department: 'HR', role: 'HR Specialist', status: 'Not Yet Arrived' },
-    { id: 5, name: 'Robert Brown', email: 'robert@hq.app', initials: 'RB', empId: 'EMP-005', department: 'Engineering', role: 'QA Engineer', status: 'Working' },
-    { id: 6, name: 'Emily Davis', email: 'emily@hq.app', initials: 'ED', empId: 'EMP-006', department: 'Marketing', role: 'Content Writer', status: 'Working' },
-    { id: 7, name: 'David Wilson', email: 'david@hq.app', initials: 'DW', empId: 'EMP-007', department: 'Engineering', role: 'DevOps Engineer', status: 'On Leave' },
-    { id: 8, name: 'Lisa Miller', email: 'lisa@hq.app', initials: 'LM', empId: 'EMP-008', department: 'Marketing', role: 'Marketing Manager', status: 'Not Yet Arrived' },
-    { id: 9, name: 'James Taylor', email: 'james@hq.app', initials: 'JT', empId: 'EMP-009', department: 'Sales', role: 'Sales Executive', status: 'Working' },
-    { id: 10, name: 'Patricia Anderson', email: 'patricia@hq.app', initials: 'PA', empId: 'EMP-010', department: 'HR', role: 'Recruiter', status: 'Working' },
-    { id: 11, name: 'Jennifer Thomas', email: 'jennifer@hq.app', initials: 'JT', empId: 'EMP-011', department: 'Design', role: 'Graphic Designer', status: 'Working' },
-    { id: 12, name: 'Charles Jackson', email: 'charles@hq.app', initials: 'CJ', empId: 'EMP-012', department: 'Engineering', role: 'Frontend Developer', status: 'Working' },
-    { id: 13, name: 'Linda White', email: 'linda@hq.app', initials: 'LW', empId: 'EMP-013', department: 'Sales', role: 'Account Manager', status: 'Not Yet Arrived' },
-    { id: 14, name: 'Barbara Harris', email: 'barbara@hq.app', initials: 'BH', empId: 'EMP-014', department: 'Engineering', role: 'Backend Developer', status: 'Working' },
-    { id: 15, name: 'Paul Martin', email: 'paul@hq.app', initials: 'PM', empId: 'EMP-015', department: 'Marketing', role: 'SEO Specialist', status: 'On Leave' },
-]);
+// Employee Data
+const employees = ref([]);
+
+const fetchEmployees = async () => {
+    isLoading.value = true;
+    try {
+        const response = await axios.get('/api/users');
+        employees.value = response.data.map(user => ({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            avatar: user.avatar_url, // Use the full URL provided by the backend accessor
+            empId: user.id_number || 'N/A',
+            department: user.department || 'N/A',
+            role: user.role, // admin or user
+            status: user.status || 'Available',
+            position: user.position || 'Employee',
+            leave_credits: user.leave_credits || 0
+        }));
+    } catch (error) {
+        console.error('Failed to fetch employees:', error);
+    } finally {
+        isLoading.value = false;
+    }
+};
+
+const getInitials = (name) => {
+    return name
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+};
+
+const handleCreateEmployee = async (formData) => {
+    isCreating.value = true;
+    try {
+        await axios.post('/api/users', formData);
+        showAddModal.value = false;
+        await fetchEmployees(); // Refresh list
+        // Could show success toast here
+    } catch (error) {
+        console.error('Failed to create employee:', error);
+        alert('Failed to create employee. Please try again.');
+    } finally {
+        isCreating.value = false;
+    }
+};
 
 const filteredEmployees = computed(() => {
     return employees.value.filter(employee => {
@@ -262,12 +381,29 @@ const toggleActionMenu = (id) => {
     }
 };
 
+const handleViewLeaves = (employee) => {
+    openActionMenuId.value = null;
+    router.push({ path: '/manage-leaves', query: { user_id: employee.id } });
+};
+
+const handleChangePassword = (employee) => {
+    selectedEmployee.value = employee;
+    showPasswordModal.value = true;
+};
+
+const handlePasswordChanged = () => {
+    alert('Password updated successfully!');
+    // Optionally refresh employee list or show toast notification
+};
+
 const updateStatus = (id, newStatus) => {
+    // Optimistic update
     const employee = employees.value.find(e => e.id === id);
     if (employee) {
         employee.status = newStatus;
         openActionMenuId.value = null; // Close menu after selection
     }
+    // In real app, call API here to persist status
 };
 
 const openLeaveModal = (id, type) => {
@@ -295,7 +431,46 @@ const closeActionMenu = () => {
     openActionMenuId.value = null;
 };
 
+const openEditModal = (employee) => {
+    selectedEmployee.value = employee;
+    showEditModal.value = true;
+};
+
+const handleUpdateEmployee = async (formData) => {
+    isEditing.value = true;
+    try {
+        const payload = {
+            name: formData.name,
+            department: formData.department,
+            role: formData.role,
+            position: formData.position,
+            id_number: formData.id_number,
+            employment_status: formData.employment_status,
+            leave_credits: formData.leave_credits
+        };
+
+        const response = await axios.put(`/api/users/${formData.id}`, payload);
+        
+        // Update local list
+        const idx = employees.value.findIndex(e => e.id === formData.id);
+        if (idx !== -1) {
+            // Merge response data (updated user) into existing employee object
+            // Ensure avatar_url and other computed props are kept or updated
+            employees.value[idx] = { ...employees.value[idx], ...response.data };
+        }
+        
+        showEditModal.value = false;
+        alert('Employee updated successfully');
+    } catch (error) {
+        console.error('Update failed:', error);
+        alert(error.response?.data?.message || 'Failed to update employee');
+    } finally {
+        isEditing.value = false;
+    }
+};
+
 onMounted(() => {
+    fetchEmployees();
     document.addEventListener('click', closeActionMenu);
 });
 

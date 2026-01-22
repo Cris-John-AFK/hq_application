@@ -4,7 +4,7 @@
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
         
         <!-- Modal Container -->
-        <div class="wrapper relative z-10 w-full max-w-lg max-h-[90vh] flex flex-col bg-[#f0f2f5] rounded-xl overflow-hidden shadow-2xl" @click.stop>
+        <div class="wrapper relative z-10 w-full max-w-2xl max-h-[90vh] flex flex-col bg-[#f0f2f5] rounded-xl overflow-hidden shadow-2xl" @click.stop>
             <!-- Purple Top Bar -->
             <div class="h-2.5 bg-[#673ab7] w-full shrink-0"></div>
             
@@ -12,82 +12,168 @@
             <div class="overflow-y-auto p-6 space-y-4">
                 <!-- Header Section -->
                 <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm relative">
-                    <div class="heading text-2xl text-gray-800">{{ leaveType }} Request</div>
-                    <p class="text-sm text-gray-600 mt-2" v-if="employeeName">For <span class="font-medium">{{ employeeName }}</span></p>
-                    <hr class="my-4 border-gray-200"/>
-                    <div class="text-xs text-[#d93025]" v-if="formError">* {{ formError }}</div>
-                    <div class="text-xs text-gray-500" v-else>* Indicates required question</div>
-                </div>
-
-                <!-- Question Section -->
-                <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm">
-                    <div class="mb-4">
-                        <span class="text-base font-medium text-gray-800">Reason for Leave</span>
-                        <span class="text-[#d93025] ml-1">*</span>
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Personnel Leave Authorization Form</h2>
+                            <p class="text-sm text-gray-600 mt-1">Please fill out all required details accurately.</p>
+                        </div>
+                        <div class="text-right">
+                             <label class="block text-xs font-bold text-gray-500 uppercase">Date Filed</label>
+                             <input type="date" v-model="form.dateFiled" class="text-sm border-b border-gray-300 focus:border-purple-600 outline-none py-1 text-gray-800 font-medium text-right">
+                        </div>
                     </div>
                     
-                    <div class="space-y-3">
-                        <div v-for="reason in leaveReasons" :key="reason">
-                            <label class="flex items-center cursor-pointer py-2 group relative">
-                                <input type="radio" v-model="form.selectedReason" :value="reason" name="leaveReason" class="peer absolute opacity-0">
-                                <div class="relative w-5 h-5 border-2 border-[#5f6368] rounded-full peer-checked:border-[#673ab7] transition-all flex-shrink-0">
-                                    <div class="absolute inset-0 flex items-center justify-center">
-                                        <div class="w-3 h-3 bg-[#673ab7] rounded-full opacity-0 peer-checked:opacity-100 transition-opacity duration-200"></div>
-                                    </div>
-                                    <div class="absolute -inset-3 rounded-full bg-[#673ab7] opacity-0 group-hover:opacity-[0.04] transition-opacity"></div>
-                                </div>
-                                <span class="ml-3 text-sm text-gray-700 select-none">{{ reason }}</span>
+                    <hr class="my-4 border-gray-200"/>
+                    
+                    <!-- Employee Info Preview (Read Only) -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-2" v-if="user">
+                        <div>
+                            <span class="block text-xs text-gray-500 uppercase">Name</span>
+                            <span class="font-bold text-gray-800">{{ user.name }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-gray-500 uppercase">Employee No.</span>
+                            <span class="font-bold text-gray-800">HQI-{{ String(user.id).padStart(4, '0') }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-gray-500 uppercase">Position</span>
+                            <span class="font-bold text-gray-800">{{ user.position || 'N/A' }}</span>
+                        </div>
+                         <div>
+                            <span class="block text-xs text-gray-500 uppercase">Status</span>
+                            <span class="inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">{{ user.employment_status || 'Probationary' }}</span>
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-[#d93025]" v-if="formError">* {{ formError }}</div>
+                    <div class="text-xs text-gray-500" v-else>* Indicates required fields</div>
+                </div>
+
+                <!-- 1. Request For -->
+                <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm">
+                    <div class="mb-3">
+                        <span class="text-base font-medium text-gray-800">Leave Request For</span>
+                        <span class="text-[#d93025] ml-1">*</span>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <label v-for="type in requestTypes" :key="type" class="flex items-center cursor-pointer p-2 rounded hover:bg-purple-50 transition-colors border border-transparent hover:border-purple-100">
+                             <div class="relative flex items-center">
+                                <input type="radio" v-model="form.requestType" :value="type" name="requestType" class="peer h-4 w-4 cursor-pointer text-purple-600 focus:ring-purple-500 border-gray-300">
+                            </div>
+                            <span class="ml-2 text-sm text-gray-700 font-medium">{{ type }}</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 2. Leave Type -->
+                <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm">
+                    <div class="mb-3">
+                        <span class="text-base font-medium text-gray-800">Leave Type</span>
+                        <span class="text-[#d93025] ml-1">*</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+                        <label v-for="lType in leaveTypes" :key="lType" class="flex items-center cursor-pointer group">
+                             <input type="radio" v-model="form.leaveType" :value="lType" name="leaveType" class="peer h-4 w-4 cursor-pointer text-purple-600 focus:ring-purple-500 border-gray-300">
+                             <span class="ml-2 text-sm text-gray-700 group-hover:text-purple-700 transition-colors">{{ lType }}</span>
+                        </label>
+                        
+                        <!-- Others -->
+                        <div class="col-span-1 md:col-span-2 mt-2">
+                             <label class="flex items-center cursor-pointer group mb-2">
+                                 <input type="radio" v-model="form.leaveType" value="Others" name="leaveType" class="peer h-4 w-4 cursor-pointer text-purple-600 focus:ring-purple-500 border-gray-300">
+                                 <span class="ml-2 text-sm text-gray-700 group-hover:text-purple-700 font-medium">Others (Please Specify)</span>
                             </label>
+                            <transition name="fade">
+                                <input 
+                                    v-if="form.leaveType === 'Others'"
+                                    type="text" 
+                                    v-model="form.otherLeaveType" 
+                                    class="w-full border-b-2 border-gray-200 outline-none py-1.5 text-sm focus:border-[#673ab7] transition-colors bg-gray-50 px-2 rounded-t" 
+                                    placeholder="Specify leave type..." 
+                                    ref="otherInput"
+                                >
+                            </transition>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Details of Leave -->
+                <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm">
+                    <div class="mb-4 text-base font-medium text-gray-800">Details of Leave / Halfday / Undertime</div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Date Range -->
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">From Date <span class="text-red-500">*</span></label>
+                                <input type="date" v-model="form.fromDate" :min="today" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">To Date <span class="text-red-500">*</span></label>
+                                <input type="date" v-model="form.toDate" :min="form.fromDate || today" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all">
+                            </div>
                         </div>
 
-                        <!-- Others Option -->
-                        <div>
-                            <label class="flex items-center cursor-pointer py-2 group relative">
-                                <input type="radio" v-model="form.selectedReason" value="Others" name="leaveReason" class="peer absolute opacity-0">
-                                <div class="relative w-5 h-5 border-2 border-[#5f6368] rounded-full peer-checked:border-[#673ab7] transition-all flex-shrink-0">
-                                    <div class="absolute inset-0 flex items-center justify-center">
-                                        <div class="w-3 h-3 bg-[#673ab7] rounded-full opacity-0 peer-checked:opacity-100 transition-opacity duration-200"></div>
-                                    </div>
-                                    <div class="absolute -inset-3 rounded-full bg-[#673ab7] opacity-0 group-hover:opacity-[0.04] transition-opacity"></div>
+                        <!-- Duration Metrics -->
+                        <div class="space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                             <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">No. of Days</label>
+                                <div class="flex items-center gap-2">
+                                    <input readonly type="number" step="0.5" v-model="form.numberOfDays" class="w-24 p-2 border border-gray-300 rounded font-bold text-gray-800 text-center focus:ring-purple-500 outline-none">
+                                    <span class="text-sm text-gray-500">days</span>
                                 </div>
-                                <span class="ml-3 text-sm text-gray-700 select-none">Others</span>
-                            </label>
-                            <div v-if="form.selectedReason === 'Others'" class="ml-8 mt-2">
-                                <input 
-                                    type="text" 
-                                    v-model="form.otherReasonText" 
-                                    class="w-full border-b border-gray-300 outline-none py-1 text-sm focus:border-[#673ab7] transition-colors bg-transparent placeholder-gray-400" 
-                                    placeholder="Please specify reason..."
-                                >
+                            </div>
+                            
+                            <!-- Hours input - Always visible -->
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1 mt-3">No. of Hours</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" step="0.5" v-model="form.numberOfHours" class="w-24 p-2 border border-gray-300 rounded font-bold text-gray-800 text-center focus:ring-purple-500 outline-none">
+                                    <span class="text-sm text-gray-500">hours</span>
+                                </div>
+                                
+                                <div class="mt-3 grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-[10px] uppercase text-gray-400 font-bold">Start Time</label>
+                                        <input type="time" v-model="form.startTime" class="w-full p-1.5 text-sm border rounded">
+                                    </div>
+                                     <div>
+                                        <label class="text-[10px] uppercase text-gray-400 font-bold">End Time</label>
+                                        <input type="time" v-model="form.endTime" class="w-full p-1.5 text-sm border rounded">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Evidence Section -->
+                <!-- 4. Reason -->
                 <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm">
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-base font-medium text-gray-800">Evidence / Attachment</span>
-                        <span class="text-xs text-gray-500">(Optional)</span>
+                    <div class="mb-3">
+                        <span class="text-base font-medium text-gray-800">Reason for Leave / Halfday / Undertime</span>
+                        <span class="text-[#d93025] ml-1">*</span>
                     </div>
-                    <div class="border-2 border-dashed border-gray-200 rounded-lg p-6 hover:bg-gray-50 transition-colors text-center cursor-pointer relative group">
-                        <input type="file" @change="handleFileUpload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                        <div class="group-hover:scale-105 transition-transform duration-200">
-                            <i class="pi pi-cloud-upload text-3xl text-[#673ab7] mb-3 block"></i>
-                            <span class="text-sm text-gray-600 block" v-if="!form.file">Drag file here or click to upload</span>
-                            <span class="text-sm text-[#673ab7] font-medium block truncate px-4" v-else>{{ form.file.name }}</span>
-                        </div>
-                    </div>
+                    <textarea 
+                        v-model="form.reason" 
+                        rows="4" 
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-shadow resize-none placeholder-gray-400 text-sm"
+                        placeholder="Please state the specific reason for your request..."
+                    ></textarea>
                 </div>
             </div>
 
             <!-- Footer Actions -->
             <div class="bg-[#f0f2f5] p-4 flex justify-between items-center shrink-0 border-t border-gray-200">
-                <div @click="closeModal" class="btn-text cursor-pointer text-[#673ab7] text-sm font-medium hover:bg-[#673ab7]/10 px-4 py-2 rounded transition-colors">
+                <div @click="closeModal" class="btn-text cursor-pointer text-[#673ab7] text-sm font-bold uppercase hover:bg-[#673ab7]/10 px-4 py-2 rounded transition-colors tracking-wide">
                     Cancel
                 </div>
-                <button @click="submitForm" class="cursor-pointer bg-[#673ab7] text-white px-6 py-2 rounded text-sm font-medium hover:bg-[#5e35b1] shadow-sm transition-all active:scale-95">
-                    Submit
+                <button 
+                    @click="submitForm" 
+                    :disabled="loading"
+                    class="cursor-pointer bg-[#673ab7] text-white px-8 py-2.5 rounded shadow-md text-sm font-bold uppercase hover:bg-[#5e35b1] hover:shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                    <i v-if="loading" class="pi pi-spin pi-spinner"></i>
+                    <span>Submit Request</span>
                 </button>
             </div>
         </div>
@@ -95,80 +181,159 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
+import { useAuthStore } from '../../stores/auth';
+import { storeToRefs } from 'pinia';
 
 const props = defineProps({
-    modelValue: {
-        type: Boolean,
-        default: false
-    },
-    leaveType: {
-        type: String,
-        default: 'On Leave'
-    },
-    employeeName: {
-        type: String,
-        default: ''
-    }
+    modelValue: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['update:modelValue', 'submit']);
+const authStore = useAuthStore();
+const { user } = storeToRefs(authStore);
 
-const formError = ref('');
-const form = ref({
-    selectedReason: '',
-    otherReasonText: '',
-    file: null
+onMounted(() => {
+    if (!user.value) authStore.fetchUser();
 });
 
-const leaveReasons = [
-    'Sick Leave',
-    'Vacation Leave',
-    'Personal Emergency',
-    'Medical Appointment'
-];
+const formError = ref('');
+const loading = ref(false);
+
+const form = ref({
+    dateFiled: new Date().toISOString().split('T')[0],
+    requestType: 'Leave',
+    leaveType: '',
+    otherLeaveType: '',
+    fromDate: '',
+    toDate: '',
+    numberOfDays: 1,
+    numberOfHours: 0,
+    startTime: '',
+    endTime: '',
+    reason: ''
+});
+
+const requestTypes = ['Leave', 'Halfday', 'Undertime', 'Official Business'];
+const leaveTypes = ['SIL', 'Solo Parent', 'Maternity', 'VAWS', 'Paternity', 'Magna Carta', 'Emergency'];
+
+// Get today's date in YYYY-MM-DD format for min attribute
+const today = computed(() => {
+    const now = new Date();
+    return now.toISOString().split('T')[0];
+});
+
+// Watch requestType to sync dates for Halfday/Undertime
+watch(() => form.value.requestType, (newType) => {
+    if (newType === 'Halfday' || newType === 'Undertime') {
+        // If fromDate is set, sync toDate to match
+        if (form.value.fromDate) {
+            form.value.toDate = form.value.fromDate;
+        }
+    }
+});
+
+// Watch fromDate to sync toDate for Halfday/Undertime
+watch(() => form.value.fromDate, (newFromDate) => {
+    if ((form.value.requestType === 'Halfday' || form.value.requestType === 'Undertime') && newFromDate) {
+        form.value.toDate = newFromDate;
+    }
+});
+
+// Watch toDate to sync fromDate for Halfday/Undertime
+watch(() => form.value.toDate, (newToDate) => {
+    if ((form.value.requestType === 'Halfday' || form.value.requestType === 'Undertime') && newToDate) {
+        form.value.fromDate = newToDate;
+    }
+});
+
+// Auto-calc number of days (INCLUDING weekends as requested)
+watch([() => form.value.fromDate, () => form.value.toDate, () => form.value.requestType], ([start, end, type]) => {
+    if (start && end) {
+        const s = new Date(start);
+        const e = new Date(end);
+        
+        // Reset hours to avoid timezone/time diff issues
+        s.setHours(0, 0, 0, 0);
+        e.setHours(0, 0, 0, 0);
+
+        if (s > e) {
+            form.value.numberOfDays = 0;
+            return;
+        }
+
+        // Calculate total days INCLUDING weekends
+        const diffTime = Math.abs(e - s);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end dates
+        
+        if (type === 'Halfday') {
+             form.value.numberOfDays = 0.5;
+        } else if (type === 'Undertime') {
+            form.value.numberOfDays = 0;
+        } else {
+            form.value.numberOfDays = diffDays;
+        }
+    }
+});
 
 const closeModal = () => {
     emit('update:modelValue', false);
     resetForm();
 };
 
-const handleFileUpload = (event) => {
-    form.value.file = event.target.files[0];
+const submitForm = () => {
+    formError.value = '';
+    
+    // Validation
+    if (!form.value.leaveType) return setError('Please select a leave type.');
+    if (form.value.leaveType === 'Others' && !form.value.otherLeaveType) return setError('Please specify the "Others" leave type.');
+    if (!form.value.fromDate || !form.value.toDate) return setError('Please select the date range.');
+    if (!form.value.reason) return setError('Please provide a reason.');
+
+    loading.value = true;
+
+    // Simulate Backend Delay or emit immediately
+    setTimeout(() => {
+        emit('submit', {
+            ...form.value,
+            // Consolidate 'Others' input
+            leaveType: form.value.leaveType === 'Others' ? form.value.otherLeaveType : form.value.leaveType,
+            date_filed: form.value.dateFiled // Ensure snake_case for backend if needed
+        });
+        loading.value = false;
+        closeModal();
+    }, 500);
 };
 
-const submitForm = () => {
-    if (!form.value.selectedReason) {
-        formError.value = 'Please select a reason for leave.';
-        return;
-    }
-    
-    if (form.value.selectedReason === 'Others' && !form.value.otherReasonText) {
-        formError.value = 'Please specify the reason.';
-        return;
-    }
-
-    emit('submit', {
-        reason: form.value.selectedReason === 'Others' ? form.value.otherReasonText : form.value.selectedReason,
-        file: form.value.file
-    });
-    
-    closeModal();
+const setError = (msg) => {
+    formError.value = msg;
+    // Scroll to top or highlight?
 };
 
 const resetForm = () => {
     form.value = {
-        selectedReason: '',
-        otherReasonText: '',
-        file: null
+        dateFiled: new Date().toISOString().split('T')[0],
+        requestType: 'Leave',
+        leaveType: '',
+        otherLeaveType: '',
+        fromDate: '',
+        toDate: '',
+        numberOfDays: 1,
+        numberOfHours: 0,
+        startTime: '',
+        endTime: '',
+        reason: ''
     };
     formError.value = '';
 };
-
-// Reset form when modal opens
-watch(() => props.modelValue, (newVal) => {
-    if (newVal) {
-        resetForm();
-    }
-});
 </script>
+
+<style scoped>
+.animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+</style>

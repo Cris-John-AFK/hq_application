@@ -1,9 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
 import Dashboard from '../components/Dashboard.vue';
 import Employees from '../components/admin/Employees.vue';
 import AdminAttendance from '../components/admin/Attendance.vue';
 import Schedules from '../components/admin/Schedules.vue';
 import Reports from '../components/admin/Reports.vue';
+import ManageLeaves from '../components/admin/ManageLeaves.vue';
 import Settings from '../components/admin/Settings.vue';
 import LoginForm from '../components/login/loginForm.vue';
 
@@ -24,57 +26,57 @@ const routes = [
         path: '/dashboard',
         name: 'Dashboard',
         component: Dashboard,
-        meta: { title: 'HQ Inc. - Dashboard Page' }
+        meta: { title: 'HQ Inc. - Dashboard Page', requiresAuth: true }
     },
     // Admin Routes
     {
         path: '/employees',
         name: 'Employees',
         component: Employees,
-        meta: { title: 'HQ Inc. - Employees Page' }
+        meta: { title: 'HQ Inc. - Employees Page', requiresAuth: true, requiresAdmin: true }
     },
     {
         path: '/attendance',
         name: 'Attendance',
         component: AdminAttendance,
-        meta: { title: 'HQ Inc. - Attendance Page' }
+        meta: { title: 'HQ Inc. - Attendance Page', requiresAuth: true, requiresAdmin: true }
     },
     {
         path: '/schedules',
         name: 'Schedules',
         component: Schedules,
-        meta: { title: 'HQ Inc. - Schedules Page' }
+        meta: { title: 'HQ Inc. - Schedules Page', requiresAuth: true, requiresAdmin: true }
     },
     {
         path: '/reports',
         name: 'Reports',
         component: Reports,
-        meta: { title: 'HQ Inc. - Reports Page' }
+        meta: { title: 'HQ Inc. - Reports Page', requiresAuth: true, requiresAdmin: true }
     },
     {
-        path: '/settings',
-        name: 'Settings',
-        component: Settings,
-        meta: { title: 'HQ Inc. - Settings Page' }
+        path: '/manage-leaves',
+        name: 'ManageLeaves',
+        component: ManageLeaves,
+        meta: { title: 'HQ Inc. - Manage Leaves', requiresAuth: true, requiresAdmin: true }
     },
     // User Routes
     {
         path: '/profile',
         name: 'Profile',
         component: UserProfile,
-        meta: { title: 'HQ Inc. - My Profile' }
+        meta: { title: 'HQ Inc. - My Profile', requiresAuth: true }
     },
     {
         path: '/my-attendance',
         name: 'MyAttendance',
         component: UserAttendance,
-        meta: { title: 'HQ Inc. - My Attendance' }
+        meta: { title: 'HQ Inc. - My Attendance', requiresAuth: true }
     },
     {
         path: '/leave-requests',
         name: 'LeaveRequests',
         component: UserLeaveRequests,
-        meta: { title: 'HQ Inc. - Leave Requests' }
+        meta: { title: 'HQ Inc. - Leave Requests', requiresAuth: true }
     }
 ];
 
@@ -83,8 +85,42 @@ const router = createRouter({
     routes
 });
 
-router.beforeEach((to, from, next) => {
-    document.title = to.meta.title || 'HQ Inc. - APP'; // Set title, or a default
+router.beforeEach(async (to, from, next) => {
+    document.title = to.meta.title || 'HQ Inc. - APP';
+
+    const authStore = useAuthStore();
+
+    // 1. Check Authentication
+    if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+        await authStore.fetchUser();
+
+        if (!authStore.isAuthenticated) {
+            next('/login');
+            return;
+        }
+    }
+
+    // 2. Redirect logged-in users away from login page
+    if (to.path === '/login' && authStore.isAuthenticated) {
+        next('/dashboard');
+        return;
+    }
+
+    // 3. Role-Based Access Control (RBAC) Implementation
+    if (to.meta.requiresAdmin) {
+        // Ensure user data is loaded (double check)
+        if (!authStore.user) {
+            await authStore.fetchUser();
+        }
+
+        // Check if user is Admin
+        if (authStore.user?.role !== 'admin') {
+            console.warn(`Unauthorized access attempt to ${to.path} by user ${authStore.user?.name}`);
+            next('/dashboard'); // or redirect to a 403 Forbidden page
+            return;
+        }
+    }
+
     next();
 });
 

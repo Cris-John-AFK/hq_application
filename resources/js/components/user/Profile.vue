@@ -90,7 +90,7 @@
         </div>
     </div>
     <!-- Edit Profile Modal -->
-    <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div v-if="showEditModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Edit Profile</h2>
             
@@ -112,6 +112,25 @@
                             type="email" 
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
                             required
+                        >
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-100">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">New Password <span class="text-xs text-gray-500 font-normal">(Optional)</span></label>
+                        <input 
+                            v-model="editForm.password" 
+                            type="password" 
+                            placeholder="Leave blank to keep current"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                        <input 
+                            v-model="editForm.password_confirmation" 
+                            type="password" 
+                            placeholder="Confirm new password"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
                         >
                     </div>
                 </div>
@@ -155,12 +174,16 @@ const showEditModal = ref(false);
 const isUpdating = ref(false);
 const editForm = reactive({
     name: '',
-    email: ''
+    email: '',
+    password: '',
+    password_confirmation: ''
 });
 
 const editProfile = () => {
     editForm.name = user.value.name;
     editForm.email = user.value.email;
+    editForm.password = '';
+    editForm.password_confirmation = '';
     showEditModal.value = true;
 };
 
@@ -204,8 +227,13 @@ const handleFileChange = async (event) => {
         alert('Please upload an image file.');
         return;
     }
-    if (file.size > 2 * 1024 * 1024) { // 2MB
-        alert('File size exceeds 2MB limit.');
+    if (file.size > 10 * 1024 * 1024) { // 10MB
+        alert('File size exceeds 10MB limit.');
+        return;
+    }
+
+    if (!confirm('Are you sure you want to change your profile photo?')) {
+        fileInput.value.value = ''; // Reset input
         return;
     }
 

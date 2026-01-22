@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
             'email' => 'admin@hq.app',
             'role' => 'admin',
             'position' => 'System Administrator',
-            'id_number' => 'ADM-001',
+            'id_number' => 'HQI-001',
             'password' => Hash::make('password'),
         ]);
 
@@ -30,7 +30,7 @@ class UserSeeder extends Seeder
             'email' => 'user@hq.app',
             'role' => 'user',
             'position' => 'Staff Member',
-            'id_number' => 'USR-001',
+            'id_number' => 'HQI-002',
             'password' => Hash::make('password'),
         ]);
     }

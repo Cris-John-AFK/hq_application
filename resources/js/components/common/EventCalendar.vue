@@ -1,7 +1,7 @@
 <template>
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-bold text-gray-800">Calendar</h3>
+    <div class="bg-gray-200 p-4 rounded-2xl shadow-sm border border-gray-100 relative max-w-sm mx-auto">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-base font-bold text-gray-800">Calendar</h3>
             <div @click="toggleMonthPicker" class="text-sm font-medium text-gray-600 cursor-pointer hover:text-teal-600 flex items-center gap-1 select-none">
                 {{ currentMonthName }} {{ currentYear }} 
                 <i :class="['pi text-xs ml-1 transition-transform', showMonthPicker ? 'pi-chevron-up' : 'pi-chevron-down']"></i>
@@ -11,33 +11,33 @@
         <!-- Month Selection Overlay -->
         <div v-if="showMonthPicker" class="absolute inset-0 bg-white rounded-2xl z-20 flex flex-col p-4 animate-fade-in">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
-                <button @click="changeYear(-1)" class="p-1 hover:bg-gray-100 rounded text-gray-600"><i class="pi pi-chevron-left"></i></button>
+                <button @click="changeYear(-1)" class="p-1 hover:bg-gray-100 rounded text-gray-600 cursor-pointer"><i class="pi pi-chevron-left"></i></button>
                 <span class="font-bold text-gray-800">{{ currentYear }}</span>
-                <button @click="changeYear(1)" class="p-1 hover:bg-gray-100 rounded text-gray-600"><i class="pi pi-chevron-right"></i></button>
+                <button @click="changeYear(1)" class="p-1 hover:bg-gray-100 rounded text-gray-600 cursor-pointer"><i class="pi pi-chevron-right"></i></button>
             </div>
             <div class="grid grid-cols-3 gap-2 flex-1">
                 <button 
                     v-for="(month, index) in months" 
                     :key="month"
                     @click="selectMonth(index)"
-                    :class="['text-sm rounded py-2 transition-colors cursor-pointer hover:bg-gray-200', currentMonth === index ? 'bg-teal-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50']"
+                    :class="['text-xs rounded py-2 transition-colors cursor-pointer hover:bg-gray-200', currentMonth === index ? 'bg-teal-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50']"
                 >
                     {{ month }}
                 </button>
             </div>
         </div>
         
-        <div class="grid grid-cols-7 gap-1 text-center mb-2">
-            <span v-for="day in weekDays" :key="day" class="text-xs font-medium text-gray-400 uppercase py-2 cursor-pointer">
+        <div class="grid grid-cols-7 gap-1 text-center mb-1">
+            <span v-for="day in weekDays" :key="day" class="text-[10px] font-medium text-gray-400 uppercase py-1 cursor-default">
                 {{ day }}
             </span>
         </div>
         
-        <div class="grid grid-cols-7 gap-1 mb-15">
+        <div class="grid grid-cols-7 gap-1 mb-2">
             <div 
                 v-for="(date, index) in calendarDays" 
                 :key="index" 
-                class="aspect-square flex items-center justify-center rounded-full text-sm relative group cursor-pointer transition-colors"
+                class="aspect-square flex items-center justify-center rounded-lg text-sm relative group cursor-pointer transition-colors"
                 :class="{
                     'text-gray-300': date.isPadding,
                     'font-medium text-gray-700 hover:bg-gray-50': !date.isPadding && !date.isToday,
@@ -46,7 +46,8 @@
             >
                 {{ date.day }}
                 <!-- Event Indicator -->
-                <span v-if="!date.isPadding && date.hasEvent && !date.isToday" class="absolute bottom-1 h-1 w-1 rounded-full bg-teal-400"></span>
+                <span v-if="!date.isPadding && date.hasEvent && !date.isToday" class="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-rose-500 shadow-sm ring-1 ring-white"></span>
+                <span v-if="date.isToday && date.hasEvent" class="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-white shadow-sm"></span>
 
                 <!-- Tooltip -->
                 <div 
