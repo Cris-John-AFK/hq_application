@@ -5,6 +5,7 @@ import Employees from '../components/admin/Employees.vue';
 import AdminAttendance from '../components/admin/Attendance.vue';
 import Schedules from '../components/admin/Schedules.vue';
 import Reports from '../components/admin/Reports.vue';
+import ManageLeaves from '../components/admin/ManageLeaves.vue';
 import Settings from '../components/admin/Settings.vue';
 import LoginForm from '../components/login/loginForm.vue';
 
@@ -32,31 +33,31 @@ const routes = [
         path: '/employees',
         name: 'Employees',
         component: Employees,
-        meta: { title: 'HQ Inc. - Employees Page', requiresAuth: true }
+        meta: { title: 'HQ Inc. - Employees Page', requiresAuth: true, requiresAdmin: true }
     },
     {
         path: '/attendance',
         name: 'Attendance',
         component: AdminAttendance,
-        meta: { title: 'HQ Inc. - Attendance Page', requiresAuth: true }
+        meta: { title: 'HQ Inc. - Attendance Page', requiresAuth: true, requiresAdmin: true }
     },
     {
         path: '/schedules',
         name: 'Schedules',
         component: Schedules,
-        meta: { title: 'HQ Inc. - Schedules Page', requiresAuth: true }
+        meta: { title: 'HQ Inc. - Schedules Page', requiresAuth: true, requiresAdmin: true }
     },
     {
         path: '/reports',
         name: 'Reports',
         component: Reports,
-        meta: { title: 'HQ Inc. - Reports Page', requiresAuth: true }
+        meta: { title: 'HQ Inc. - Reports Page', requiresAuth: true, requiresAdmin: true }
     },
     {
         path: '/manage-leaves',
         name: 'ManageLeaves',
-        component: Settings, // We'll reuse Settings component for now, rename it later
-        meta: { title: 'HQ Inc. - Manage Leaves', requiresAuth: true }
+        component: ManageLeaves,
+        meta: { title: 'HQ Inc. - Manage Leaves', requiresAuth: true, requiresAdmin: true }
     },
     // User Routes
     {
@@ -89,20 +90,38 @@ router.beforeEach(async (to, from, next) => {
 
     const authStore = useAuthStore();
 
+    // 1. Check Authentication
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-        // Try to fetch user to restore session if it exists (e.g. on refresh)
         await authStore.fetchUser();
 
         if (!authStore.isAuthenticated) {
             next('/login');
-        } else {
-            next();
+            return;
         }
-    } else if (to.path === '/login' && authStore.isAuthenticated) {
-        next('/dashboard');
-    } else {
-        next();
     }
+
+    // 2. Redirect logged-in users away from login page
+    if (to.path === '/login' && authStore.isAuthenticated) {
+        next('/dashboard');
+        return;
+    }
+
+    // 3. Role-Based Access Control (RBAC) Implementation
+    if (to.meta.requiresAdmin) {
+        // Ensure user data is loaded (double check)
+        if (!authStore.user) {
+            await authStore.fetchUser();
+        }
+
+        // Check if user is Admin
+        if (authStore.user?.role !== 'admin') {
+            console.warn(`Unauthorized access attempt to ${to.path} by user ${authStore.user?.name}`);
+            next('/dashboard'); // or redirect to a 403 Forbidden page
+            return;
+        }
+    }
+
+    next();
 });
 
 export default router;

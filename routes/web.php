@@ -27,6 +27,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/users', [\App\Http\Controllers\UserController::class, 'index']);
     Route::post('/api/users', [\App\Http\Controllers\UserController::class, 'store']);
     Route::put('/api/users/{id}/password', [\App\Http\Controllers\UserController::class, 'changeUserPassword']);
+    
+    // Leave Routes
+    Route::get('/api/leave-requests', [\App\Http\Controllers\LeaveRequestController::class, 'index']);
+    Route::post('/api/leave-requests', [\App\Http\Controllers\LeaveRequestController::class, 'store']);
+    Route::put('/api/leave-requests/{leaveRequest}', [\App\Http\Controllers\LeaveRequestController::class, 'update']);
+    Route::get('/api/users/{id}/leave-history', [\App\Http\Controllers\LeaveRequestController::class, 'userHistory']);
+    
     // Catch-all meant for Vue Router
     Route::get('/{any}', function () {
         return response()

@@ -27,7 +27,14 @@ class User extends Authenticatable
         'department',
         'status',
         'avatar',
+        'employment_status',
+        'sil_credits',
     ];
+
+    public function leaveRequests()
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
 
     /**
      * The attributes that should be hidden for serialization.

@@ -21,8 +21,15 @@ A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js
   - Employee List with search, filter, pagination, and **Add Employee** functionality (Manual ID `HQI-XXXX`)
   - **Inline Action Buttons**: View Leaves, **Change Password** (with confirmation), Mark On Leave
   - **Instant Tooltips**: Fast-appearing custom tooltips for better UX
-  - **Manage Leaves** page (replaces Settings) for leave request management
-  - Leave request management with custom radio button UI
+  - **Manage Leaves** (Comprehensive HR Module):
+    - Detailed tracking of Employee, Status, Leave Type (SIL, Maternity, Emergency, etc.)
+    - Request Types: Leave, Halfday, Undertime, Official Business with specific time tracking
+    - **Backtracking & Reporting**: Backtrack all usage, detailed duration logging
+    - **Admin Controls**: Mark leaves as "With Pay" or "Unpaid", approve/reject with remarks
+    - **Leave Credits**: SIL balance tracking and employment status (Regular/Probationary) visibility
+    - **Secure Role-Based Access**: Admin-only route protection prevents unauthorized access
+    - Advanced filtering by status, type, and search
+  - Leave request management with internal workflow
   - Attendance tracking and reporting
   - Modern stacked area chart with ApexCharts showing attendance trends
   - **Enhanced Calendar Modal**: Two-column layout with calendar and Today's Schedule sidebar
