@@ -22,10 +22,7 @@
                         class="h-10 pl-10 pr-8 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-white appearance-none cursor-pointer w-full"
                     >
                         <option value="All">All Departments</option>
-                        <option value="Engineering">Engineering</option>
-                        <option value="Design">Design</option>
-                        <option value="Marketing">Marketing</option>
-                        <option value="HR">Human Resources</option>
+                        <option v-for="dept in departments" :key="dept" :value="dept">{{ dept }}</option>
                     </select>
                 </div>
                 <!-- Status Filter -->
@@ -221,6 +218,7 @@
         <AddEmployeeModal 
             v-model="showAddModal" 
             :loading="isCreating"
+            :departments="departments"
             @submit="handleCreateEmployee"
         />
 
@@ -229,6 +227,7 @@
             v-model="showEditModal" 
             :employee="selectedEmployee"
             :loading="isEditing"
+            :departments="departments"
             @submit="handleUpdateEmployee"
         />
 
@@ -284,6 +283,17 @@ const selectedEmployee = ref(null);
 // Employee Data
 const employees = ref([]);
 
+// Departments Data
+const departments = ref([]);
+const fetchDepartments = async () => {
+    try {
+        const response = await axios.get('/api/departments');
+        departments.value = response.data.map(d => d.name);
+    } catch (error) {
+        console.error('Failed to fetch departments:', error);
+    }
+};
+
 const fetchEmployees = async () => {
     isLoading.value = true;
     try {
@@ -294,7 +304,8 @@ const fetchEmployees = async () => {
             email: user.email,
             avatar: user.avatar_url, // Use the full URL provided by the backend accessor
             empId: user.id_number || 'N/A',
-            department: user.department || 'N/A',
+            // Department Logic for new users or existing
+            department: user.department?.name || user.department || 'N/A', 
             role: user.role, // admin or user
             status: user.status || 'Available',
             position: user.position || 'Employee',
@@ -308,6 +319,7 @@ const fetchEmployees = async () => {
 };
 
 const getInitials = (name) => {
+    if (!name) return '??';
     return name
         .split(' ')
         .map(n => n[0])
@@ -315,6 +327,12 @@ const getInitials = (name) => {
         .toUpperCase()
         .substring(0, 2);
 };
+
+onMounted(() => {
+    fetchEmployees();
+    fetchDepartments();
+    document.addEventListener('click', closeActionMenu);
+});
 
 const handleCreateEmployee = async (formData) => {
     isCreating.value = true;

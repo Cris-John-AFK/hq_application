@@ -1,7 +1,7 @@
 <template>
     <div class="max-w-7xl mx-auto">
         <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-3">
                 <StatCard 
                     icon="pi-users" 
                     :value="totalUsers" 
@@ -18,17 +18,24 @@
                 />
                 <StatCard 
                     icon="pi-times-circle" 
-                    value=" 0" 
+                    value="0" 
                     label="Absent" 
                     iconBgClass="bg-red-50"
                     iconTextClass="text-red-500"
                 />
                 <StatCard 
                     icon="pi-clock" 
+                    value="2" 
+                    label="Late" 
+                    iconBgClass="bg-amber-50"
+                    iconTextClass="text-amber-500"
+                />
+                <StatCard 
+                    icon="pi-calendar" 
                     :value="leaveStats.on_leave_today" 
                     label="On Leave" 
-                    iconBgClass="bg-yellow-50"
-                    iconTextClass="text-yellow-500"
+                    iconBgClass="bg-purple-50"
+                    iconTextClass="text-purple-500"
                 />
         </div>
 
@@ -274,7 +281,7 @@
     
     const isLoadingEmployees = ref(false);
     const employees = ref([]);
-    const totalUsers = ref(0);
+    const totalUsers = computed(() => employees.value.length);
     const getInitials = (name) => {
         if (!name) return '??';
         return name
@@ -284,14 +291,6 @@
             .toUpperCase()
             .substring(0, 2);
     };
-    const fetchTotalUsers = async () => {
-        try {
-            const response = await axios.get('/api/users/total');
-            totalUsers.value = response.data.total;
-        } catch (err) {
-            console.error('Failed to fetch total users:', err);
-        }
-    }
 
     const fetchEmployees = async () => {
         isLoadingEmployees.value = true;
@@ -324,7 +323,6 @@
 
     onMounted(() => {
         fetchEmployees();
-        fetchTotalUsers();
         leaveStore.fetchStats();
     });
 

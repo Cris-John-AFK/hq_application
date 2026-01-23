@@ -11,7 +11,7 @@
                 <div class="relative w-10 h-10 mr-4 transform transition-transform group-hover:scale-105">
                     <!-- Placeholder Logo: Replace src with your actual logo path (e.g., /images/logo.png) -->
                     <img 
-                        src="https://placehold.co/100x100/14b8a6/ffffff?text=HQ" 
+                        src="/logo.png" 
                         alt="HQ Logo" 
                         class="w-full h-full object-cover rounded-xl shadow-lg shadow-teal-500/20"
                     />

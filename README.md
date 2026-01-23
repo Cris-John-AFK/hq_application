@@ -11,17 +11,20 @@ A professional, high-performance web application built with **Laravel 12**, **Po
 - **Real-time Synchronization**: Live 12-hour clock and dynamic breadcrumbs in the topbar.
 
 ### 📊 Advanced Admin Dashboard
-- **Activity Pagination**: "Recent Attendance" and "Recent Leaves" feeds support clean pagination (5 per page) to handle high activity volumes without clutter.
+- **5-Column Stats Grid**: Real-time tracking of **Total Employees**, **Present**, **Absent**, **Late**, and **On Leave** metrics.
+- **Activity Pagination**: "Recent Attendance" and "Recent Leaves" feeds support clean pagination (5 per page).
 - **Pulse Notifications**: Real-time red pulse badges on the dashboard tabs alert admins to new pending leave requests.
 - **Pending Highlights**: "New" animated badges on list items catch immediate attention for pending tasks.
-- **Visual Analytics**: Interactive attendance trend charts powered by ApexCharts.
+- **Visual Analytics**: Professional grouped bar charts for clear, comparison-ready attendance visualization (Present, Absent, Late, Leave).
 
 ### 📅 Smart Calendar & Scheduling
-- **Centralized Calendar Activities**: Dedicated page (`/schedules`) providing a full-screen view of company-wide activities.
-- **Holiday Integration**: Built-in Philippine Holiday tracking (Regular & Special Non-Working) visualized alongside employee leaves.
-- **Live Event Integration**: Reflects **real-time approved leave requests** directly on the calendar.
-- **Dynamic Daily Schedule**: Automatically lists employees on leave for the current day, providing HR with an instant "Who's Out" overview.
-- **Interactive Tooltips**: Hover over calendar dates to see specific names and leave types of employees away.
+- **Manage Calendar Activities**: A dedicated full-screen module (`/schedules`) for high-level organizational planning.
+- **Dynamic Event Management**: Admins can **Create**, **View**, and **Delete** custom company events, meetings, and local holidays.
+- **Interactive Daily Overview**: Click any date to see a detailed popup containing:
+    -   **Staff On Leave**: List of employees away with their avatars and leave types.
+    -   **Event Details**: Full titles and descriptions for company activities and holidays.
+- **Hybrid Data Layer**: Seamlessly merges Philippine Public Holidays (static) with User-Created Events (dynamic) and Approved Leaves (real-time).
+- **Color-Coded Intelligence**: Instant visual distinction between Leaves (Purple), Regular Holidays (Red), Special Holidays (Orange), and Events (Blue).
 
 ### 📁 Unified Leave Management (HR Module)
 - **Personnel Leave Authorization Form**: A pixel-perfect digital replica of the physical authorization form with strict validation.
@@ -62,6 +65,16 @@ A professional, high-performance web application built with **Laravel 12**, **Po
 - **State Management**: Pinia
 - **Database**: PostgreSQL
 - **Data Vis**: ApexCharts & Chart.js
+
+### 📑 Integrated Reporting Center
+- **Annual Company Report**: Detailed breakdown including Headcount, Attendance Rate, Absenteeism, Tardiness, **Undertime / Half Day**, and **Total Undertime (mins)**.
+- **Departmental Analytics**: Monthly deep-dive into each department's Scheduled vs Actual Hours, **Regular Hours**, Overtime, Excess Hours, and **Excess Overtime Employee Count**.
+- **Excel Export**: One-click download of all report data for offline analysis.
+- **Mock Data Engine**: Reports are powered by a realistic simulation engine for instant demonstration.
+
+### 🏢 Dynamic Department Management
+- **Centralized Management**: Dedicated `departments` database table for scalable organizational structure.
+- **Dynamic Assignment**: Employees can be assigned to departments dynamically via the "Add/Edit Employee" modals.
 
 ## 🚀 Installation & Setup
 

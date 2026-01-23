@@ -27,7 +27,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/users', [\App\Http\Controllers\UserController::class, 'index']);
     Route::post('/api/users', [\App\Http\Controllers\UserController::class, 'store']);
     Route::put('/api/users/{id}', [\App\Http\Controllers\UserController::class, 'updateEmployee']);
+    Route::put('/api/users/{id}', [\App\Http\Controllers\UserController::class, 'updateEmployee']);
     Route::put('/api/users/{id}/password', [\App\Http\Controllers\UserController::class, 'changeUserPassword']);
+    
+    // Departments
+    Route::get('/api/departments', [\App\Http\Controllers\DepartmentController::class, 'index']);
+    Route::post('/api/departments', [\App\Http\Controllers\DepartmentController::class, 'store']);
+
+    // Reports (Mocked)
+    Route::get('/api/reports/annual', [\App\Http\Controllers\ReportController::class, 'annualAttendance']);
+    Route::get('/api/reports/monthly-department', [\App\Http\Controllers\ReportController::class, 'monthlyDepartment']);
     
     // Leave Routes
     Route::get('/api/leave-requests/export', [\App\Http\Controllers\LeaveRequestController::class, 'export']);

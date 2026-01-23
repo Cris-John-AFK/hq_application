@@ -34,11 +34,7 @@
                         required
                     >
                         <option value="" disabled>Select Department</option>
-                        <option value="Engineering">Engineering</option>
-                        <option value="Design">Design</option>
-                        <option value="Marketing">Marketing</option>
-                        <option value="HR">Human Resources</option>
-                        <option value="Sales">Sales</option>
+                        <option v-for="dept in departments" :key="dept" :value="dept">{{ dept }}</option>
                     </select>
                 </div>
 
@@ -137,7 +133,13 @@ import { reactive, watch } from 'vue';
 const props = defineProps({
     modelValue: Boolean,
     loading: Boolean,
-    employee: Object
+    modelValue: Boolean,
+    loading: Boolean,
+    employee: Object,
+    departments: {
+        type: Array,
+        default: () => []
+    }
 });
 
 const emit = defineEmits(['update:modelValue', 'submit']);
