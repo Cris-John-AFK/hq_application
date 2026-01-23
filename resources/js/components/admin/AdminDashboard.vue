@@ -260,6 +260,7 @@
 <script setup>
     import { ref, onMounted, computed } from 'vue';
     import { useAuthStore } from '../../stores/auth';
+    import { useLeaveStore } from '../../stores/leaves';
     import { storeToRefs } from 'pinia';
     import StatCard from '../common/StatCard.vue';
     import AttendanceChart from '../common/AttendanceChart.vue';
@@ -267,10 +268,13 @@
     import axios from 'axios';
 
     const authStore = useAuthStore();
+    const leaveStore = useLeaveStore();
     const { user } = storeToRefs(authStore);
+    const { stats: leaveStats } = storeToRefs(leaveStore);
+    
     const isLoadingEmployees = ref(false);
     const employees = ref([]);
-    const totalUsers = computed(() => employees.value.length);
+    const totalUsers = ref(0);
     const getInitials = (name) => {
         if (!name) return '??';
         return name
@@ -318,26 +322,10 @@
     const leavesPage = ref(1);
     const pageSize = ref(5);
 
-    const leaveStats = ref({
-        pending: 0,
-        approved: 0,
-        rejected: 0,
-        cancelled: 0,
-        on_leave_today: 0,
-        recent: []
-    });
-
-    const fetchLeaveStats = async () => {
-        try {
-            const res = await axios.get('/api/leave-stats');
-            leaveStats.value = res.data;
-        } catch (e) { console.error(e); }
-    };
-
     onMounted(() => {
         fetchEmployees();
         fetchTotalUsers();
-        fetchLeaveStats();
+        leaveStore.fetchStats();
     });
 
     // Recent Attendance Data

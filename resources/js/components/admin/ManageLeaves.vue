@@ -10,7 +10,7 @@
                     </div>
                     <button 
                         @click="exportReport" 
-                        class="flex items-center gap-2 px-4 py-2 bg-teal-600 border border-teal-500 text-white rounded-lg hover:bg-teal-700 transition-colors shadow-sm font-semibold"
+                        class="cursor-pointer flex items-center gap-2 px-4 py-2 bg-teal-600 border border-teal-500 text-white rounded-lg hover:bg-teal-700 transition-colors shadow-sm font-semibold"
                     >
                         <i class="pi pi-download"></i>
                         <span>{{ filters.user_id ? 'Export Employee Record' : 'Export General Report' }}</span>
@@ -127,9 +127,9 @@
                     <div class="relative flex-1 w-full">
                         <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         <input 
-                            v-model="filters.search" 
+                            v-model="searchQuery" 
                             type="text" 
-                            placeholder="Search by employee name or ID..." 
+                            placeholder="Search by name or Employee ID (e.g. HQI-0001)..." 
                             class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
                         >
                     </div>
@@ -205,8 +205,11 @@
                                                 </div>
                                             </div>
                                             <div>
-                                                <p class="font-bold text-gray-800 text-sm">{{ request.user?.name }}</p>
-                                                <p class="text-xs text-gray-400">{{ request.user?.department }}</p>
+                                                <div class="flex items-center gap-2">
+                                                    <p class="font-bold text-gray-800 text-sm">{{ request.user?.name }}</p>
+                                                    <span class="text-[9px] font-mono px-1 bg-gray-100 text-gray-500 rounded border border-gray-200">{{ request.user?.id_number }}</span>
+                                                </div>
+                                                <p class="text-xs text-gray-400 font-medium">{{ request.user?.department }}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -255,215 +258,258 @@
                     
                     <!-- Pagination -->
                     <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-between items-center text-sm">
-                        <span class="text-gray-500">Showing {{ requests.length }} records</span>
-                        <div class="flex gap-2">
-                            <button class="px-3 py-1 border rounded bg-white disabled:opacity-50" :disabled="page === 1" @click="page--">Prev</button>
-                            <button class="px-3 py-1 border rounded bg-white disabled:opacity-50" @click="page++">Next</button>
+                        <span class="text-gray-500 font-medium">Showing {{ requests.length }} of {{ totalRecords }} records</span>
+                        <div class="flex items-center gap-4">
+                            <span class="text-gray-400 text-xs font-bold uppercase tracking-widest">Page {{ page }} of {{ lastPage }}</span>
+                            <div class="flex gap-2">
+                                <button 
+                                    class="px-3 py-1.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-white text-gray-600 transition-colors shadow-sm font-bold text-xs uppercase" 
+                                    :disabled="page === 1 || loading" 
+                                    @click="page--"
+                                >
+                                    Prev
+                                </button>
+                                <button 
+                                    class="px-3 py-1.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-white text-gray-600 transition-colors shadow-sm font-bold text-xs uppercase" 
+                                    :disabled="page >= lastPage || loading" 
+                                    @click="page++"
+                                >
+                                    Next
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Detail Modal -->
                 <div v-if="selectedRequest" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" @click.self="closeModal">
-                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col">
                         <!-- Modal Header -->
                         <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                             <div>
-                                <h2 class="text-xl font-bold text-gray-800">Leave Request Details</h2>
-                                <p class="text-sm text-gray-500">RID-{{ String(selectedRequest.id).padStart(6, '0') }}</p>
+                                <h2 class="text-xl font-bold text-gray-800">Review Leave Request</h2>
+                                <p class="text-xs text-gray-500 font-mono mt-1">RID-{{ String(selectedRequest.id).padStart(6, '0') }}</p>
                             </div>
-                            <button @click="closeModal" class="p-2 hover:bg-gray-200 rounded-full text-gray-500 transition-colors"><i class="pi pi-times"></i></button>
+                            <button @click="closeModal" class="cursor-pointer p-2 hover:bg-gray-200 rounded-full text-gray-500 transition-colors"><i class="pi pi-times"></i></button>
                         </div>
 
                         <!-- Modal Content -->
-                        <div class="flex-1 overflow-y-auto p-6">
-                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                <!-- Left Col: Employee Profile -->
-                                <div class="lg:col-span-1 space-y-6">
-                                    <div class="text-center p-6 bg-gray-50 rounded-xl border border-gray-200">
-                                        <div class="w-20 h-20 mx-auto rounded-full bg-white p-1 shadow-sm mb-3">
-                                            <img v-if="selectedRequest.user?.avatar_url" :src="selectedRequest.user.avatar_url" class="w-full h-full rounded-full object-cover">
-                                            <div v-else class="w-full h-full rounded-full bg-teal-100 flex items-center justify-center text-teal-600 text-2xl font-bold">
-                                                {{ getInitials(selectedRequest.user?.name) }}
-                                            </div>
+                        <div class="flex-1 overflow-y-auto p-6 bg-gray-50/30">
+                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                
+                                <!-- Left Panel: Context & Analysis (New) -->
+                                <div class="lg:col-span-4 space-y-4">
+                                    <!-- User Card -->
+                                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-3">
+                                        <div class="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold overflow-hidden">
+                                            <img v-if="selectedRequest.user?.avatar_url" :src="selectedRequest.user.avatar_url" class="w-full h-full object-cover">
+                                            <span v-else>{{ getInitials(selectedRequest.user?.name) }}</span>
                                         </div>
-                                        <h3 class="font-bold text-gray-800">{{ selectedRequest.user?.name }}</h3>
-                                        <p class="text-sm text-gray-500">{{ selectedRequest.user?.position || 'Employee' }}</p>
-                                        <span class="inline-block mt-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
-                                            {{ selectedRequest.user?.employment_status || 'Probationary' }}
-                                        </span>
+                                        <div>
+                                            <h3 class="font-bold text-gray-800 text-sm">{{ selectedRequest.user?.name }}</h3>
+                                            <p class="text-xs text-gray-500">{{ selectedRequest.user?.position }} • {{ selectedRequest.user?.department }}</p>
+                                        </div>
                                     </div>
 
-                                    <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                                        <h4 class="text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">Service Incentive Leave (SIL)</h4>
-                                        <div class="space-y-2">
-                                            <div class="flex justify-between items-center">
-                                                <span class="text-sm text-gray-600">Total of SIL:</span>
-                                                <span class="text-xl font-bold text-blue-600">{{ Number(selectedRequest.user?.leave_credits || 0).toFixed(2) }} days</span>
-                                            </div>
-                                            <div class="flex justify-between items-center">
-                                                <span class="text-sm text-gray-600">Request Duration:</span>
-                                                <span class="text-xl font-bold text-gray-700">{{ Number(selectedRequest.days_taken || 0).toFixed(2) }} days</span>
-                                            </div>
-                                            <div class="border-t border-blue-200 pt-2 mt-2">
-                                                <div v-if="Number(selectedRequest.user?.leave_credits || 0) >= Number(selectedRequest.days_taken || 0)" class="p-3 bg-green-50 border border-green-200 rounded-lg">
-                                                    <div class="flex items-center gap-2 text-green-700 mb-1">
-                                                        <i class="pi pi-check-circle"></i>
-                                                        <span class="font-bold text-sm text-green-700">Sufficient Credits</span>
+                                    <!-- Loading Analysis -->
+                                    <div v-if="loadingAnalysis" class="p-8 text-center text-gray-400 bg-white rounded-xl border border-gray-200 dashed">
+                                        <i class="pi pi-spin pi-spinner text-2xl mb-2"></i>
+                                        <p class="text-xs">Analyzing impact & patterns...</p>
+                                    </div>
+
+                                    <!-- Analysis Results -->
+                                    <div v-else-if="analysis" class="space-y-4 animate-in fade-in slide-in-from-left-4 duration-500">
+                                        
+                                        <!-- Patterns / Flags -->
+                                        <div v-if="analysis.patterns?.length > 0" class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                                            <h4 class="text-xs font-bold text-amber-800 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                <i class="pi pi-flag-fill"></i> Detected Patterns
+                                            </h4>
+                                            <div class="space-y-2">
+                                                <div v-for="(pat, idx) in analysis.patterns" :key="idx" class="flex gap-2 items-start bg-white/50 p-2 rounded-lg border border-amber-100">
+                                                    <i class="pi pi-exclamation-circle text-amber-600 mt-0.5"></i>
+                                                    <div>
+                                                        <p class="text-xs font-bold text-amber-900">{{ pat.label }}</p>
+                                                        <p class="text-[10px] text-amber-800/80">{{ pat.description }}</p>
                                                     </div>
-                                                    <div class="flex justify-between items-center mt-1">
-                                                        <span class="text-xs text-green-600 font-medium">Math: {{ Number(selectedRequest.user?.leave_credits || 0).toFixed(2) }} - {{ Number(selectedRequest.days_taken || 0).toFixed(2) }} =</span>
-                                                        <span class="text-lg font-bold text-green-600">
-                                                            {{ (Number(selectedRequest.user?.leave_credits || 0) - Number(selectedRequest.days_taken || 0)).toFixed(2) }} 
-                                                        </span>
-                                                    </div>
-                                                    <p class="text-[10px] text-green-600 font-bold mt-1 text-right italic uppercase tracking-wider">Total SIL Balance</p>
                                                 </div>
-                                                <div v-else class="bg-red-50 border border-red-200 rounded-lg p-3">
-                                                    <div class="flex items-center gap-2 text-red-700 mb-1">
-                                                        <i class="pi pi-exclamation-triangle"></i>
-                                                        <span class="font-bold text-sm">Insufficient Credits</span>
-                                                    </div>
-                                                    <div class="flex justify-between items-center mt-1 text-red-700">
-                                                        <span class="text-xs font-medium">Math: {{ Number(selectedRequest.user?.leave_credits || 0).toFixed(2) }} - {{ Number(selectedRequest.days_taken || 0).toFixed(2) }} =</span>
-                                                        <span class="text-lg font-bold">
-                                                            {{ (Number(selectedRequest.user?.leave_credits || 0) - Number(selectedRequest.days_taken || 0)).toFixed(2) }}
-                                                        </span>
-                                                    </div>
-                                                    <p class="text-[10px] text-red-600 font-bold mt-1 text-right italic uppercase tracking-wider">Warning: Negative Balance Output</p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Compliance Check -->
+                                        <div :class="['rounded-xl p-4 border', analysis.compliance?.passed ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200']">
+                                            <h4 :class="['text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2', analysis.compliance?.passed ? 'text-green-800' : 'text-red-800']">
+                                                <i :class="['pi', analysis.compliance?.passed ? 'pi-verified' : 'pi-ban']"></i>
+                                                Compliance Check
+                                            </h4>
+                                            <p v-if="!analysis.compliance?.passed" class="text-xs font-bold text-red-700">
+                                                {{ analysis.compliance.message }}
+                                            </p>
+                                            <p v-else class="text-xs text-green-700">
+                                                Request adheres to {{ selectedRequest.leave_type }} policy rules.
+                                            </p>
+                                        </div>
+
+                                        <!-- Department Impact -->
+                                        <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Department Impact</h4>
+                                            <div v-if="analysis.impact">
+                                                <div class="flex justify-between items-end mb-1">
+                                                    <span class="text-2xl font-black text-gray-800">{{ analysis.impact.absent_percentage }}%</span>
+                                                    <span class="text-xs text-gray-500 mb-1">of {{ analysis.impact.department }} absent</span>
                                                 </div>
+                                                <div class="w-full bg-gray-100 rounded-full h-2 mb-3 overflow-hidden">
+                                                    <div 
+                                                        class="h-full rounded-full transition-all duration-1000" 
+                                                        :style="{ width: `${analysis.impact.absent_percentage}%` }"
+                                                        :class="analysis.impact.absent_percentage > 20 ? 'bg-red-500' : 'bg-teal-500'"
+                                                    ></div>
+                                                </div>
+                                                <div v-if="analysis.impact.others_on_leave_count > 0">
+                                                    <p class="text-xs font-bold text-gray-600 mb-1">Also on leave:</p>
+                                                    <ul class="text-xs text-gray-500 list-disc pl-4">
+                                                        <li v-for="name in analysis.impact.others_on_leave_details" :key="name">{{ name }}</li>
+                                                    </ul>
+                                                </div>
+                                                <p v-else class="text-xs text-gray-400 italic">No overlap with others.</p>
+                                            </div>
+                                            <p v-else class="text-xs text-gray-400">No department info available.</p>
+                                        </div>
+
+                                        <!-- Credit Forecast -->
+                                        <div class="bg-blue-50/50 rounded-xl p-4 border border-blue-100">
+                                            <h4 class="text-xs font-bold text-blue-800 uppercase tracking-widest mb-3">Credit Forecast</h4>
+                                            <div class="flex justify-between items-center mb-2">
+                                                <span class="text-xs text-gray-600">Current Balance</span>
+                                                <span class="font-bold text-gray-800">{{ Number(selectedRequest.user?.leave_credits || 0).toFixed(2) }}</span>
+                                            </div>
+                                            <div class="flex justify-between items-center mb-2">
+                                                <span class="text-xs text-gray-600">This Request</span>
+                                                <span class="font-bold text-red-600">-{{ Number(selectedRequest.days_taken).toFixed(2) }}</span>
+                                            </div>
+                                            <div class="border-t border-blue-200 py-2">
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-xs font-bold text-blue-700">Projected Year-End</span>
+                                                    <span class="font-bold text-blue-700">{{ analysis.forecast?.projected_balance ? Number(analysis.forecast.projected_balance).toFixed(2) : '---' }}</span>
+                                                </div>
+                                                <p class="text-[10px] text-blue-600/80 mt-1 leading-tight">{{ analysis.forecast?.message }}</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Right Col: Request Details -->
-                                <div class="lg:col-span-2 space-y-6">
-                                    <!-- Status Banner -->
-                                    <div :class="[
-                                        'p-4 rounded-lg flex items-center gap-3 border',
-                                        selectedRequest.status === 'Approved' ? 'bg-green-50 border-green-200 text-green-700' :
-                                        selectedRequest.status === 'Pending' ? 'bg-orange-50 border-orange-200 text-orange-700' :
-                                        'bg-red-50 border-red-200 text-red-700'
-                                    ]">
-                                        <i :class="[
-                                            'pi text-xl',
-                                            selectedRequest.status === 'Approved' ? 'pi-check-circle' :
-                                            selectedRequest.status === 'Pending' ? 'pi-clock' :
-                                            'pi-times-circle'
-                                        ]"></i>
-                                        <div>
-                                            <p class="font-bold">Status: {{ selectedRequest.status }}</p>
-                                            <p class="text-xs opacity-80" v-if="selectedRequest.status !== 'Pending'">
-                                                Processed on {{ formatDate(selectedRequest.updated_at) }}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Details Grid -->
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                            <p class="text-xs text-gray-500 uppercase font-bold mb-1">Leave Type</p>
-                                            <p class="font-medium text-gray-800">{{ selectedRequest.leave_type }}</p>
-                                        </div>
-                                        <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                            <p class="text-xs text-gray-500 uppercase font-bold mb-1">Duration</p>
-                                            <p class="font-medium text-gray-800">{{ selectedRequest.days_taken }} Days</p>
-                                        </div>
-                                        <div class="p-3 bg-gray-50 rounded-lg border border-gray-100 col-span-2">
-                                            <p class="text-xs text-gray-500 uppercase font-bold mb-1">Date Coverage</p>
-                                            <p class="font-medium text-gray-800">
-                                                {{ formatDate(selectedRequest.from_date) }} 
-                                                <span v-if="selectedRequest.to_date"> - {{ formatDate(selectedRequest.to_date) }}</span>
-                                            </p>
-                                            <p v-if="selectedRequest.start_time" class="text-sm text-gray-500 mt-1">
-                                                Time: {{ formatTime(selectedRequest.start_time) }} - {{ formatTime(selectedRequest.end_time) }}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Reason -->
-                                    <div>
-                                        <h4 class="font-bold text-gray-700 mb-2">Reason for Leave</h4>
-                                        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 text-gray-700 italic border-l-4 border-l-teal-500">
-                                            "{{ selectedRequest.reason }}"
-                                        </div>
-                                    </div>
-
-                                    <!-- Admin Actions Area -->
-                                    <div class="border-t border-gray-100 pt-6">
-                                        <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                            <i class="pi pi-shield text-teal-600"></i> Admin Actions
-                                        </h4>
-                                        
-                                        <div class="space-y-4">
-                                            <!-- Payment Toggle -->
-                                            <div class="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-teal-400 transition-colors cursor-pointer" @click="togglePaid">
-                                                <div class="flex items-center gap-3">
-                                                    <div :class="['w-5 h-5 rounded border flex items-center justify-center transition-colors', selectedRequest.is_paid ? 'bg-teal-500 border-teal-500' : 'border-gray-300 bg-white']">
-                                                        <i class="pi pi-check text-white text-xs" v-if="selectedRequest.is_paid"></i>
-                                                    </div>
-                                                    <div>
-                                                        <p class="font-medium text-gray-800">Leave with Pay</p>
-                                                        <p class="text-xs text-gray-500">Mark this leave request as paid</p>
-                                                    </div>
+                                <!-- Right Panel: Request & Actions -->
+                                <div class="lg:col-span-8 space-y-6">
+                                    <!-- Main Request Info -->
+                                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                        <div class="flex justify-between items-start mb-6">
+                                            <div>
+                                                <span class="text-xs font-bold text-teal-600 uppercase tracking-wider">{{ selectedRequest.leave_type }}</span>
+                                                <h3 class="text-2xl font-bold text-gray-800 mt-1">{{ formatDate(selectedRequest.from_date) }} <span class="text-gray-400 font-normal">to</span> {{ formatDate(selectedRequest.to_date || selectedRequest.from_date) }}</h3>
+                                                <div class="flex items-center gap-2 mt-2">
+                                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                        {{ selectedRequest.days_taken }} Day(s)
+                                                    </span>
+                                                    <span class="text-sm text-gray-500">{{ selectedRequest.request_type }}</span>
                                                 </div>
                                             </div>
+                                            <div :class="[
+                                                'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border',
+                                                selectedRequest.status === 'Approved' ? 'bg-green-50 text-green-700 border-green-200' :
+                                                selectedRequest.status === 'Pending' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                                'bg-red-50 text-red-700 border-red-200'
+                                            ]">
+                                                {{ selectedRequest.status }}
+                                            </div>
+                                        </div>
 
-                                            <div class="p-3 rounded-lg border border-gray-200">
-                                                <div class="flex items-center justify-between mb-2">
-                                                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">No. of Days Paid</label>
-                                                    <span class="text-[10px] text-gray-400 italic">Adjust if partially paid</span>
+                                        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                                            <p class="text-xs text-gray-400 uppercase font-bold mb-2">Employee Reason</p>
+                                            <p class="text-gray-700 italic">"{{ selectedRequest.reason }}"</p>
+                                        </div>
+
+                                        <div v-if="selectedRequest.attachment_path" class="mb-2">
+                                            <a :href="selectedRequest.attachment_path" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg border border-purple-200 hover:bg-purple-100 transition-colors text-sm font-bold">
+                                                <i class="pi pi-download"></i>
+                                                View Supporting Document
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <!-- Decision Area -->
+                                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-lg ring-1 ring-gray-100">
+                                        <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                            <i class="pi pi-gavel text-teal-600"></i> Decision & Justification
+                                        </h4>
+
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                            <div>
+                                                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Payment Settings</label>
+                                                <div class="flex items-center gap-2 mb-3">
+                                                    <button 
+                                                        @click="selectedRequest.is_paid = !selectedRequest.is_paid"
+                                                        :class="['cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-sm font-medium', selectedRequest.is_paid ? 'bg-teal-50 border-teal-200 text-teal-700' : 'bg-white border-gray-200 text-gray-500']"
+                                                    >
+                                                        <i :class="['pi', selectedRequest.is_paid ? 'pi-check-circle' : 'pi-circle']"></i>
+                                                        With Pay
+                                                    </button>
                                                 </div>
-                                                <div class="flex items-center gap-2">
+                                                <div v-if="selectedRequest.is_paid" class="animate-in fade-in slide-in-from-top-1">
+                                                    <label class="text-[10px] uppercase font-bold text-gray-400">Days Paid</label>
                                                     <input 
+                                                        v-model="selectedRequest.days_paid" 
                                                         type="number" 
                                                         step="0.5" 
-                                                        v-model="selectedRequest.days_paid"
-                                                        class="w-full p-2 border border-gray-200 rounded-lg font-bold text-gray-800 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-center"
-                                                        placeholder="0.00"
+                                                        class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold"
                                                     >
-                                                    <span class="text-sm font-medium text-gray-500">Days</span>
                                                 </div>
                                             </div>
 
-                                            <!-- Remarks -->
                                             <div>
-                                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Admin Remarks</label>
+                                                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">
+                                                    Decision Justification <span class="text-red-500">*</span>
+                                                </label>
                                                 <textarea 
-                                                    v-model="adminRemarks" 
-                                                    rows="2" 
-                                                    class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm"
-                                                    placeholder="Add internal notes or remarks..."
+                                                    v-model="justification" 
+                                                    rows="3" 
+                                                    class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm transition-all"
+                                                    placeholder="Required: Explain why you are approving or rejecting this request..."
+                                                    :class="{'border-red-300 ring-2 ring-red-100': showJustificationError}"
                                                 ></textarea>
+                                                <p v-if="showJustificationError" class="text-xs text-red-500 mt-1 font-bold">Justification is required for this action.</p>
                                             </div>
+                                        </div>
 
-                                            <!-- Action Buttons -->
-                                            <div class="flex gap-3 pt-2">
-                                                <button 
-                                                    @click="updateStatus('Approved')" 
-                                                    class="cursor-pointer flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold shadow-sm shadow-green-200 transition-all active:scale-95"
-                                                    v-if="selectedRequest.status !== 'Approved'"
-                                                >
-                                                    Approve Request
-                                                </button>
-                                                
-                                                <button 
-                                                    @click="updateStatus('Rejected')"
-                                                    class="cursor-pointer flex-1 py-2.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg font-bold transition-all active:scale-95"
-                                                    v-if="selectedRequest.status === 'Pending' || selectedRequest.status === 'Cancelled'"
-                                                >
-                                                    Reject Request
-                                                </button>
+                                        <div class="flex gap-3 border-t border-gray-100 pt-6">
+                                            <button 
+                                                @click="handleAction('Approved')" 
+                                                class="cursor-pointer flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0"
+                                                v-if="selectedRequest.status !== 'Approved'"
+                                                :disabled="processing"
+                                            >
+                                                <i class="pi pi-check" v-if="!processing"></i>
+                                                <i class="pi pi-spin pi-spinner" v-else></i>
+                                                Approve Request
+                                            </button>
+                                            
+                                            <button 
+                                                @click="handleAction('Rejected')"
+                                                class="cursor-pointer flex-1 py-3 bg-white border-2 border-red-100 text-red-600 hover:bg-red-50 hover:border-red-200 rounded-lg font-bold transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0"
+                                                v-if="selectedRequest.status === 'Pending' || selectedRequest.status === 'Cancelled'"
+                                                :disabled="processing"
+                                            >
+                                                <i class="pi pi-times" v-if="!processing"></i>
+                                                Reject Request
+                                            </button>
 
-                                                <button 
-                                                    @click="updateStatus('Cancelled')"
-                                                    class="cursor-pointer flex-1 py-2.5 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg font-bold transition-all active:scale-95"
-                                                    v-if="selectedRequest.status === 'Approved'"
-                                                >
-                                                    Cancel Request
-                                                </button>
-                                            </div>
+                                            <button 
+                                                @click="handleAction('Cancelled')"
+                                                class="cursor-pointer flex-1 py-3 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-lg font-bold transition-all flex items-center justify-center gap-2"
+                                                v-if="selectedRequest.status === 'Approved'"
+                                                :disabled="processing"
+                                            >
+                                                Cancel Request
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -480,17 +526,30 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import { useAuthStore } from '../../stores/auth';
+import { useLeaveStore } from '../../stores/leaves';
 import { storeToRefs } from 'pinia';
 import MainLayout from '../../layouts/MainLayout.vue';
 
 const authStore = useAuthStore();
+const leaveStore = useLeaveStore();
 const { user } = storeToRefs(authStore);
+const { stats } = storeToRefs(leaveStore);
 
 const requests = ref([]);
 const loading = ref(false);
 const page = ref(1);
+const lastPage = ref(1);
+const totalRecords = ref(0);
+
+// Modal & Logic State
 const selectedRequest = ref(null);
-const adminRemarks = ref('');
+const analysis = ref(null);
+const loadingAnalysis = ref(false);
+const justification = ref('');
+const showJustificationError = ref(false);
+const processing = ref(false);
+const adminRemarks = ref(''); // Keep for backward compat or merge
+
 const filters = ref({
     search: '',
     status: '',
@@ -498,68 +557,53 @@ const filters = ref({
     user_id: ''
 });
 
-const stats = ref({
-    pending: 0,
-    approved: 0,
-    rejected: 0,
-    approved_this_month: 0,
-    scheduled: 0,
-    total_all_time: 0
+const searchQuery = ref('');
+let debounceTimeout = null;
+
+watch(searchQuery, (newVal) => {
+    if (debounceTimeout) clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(() => {
+        filters.value.search = newVal;
+    }, 300);
 });
-// Metrics from API
+
+// Use store stats
 const pendingCount = computed(() => stats.value.pending);
 const approvedCount = computed(() => stats.value.approved_this_month);
 const rejectedCount = computed(() => stats.value.rejected);
-const scheduledCount = computed(() => stats.value.cancelled); // Mapped to cancelled as per user change
+const scheduledCount = computed(() => stats.value.cancelled); // Mapped in AdminDashboard similarly? No, AdminDashboard uses cancelled. ManageLeaves mapped scheduled to cancelled? Let's check original.
+// Original ManageLeaves: scheduledCount = computed(() => stats.value.cancelled);
+// Wait, the template says "Cancelled Requests" for scheduledCount?
+// Line 110: <h3 ...>Cancelled</h3> and <p ...>Requests</p> inside the block where scheduledCount is used?
+// Let's check lines 106-111 of ManageLeaves.vue
+// original: 
+// 106: <div ...>{{ scheduledCount }}</div>
+// 110: <h3>Cancelled</h3>
+// But wait, the controller returns 'scheduled' and 'cancelled'.
+// Inspecting Controller:
+// 'cancelled' => $cancelled (LeaveRequest::where('status', 'Cancelled')->count())
+// 'scheduled' => $scheduled (Approved > now)
+// In ManageLeaves original: values were mapped:
+// const stats = ref({...})
+// const pendingCount = computed(() => stats.value.pending)
+// ...
+// const scheduledCount = computed(() => stats.value.cancelled); <-- This looks like a bug in original code or visual mismatch
+// The UI label says "Cancelled".
+// Let's map it to cancelled.
 const totalCount = computed(() => stats.value.total_all_time);
 
 const filteredEmployeeData = computed(() => {
     if (!filters.value.user_id || requests.value.length === 0) return null;
-    // Assuming all requests in filtered list belong to the same user
     return requests.value[0]?.user;
 });
 
-const fetchStats = async () => {
-    try {
-        const response = await axios.get('/api/leave-stats');
-        stats.value = response.data;
-    } catch (e) {
-        console.error("Fetch stats failed", e);
-    }
-};
-
 onMounted(async () => {
     authStore.fetchUser();
-    
-    // Check for query params
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('user_id');
-    const hlId = urlParams.get('highlight');
-    
-    if (userId) {
-        filters.value.user_id = userId;
-    }
-    
+    if (userId) filters.value.user_id = userId;
     await fetchRequests();
-    fetchStats();
-
-    // Check for highlight param
-    if (hlId) {
-        let target = requests.value.find(r => r.id == hlId);
-        if (!target) {
-             try {
-                const res = await axios.get('/api/leave-requests', { params: { id: hlId } });
-                if (res.data.data && res.data.data.length > 0) {
-                    target = res.data.data[0];
-                }
-             } catch(e) {}
-        }
-        if (target) {
-            viewDetails(target);
-            // Optional: Remove query param to clean URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-    }
+    leaveStore.fetchStats();
 });
 
 const fetchRequests = async () => {
@@ -574,6 +618,8 @@ const fetchRequests = async () => {
         };
         const response = await axios.get('/api/leave-requests', { params });
         requests.value = response.data.data;
+        lastPage.value = response.data.last_page;
+        totalRecords.value = response.data.total;
     } catch (e) {
         console.error("Fetch failed", e);
     } finally {
@@ -581,10 +627,8 @@ const fetchRequests = async () => {
     }
 };
 
-watch(filters, () => {
-    page.value = 1;
-    fetchRequests();
-}, { deep: true });
+watch(filters, () => { page.value = 1; fetchRequests(); }, { deep: true });
+watch(page, () => { fetchRequests(); });
 
 // Helpers
 const getInitials = (name) => name ? name.match(/(\b\S)?/g).join("").match(/(^\S|\S$)?/g).join("").toUpperCase() : 'U';
@@ -597,33 +641,50 @@ const formatTime = (t) => {
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 };
 
-// Modal Logic
-const viewDetails = (req) => {
+// New Modal Logic
+const viewDetails = async (req) => {
     selectedRequest.value = { 
         ...req,
         days_paid: req.days_paid || req.days_taken || 0
-    }; // clone
+    };
+    justification.value = req.admin_remarks || ''; // Pre-fill if exists
     adminRemarks.value = req.admin_remarks || '';
+    
+    // Fetch Analysis
+    loadingAnalysis.value = true;
+    analysis.value = null;
+    try {
+        const res = await axios.get(`/api/leave-requests/${req.id}/analysis`);
+        analysis.value = res.data;
+    } catch (e) {
+        console.error("Failed to load analysis", e);
+    } finally {
+        loadingAnalysis.value = false;
+    }
 };
 
 const closeModal = () => {
     selectedRequest.value = null;
-    adminRemarks.value = '';
+    justification.value = '';
+    showJustificationError.value = false;
 };
 
-const togglePaid = () => {
-    selectedRequest.value.is_paid = !selectedRequest.value.is_paid;
-};
-
-const updateStatus = async (newStatus) => {
-    if (!confirm(`Are you sure you want to mark this as ${newStatus}?`)) return;
+const handleAction = async (newStatus) => {
+    if (!justification.value.trim()) {
+        showJustificationError.value = true;
+        return;
+    }
     
+    if (!confirm(`Confirm action: ${newStatus}?`)) return;
+    
+    processing.value = true;
     try {
         const payload = {
             status: newStatus,
             is_paid: selectedRequest.value.is_paid,
             days_paid: selectedRequest.value.days_paid || 0,
-            admin_remarks: adminRemarks.value
+            admin_remarks: justification.value, // Mapping justification to admin_remarks logic
+            justification: justification.value
         };
         
         await axios.put(`/api/leave-requests/${selectedRequest.value.id}`, payload);
@@ -634,12 +695,13 @@ const updateStatus = async (newStatus) => {
             requests.value[idx] = { ...requests.value[idx], ...payload, updated_at: new Date() };
         }
         
-        fetchStats(); // Refresh headers
+        leaveStore.fetchStats(true); // Force refresh
         closeModal();
-        // Show Toast Success
     } catch (e) {
-        console.error("Update failed", e);
-        alert('Failed to update request');
+        console.error("Action failed", e);
+        alert('Action failed: ' + (e.response?.data?.message || 'Server error'));
+    } finally {
+        processing.value = false;
     }
 };
 
@@ -650,7 +712,6 @@ const exportReport = () => {
         leave_type: filters.value.type,
         user_id: filters.value.user_id || ''
     });
-    
     window.location.href = `/api/leave-requests/export?${params.toString()}`;
 };
 </script>

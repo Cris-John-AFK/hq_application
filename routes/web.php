@@ -32,7 +32,18 @@ Route::middleware('auth')->group(function () {
     // Leave Routes
     Route::get('/api/leave-requests/export', [\App\Http\Controllers\LeaveRequestController::class, 'export']);
     Route::get('/api/leave-stats', [\App\Http\Controllers\LeaveRequestController::class, 'stats']);
+    
+    // Decision Support Routes
+    Route::get('/api/leave-requests/{id}/analysis', [\App\Http\Controllers\LeaveRequestController::class, 'getAnalysis']);
+    Route::get('/api/users/{id}/forecast', [\App\Http\Controllers\LeaveRequestController::class, 'getUserForecast']);
+    
     Route::get('/api/leave-requests', [\App\Http\Controllers\LeaveRequestController::class, 'index']);
+    Route::get('/api/calendar-events', [\App\Http\Controllers\LeaveRequestController::class, 'calendarEvents']);
+    // Custom Events
+    Route::get('/api/custom-events', [\App\Http\Controllers\CalendarEventController::class, 'index']);
+    Route::post('/api/custom-events', [\App\Http\Controllers\CalendarEventController::class, 'store']);
+    Route::delete('/api/custom-events/{id}', [\App\Http\Controllers\CalendarEventController::class, 'destroy']);
+    
     Route::post('/api/leave-requests', [\App\Http\Controllers\LeaveRequestController::class, 'store']);
     Route::put('/api/leave-requests/{leaveRequest}', [\App\Http\Controllers\LeaveRequestController::class, 'update']);
     Route::get('/api/users/{id}/leave-history', [\App\Http\Controllers\LeaveRequestController::class, 'userHistory']);

@@ -151,7 +151,7 @@
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- Calendar Section -->
                         <div>
-                            <EventCalendar />
+                            <EventCalendar :events="allEvents" />
                         </div>
 
                         <!-- Today's Schedule Section -->
@@ -187,6 +187,14 @@
                                     <div class="flex-1 min-w-0">
                                         <p class="font-medium text-gray-800 text-sm">{{ item.title }}</p>
                                         <p class="text-xs text-gray-500 mt-0.5">{{ item.description }}</p>
+                                        
+                                        <!-- Employee Details -->
+                                        <div class="flex flex-wrap gap-1.5 mt-1.5 mb-1">
+                                            <span v-if="item.id_number" class="text-[10px] font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">{{ item.id_number }}</span>
+                                            <span v-if="item.department" class="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">{{ item.department }}</span>
+                                            <span v-if="item.position" class="text-[10px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded border border-purple-100">{{ item.position }}</span>
+                                        </div>
+
                                         <div class="flex items-center gap-2 mt-1">
                                             <span 
                                                 :class="[
@@ -214,6 +222,8 @@
     import { ref, computed, onMounted, onUnmounted } from 'vue';
     import { useAuthStore } from '../stores/auth';
     import { useRoute } from 'vue-router';
+    import { useCalendarStore } from '../stores/calendar';
+    import { storeToRefs } from 'pinia';
     import EventCalendar from '../components/common/EventCalendar.vue';
 
     const route = useRoute();
@@ -233,9 +243,13 @@
         });
     };
 
+    const calendarStore = useCalendarStore();
+    const { events: allEvents } = storeToRefs(calendarStore);
+
     onMounted(() => {
         updateTime();
         timeInterval = setInterval(updateTime, 1000);
+        calendarStore.fetchEvents();
     });
 
     onUnmounted(() => {
@@ -252,6 +266,9 @@
 
     const toggleCalendar = () => {
         isCalendarOpen.value = !isCalendarOpen.value;
+        if (isCalendarOpen.value) {
+            calendarStore.fetchEvents(); // Will use cache if recent
+        }
     };
 
     const handleLogout = () => {
@@ -269,29 +286,30 @@
         });
     });
 
-    // Sample schedule data - replace with API call in production
+    // Today's schedule filtered from allEvents
     const todaySchedule = computed(() => {
-        // This would typically come from an API
-        return [
-            {
-                id: 1,
-                type: 'event',
-                title: 'Team Meeting',
-                description: '10:00 AM - Conference Room A'
-            },
-            {
-                id: 2,
-                type: 'leave',
-                title: 'John Doe - Sick Leave',
-                description: 'Full Day'
-            },
-            {
-                id: 3,
-                type: 'event',
-                title: 'Project Review',
-                description: '2:00 PM - Online'
-            }
-        ];
+        const today = new Date().toISOString().split('T')[0];
+        
+        const schedule = allEvents.value.filter(event => {
+            return event.from_date <= today && event.to_date >= today;
+        }).map(event => ({
+            id: event.id,
+            type: 'leave',
+            title: `${event.user_name} - ${event.leave_type}`,
+            description: event.request_type === 'Leave' ? 'Full Day Leave' : `${event.request_type}`,
+            id_number: event.user_id_number,
+            department: event.user_department,
+            position: event.user_position
+        }));
+
+        // Add dummy meetings for visual flavor if schedule is empty or as additional items
+        // In real app, you might have a meetings table too
+        if (schedule.length === 0) {
+            // Keep it empty or add something? The user wanted real data.
+            // I'll stick to real data from the events we have.
+        }
+
+        return schedule;
     });
 
     const menuItems = computed(() => {

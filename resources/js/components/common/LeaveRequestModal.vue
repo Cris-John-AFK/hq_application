@@ -147,7 +147,28 @@
                     </div>
                 </div>
 
-                <!-- 4. Reason -->
+                <!-- 4. Optional Attachment -->
+                <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm">
+                    <div class="mb-3">
+                        <span class="text-base font-medium text-gray-800">Supporting Document</span>
+                        <span class="text-gray-400 text-xs ml-1">(Optional)</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label class="cursor-pointer flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-200 transition-all group">
+                            <i class="pi pi-paperclip text-gray-400 group-hover:text-purple-600"></i>
+                            <span class="text-sm text-gray-600 group-hover:text-purple-700 font-medium">
+                                {{ attachmentName || 'Attach File' }}
+                            </span>
+                            <input type="file" ref="fileInput" @change="handleFileChange" class="hidden" accept=".jpg,.jpeg,.png,.pdf">
+                        </label>
+                        <span v-if="attachmentName" class="text-xs text-gray-400 cursor-pointer hover:text-red-500" @click="clearFile">
+                            <i class="pi pi-times"></i> Remove
+                        </span>
+                        <p class="text-xs text-gray-400 italic">Max 5MB. JPG, PNG, PDF only.</p>
+                    </div>
+                </div>
+
+                <!-- 5. Reason -->
                 <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm">
                     <div class="mb-3">
                         <span class="text-base font-medium text-gray-800">Reason for Leave / Halfday / Undertime</span>
@@ -211,8 +232,12 @@ const form = ref({
     numberOfHours: 0,
     startTime: '',
     endTime: '',
-    reason: ''
+    reason: '',
+    attachment: null
 });
+
+const attachmentName = ref('');
+const fileInput = ref(null);
 
 const requestTypes = ['Leave', 'Halfday', 'Undertime', 'Official Business'];
 const leaveTypes = ['SIL', 'Solo Parent', 'Maternity', 'VAWS', 'Paternity', 'Magna Carta', 'Emergency'];
@@ -276,6 +301,25 @@ watch([() => form.value.fromDate, () => form.value.toDate, () => form.value.requ
     }
 });
 
+const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        if (file.size > 2 * 1024 * 1024) { // 2MB
+            alert('File size exceeds 2MB limit.');
+            clearFile();
+            return;
+        }
+        form.value.attachment = file;
+        attachmentName.value = file.name;
+    }
+};
+
+const clearFile = () => {
+    form.value.attachment = null;
+    attachmentName.value = '';
+    if (fileInput.value) fileInput.value.value = '';
+};
+
 const closeModal = () => {
     emit('update:modelValue', false);
     resetForm();
@@ -322,8 +366,10 @@ const resetForm = () => {
         numberOfHours: 0,
         startTime: '',
         endTime: '',
-        reason: ''
+        reason: '',
+        attachment: null
     };
+    attachmentName.value = '';
     formError.value = '';
 };
 </script>
