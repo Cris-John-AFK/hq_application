@@ -7,7 +7,7 @@
                     <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">{{ formatDate(date.fullDate) }}</p>
                     <h3 class="font-bold text-gray-800 text-xl">Daily Overview</h3>
                 </div>
-                <button @click="close" class="w-8 h-8 rounded-full hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors">
+                <button @click="close" class="cursor-pointer w-8 h-8 rounded-full hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors">
                     <i class="pi pi-times"></i>
                 </button>
             </div>
@@ -62,10 +62,10 @@
                         <div v-for="leave in date.events" :key="leave.id" class="flex items-center gap-3 bg-purple-50/50 border border-purple-100 rounded-xl p-3">
                             <div class="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center shrink-0 overflow-hidden">
                                 <img v-if="leave.avatar" :src="leave.avatar" class="w-full h-full object-cover">
-                                <span v-else class="font-bold text-purple-700 text-sm">{{ leave.user_name.charAt(0) }}</span>
+                                <span v-else class="font-bold text-purple-700 text-sm">{{ (leave.user_name || leave.title || 'U').charAt(0) }}</span>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="font-bold text-gray-800 text-sm truncate">{{ leave.user_name }}</p>
+                                <p class="font-bold text-gray-800 text-sm truncate">{{ leave.user_name || leave.title }}</p>
                                 <p class="text-xs text-gray-500">{{ leave.leave_type }}</p>
                             </div>
                             <div class="text-right">

@@ -352,20 +352,22 @@ class LeaveRequestController extends Controller
 
     public function calendarEvents(Request $request)
     {
-        $query = LeaveRequest::with('user:id,name,avatar,department,position,id_number')
+        // 1. Fetch Approved Leaves
+        $leaveQuery = LeaveRequest::with('user:id,name,avatar,department,position,id_number')
             ->where('status', 'Approved');
 
         if ($request->filled('month')) {
-            $query->whereMonth('from_date', $request->month);
+            $leaveQuery->whereMonth('from_date', $request->month);
         }
 
         if ($request->filled('year')) {
-            $query->whereYear('from_date', $request->year);
+            $leaveQuery->whereYear('from_date', $request->year);
         }
 
-        $events = $query->get()->map(function ($leave) {
+        $leaves = $leaveQuery->get()->map(function ($leave) {
             return [
-                'id' => $leave->id,
+                'id' => 'leave_' . $leave->id,
+                'type' => 'leave',
                 'user_name' => $leave->user->name,
                 'user_id_number' => $leave->user->id_number,
                 'user_department' => $leave->user->department,
@@ -376,9 +378,34 @@ class LeaveRequestController extends Controller
                 'to_date' => $leave->to_date ? $leave->to_date->format('Y-m-d') : $leave->from_date->format('Y-m-d'),
                 'request_type' => $leave->request_type,
                 'days_taken' => $leave->days_taken,
+                'title' => "{$leave->user->name} on {$leave->leave_type}",
             ];
         });
 
-        return response()->json($events);
+        // 2. Fetch Custom Calendar Events
+        $eventQuery = \App\Models\CalendarEvent::query();
+        
+        if ($request->filled('month')) {
+            $eventQuery->whereMonth('start_date', $request->month);
+        }
+
+        if ($request->filled('year')) {
+            $eventQuery->whereYear('start_date', $request->year);
+        }
+
+        $customEvents = $eventQuery->get()->map(function ($evt) {
+            return [
+                'id' => 'evt_' . $evt->id,
+                'type' => $evt->type, // event, holiday, meeting
+                'title' => $evt->title,
+                'description' => $evt->description,
+                'from_date' => $evt->start_date->format('Y-m-d'),
+                'to_date' => $evt->end_date ? $evt->end_date->format('Y-m-d') : $evt->start_date->format('Y-m-d'),
+                'is_read' => $evt->is_read,
+            ];
+        });
+
+        // 3. Merge and Return
+        return response()->json($leaves->concat($customEvents));
     }
 }

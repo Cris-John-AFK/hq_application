@@ -19,7 +19,10 @@ A professional, high-performance web application built with **Laravel 12**, **Po
 
 ### 📅 Smart Calendar & Scheduling
 - **Manage Calendar Activities**: A dedicated full-screen module (`/schedules`) for high-level organizational planning.
+- **Database-Backed Events**: All custom events, meetings, and holidays are persisted in a dedicated PostgreSQL `calendar_events` table.
 - **Dynamic Event Management**: Admins can **Create**, **View**, and **Delete** custom company events, meetings, and local holidays.
+- **Top-Bar Pulse Indicator**: A live red notification badge on the top-bar calendar button alerts admins to newly created events.
+- **Auto-Mark as Read**: Intelligent UX that automatically clears notification badges when the admin navigates to the calendar module.
 - **Interactive Daily Overview**: Click any date to see a detailed popup containing:
     -   **Staff On Leave**: List of employees away with their avatars and leave types.
     -   **Event Details**: Full titles and descriptions for company activities and holidays.

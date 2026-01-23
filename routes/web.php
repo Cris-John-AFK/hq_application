@@ -51,6 +51,7 @@ Route::middleware('auth')->group(function () {
     // Custom Events
     Route::get('/api/custom-events', [\App\Http\Controllers\CalendarEventController::class, 'index']);
     Route::post('/api/custom-events', [\App\Http\Controllers\CalendarEventController::class, 'store']);
+    Route::post('/api/custom-events/mark-read', [\App\Http\Controllers\CalendarEventController::class, 'markAsRead']);
     Route::delete('/api/custom-events/{id}', [\App\Http\Controllers\CalendarEventController::class, 'destroy']);
     
     Route::post('/api/leave-requests', [\App\Http\Controllers\LeaveRequestController::class, 'store']);

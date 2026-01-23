@@ -121,7 +121,7 @@ const calendarDays = computed(() => {
 
         let eventTitle = 'No events scheduled';
         if (hasEvent) {
-             eventTitle = dayEvents.map(e => `${e.user_name} (${e.leave_type})`).join(', ');
+             eventTitle = dayEvents.map(e => e.title).join(', ');
         } else if (isToday) {
             eventTitle = 'Today';
         }

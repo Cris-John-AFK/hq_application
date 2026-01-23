@@ -12,18 +12,18 @@
                     <div class="flex items-center gap-3">
                          <button 
                             @click="isAddEventOpen = true"
-                            class="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors font-medium text-sm shadow-sm"
+                            class="cursor-pointer flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors font-medium text-sm shadow-sm"
                         >
                             <i class="pi pi-plus"></i>
                             Add Event
                         </button>
                     
                         <div class="flex items-center gap-3 bg-white p-1 rounded-lg border border-gray-200 shadow-sm ml-2">
-                            <button @click="changeMonth(-1)" class="p-2 hover:bg-gray-100 rounded-md text-gray-500 transition-colors">
+                            <button @click="changeMonth(-1)" class="cursor-pointer p-2 hover:bg-gray-100 rounded-md text-gray-500 transition-colors">
                                 <i class="pi pi-chevron-left"></i>
                             </button>
                             <span class="min-w-[140px] text-center font-bold text-gray-800 text-lg">{{ currentMonthName }} {{ currentYear }}</span>
-                            <button @click="changeMonth(1)" class="p-2 hover:bg-gray-100 rounded-md text-gray-500 transition-colors">
+                            <button @click="changeMonth(1)" class="cursor-pointer p-2 hover:bg-gray-100 rounded-md text-gray-500 transition-colors">
                                 <i class="pi pi-chevron-right"></i>
                             </button>
                         </div>
@@ -108,13 +108,13 @@
             <!-- Modals -->
             <AddEventModal 
                 v-model="isAddEventOpen" 
-                @success="fetchCustomEvents"
+                @success="refreshCalendar"
             />
             
             <DayDetailsModal
                 v-model="isDayDetailsOpen"
                 :date="selectedDate"
-                @delete="fetchCustomEvents"
+                @delete="refreshCalendar"
             />
 
         </MainLayout>
@@ -140,7 +140,6 @@
     const isAddEventOpen = ref(false);
     const isDayDetailsOpen = ref(false);
     const selectedDate = ref(null);
-    const customEvents = ref([]);
 
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const currentDate = ref(new Date());
@@ -151,16 +150,9 @@
 
     const phHolidays = computed(() => getHolidays(currentYear.value));
 
-    // Fetch custom events from API
-    const fetchCustomEvents = async () => {
-        try {
-             // Fetch all for simplicity or range based. 
-             // Let's fetch all for now or current year.
-             const response = await axios.get('/api/custom-events');
-             customEvents.value = response.data;
-        } catch (e) {
-            console.error("Failed to fetch events", e);
-        }
+    // Unified fetch using store
+    const refreshCalendar = async () => {
+        await calendarStore.fetchEvents(true);
     };
 
     const getEventClass = (evt) => {
@@ -200,20 +192,18 @@
             
             // Filter Leaves
             const dayLeaves = allLeaves.value.filter(e => {
-                return e.from_date <= dateStr && e.to_date >= dateStr;
+                return e.type === 'leave' && e.from_date <= dateStr && e.to_date >= dateStr;
             });
 
-            // Filter PH Holidays
-            const dayHolidays = phHolidays.value.filter(h => h.date === dateStr);
+            // Filter Custom Events (Holidays, Meetings, Company Events from DB)
+            const dayCustom = allLeaves.value.filter(e => {
+                return e.type !== 'leave' && e.from_date <= dateStr && e.to_date >= dateStr;
+            });
+
+            // Filter PH Holidays (Static list)
+            const dayStaticHolidays = phHolidays.value.filter(h => h.date === dateStr);
             
-            // Filter Custom Events
-            const dayCustom = customEvents.value.filter(e => {
-                // Handle ranges if needed, for now assume single day or start_date check
-                // If single day logic:
-                return e.start_date === dateStr;
-            });
-
-            const mergedEvents = [...dayHolidays, ...dayCustom];
+            const mergedEvents = [...dayStaticHolidays, ...dayCustom];
 
             const isToday = 
                 i === today.getDate() && 
@@ -259,6 +249,5 @@
     onMounted(async () => {
         await authStore.fetchUser();
         calendarStore.fetchEvents();
-        fetchCustomEvents();
     });
 </script>

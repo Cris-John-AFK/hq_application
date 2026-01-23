@@ -3,7 +3,7 @@
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                 <h3 class="font-bold text-gray-800 text-lg">Add New Event</h3>
-                <button @click="close" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <button @click="close" class="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors">
                     <i class="pi pi-times"></i>
                 </button>
             </div>
@@ -27,14 +27,14 @@
                             v-model="form.start_date" 
                             type="date" 
                             required
-                            class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all font-medium text-gray-800"
+                            class="cursor-pointer w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all font-medium text-gray-800"
                         >
                     </div>
                      <div>
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Type</label>
                         <select 
                             v-model="form.type" 
-                            class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all font-medium text-gray-800"
+                            class="cursor-pointer w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all font-medium text-gray-800"
                         >
                             <option value="event">General Event</option>
                             <option value="holiday">Holiday</option>
@@ -57,14 +57,14 @@
                     <button 
                         type="button" 
                         @click="close"
-                        class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+                        class="cursor-pointer px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
                     >
                         Cancel
                     </button>
                     <button 
                         type="submit" 
                         :disabled="loading"
-                        class="px-6 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium shadow-sm transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                        class="cursor-pointer px-6 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium shadow-sm transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         <i v-if="loading" class="pi pi-spin pi-spinner"></i>
                         {{ loading ? 'Creating...' : 'Create Event' }}

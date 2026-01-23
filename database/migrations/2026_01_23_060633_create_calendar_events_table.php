@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('calendar_events', function (Blueprint $table) {
@@ -17,16 +14,12 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->date('start_date');
             $table->date('end_date')->nullable();
-            $table->string('type')->default('event'); // event, holiday, meeting
-            $table->boolean('is_recurring')->default(false);
-            $table->foreignId('created_by')->nullable()->constrained('users');
+            $table->enum('type', ['event', 'holiday', 'meeting'])->default('event');
+            $table->boolean('is_read')->default(false); // For new event indicator
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('calendar_events');

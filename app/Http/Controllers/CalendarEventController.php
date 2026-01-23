@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\CalendarEvent;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class CalendarEventController extends Controller
 {
@@ -18,14 +17,14 @@ class CalendarEventController extends Controller
                   ->orWhereBetween('end_date', [$request->start_date, $request->end_date]);
             });
         }
-        
-        // Include recurring events regardless of date? 
-        // For simplicity v1: fetch events overlapping range OR is_recurring = true
-        if ($request->filled('start_date')) {
-             $query->orWhere('is_recurring', true);
-        }
 
-        return response()->json($query->orderBy('start_date')->get());
+        $events = $query->orderBy('start_date')->get();
+        $unreadCount = CalendarEvent::where('is_read', false)->count();
+
+        return response()->json([
+            'events' => $events,
+            'unread_count' => $unreadCount
+        ]);
     }
 
     public function store(Request $request)
@@ -35,26 +34,23 @@ class CalendarEventController extends Controller
             'description' => 'nullable|string',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'type' => 'required|in:event,holiday,meeting',
-            'is_recurring' => 'boolean'
+            'type' => 'required|in:event,holiday,meeting'
         ]);
-
-        $validated['created_by'] = Auth::id();
 
         $event = CalendarEvent::create($validated);
 
         return response()->json($event, 201);
     }
 
+    public function markAsRead()
+    {
+        CalendarEvent::where('is_read', false)->update(['is_read' => true]);
+        return response()->json(['message' => 'All events marked as read']);
+    }
+
     public function destroy($id)
     {
         $event = CalendarEvent::findOrFail($id);
-        
-        // Authorization check: Only admin or creator
-        if (Auth::user()->role !== 'admin' && Auth::id() !== $event->created_by) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
         $event->delete();
 
         return response()->json(['message' => 'Event deleted']);

@@ -13,13 +13,15 @@ class CalendarEvent extends Model
         'end_date',
         'type',
         'is_recurring',
-        'created_by'
+        'created_by',
+        'is_read'
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
-        'is_recurring' => 'boolean'
+        'is_recurring' => 'boolean',
+        'is_read' => 'boolean'
     ];
 
     public function creator()
