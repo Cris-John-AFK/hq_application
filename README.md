@@ -76,6 +76,23 @@ A professional, high-performance web application built with **Laravel 12**, **Po
 - **Centralized Management**: Dedicated `departments` database table for scalable organizational structure.
 - **Dynamic Assignment**: Employees can be assigned to departments dynamically via the "Add/Edit Employee" modals.
 
+### 👤 Individual Employee Reports
+- **View Report Action**: Replaced "Change Password" button with "View Report" for quick access to employee analytics.
+- **Weekly Breakdown**: View individual employee working hours by week with regular hours, overtime, and days worked.
+- **Monthly Summary**: Track monthly performance including total hours, absences, and overtime trends.
+- **Yearly Overview**: Comprehensive annual statistics showing total hours worked, days worked, overtime, absences, tardiness, and undertime.
+- **Integrated Password Management**: "Change Password" functionality moved inside the Edit Employee modal for streamlined UX.
+
+### 📋 Attendance Management System
+- **Excel Import**: Bulk import attendance records via XLSX/XLS files for easy data migration.
+- **Template Download**: One-click download of properly formatted Excel template with all required columns.
+- **Advanced Filtering**: Filter attendance by date range, department, status (Present/Absent/Late/Half Day), and employee search.
+- **Real-time Search**: Instant search by employee name or ID number with debounced input.
+- **Individual Attendance View**: Click any record to view complete attendance history for that employee with summary statistics.
+- **Status Tracking**: Color-coded status badges (Green=Present, Red=Absent, Orange=Late, Yellow=Half Day).
+- **Pagination**: Clean pagination controls for large datasets (10 records per page).
+- **Summary Statistics**: Employee-specific dashboard showing total days, present count, absent count, and late count.
+
 ## 🚀 Installation & Setup
 
 ### 1. Prerequisites

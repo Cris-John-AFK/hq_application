@@ -42,7 +42,7 @@
                     <button 
                         @click="activeTab = 'annual'"
                         :class="[
-                            'px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                            'cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition-all',
                             activeTab === 'annual' ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                         ]"
                     >
@@ -51,7 +51,7 @@
                     <button 
                         @click="activeTab = 'department'"
                         :class="[
-                            'px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                            'cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition-all',
                             activeTab === 'department' ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                         ]"
                     >
@@ -60,7 +60,7 @@
                     <button 
                         @click="activeTab = 'yearly'"
                         :class="[
-                            'px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                            'cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition-all',
                             activeTab === 'yearly' ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                         ]"
                     >

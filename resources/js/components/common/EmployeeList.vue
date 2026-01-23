@@ -143,16 +143,16 @@
                                     </span>
                                 </div>
 
-                                <!-- Change Password -->
+                                <!-- View Report -->
                                 <div class="relative group">
                                     <button 
-                                        @click="handleChangePassword(employee)" 
-                                        class="cursor-pointer w-8 h-8 rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 flex items-center justify-center transition-colors"
+                                        @click="handleViewReport(employee)" 
+                                        class="cursor-pointer w-8 h-8 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 flex items-center justify-center transition-colors"
                                     >
-                                        <i class="pi pi-key text-xs"></i>
+                                        <i class="pi pi-chart-bar text-xs"></i>
                                     </button>
                                     <span class="absolute bottom-full mb-2 right-0 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                                        Change Password
+                                        View Report
                                         <span class="absolute top-full right-4 border-4 border-transparent border-t-gray-800"></span>
                                     </span>
                                 </div>
@@ -229,6 +229,7 @@
             :loading="isEditing"
             :departments="departments"
             @submit="handleUpdateEmployee"
+            @changePassword="handleChangePassword"
         />
 
         <!-- Leave Form Modal (Reusable Component) -->
@@ -246,6 +247,12 @@
             :employee-name="selectedEmployee?.name"
             @success="handlePasswordChanged"
         />
+
+        <!-- Employee Report Modal -->
+        <EmployeeReportModal 
+            v-model="showReportModal"
+            :employee="selectedEmployee"
+        />
     </div>
 </template>
 
@@ -256,6 +263,7 @@ import LeaveRequestModal from './LeaveRequestModal.vue';
 import AddEmployeeModal from './AddEmployeeModal.vue';
 import EditEmployeeModal from './EditEmployeeModal.vue';
 import ChangePasswordModal from './ChangePasswordModal.vue';
+import EmployeeReportModal from './EmployeeReportModal.vue';
 import axios from 'axios';
 
 const router = useRouter();
@@ -272,6 +280,7 @@ const showLeaveModal = ref(false);
 const showAddModal = ref(false);
 const showEditModal = ref(false);
 const showPasswordModal = ref(false);
+const showReportModal = ref(false);
 const isCreating = ref(false);
 const isEditing = ref(false);
 const leaveForm = ref({
@@ -412,6 +421,11 @@ const handleChangePassword = (employee) => {
 const handlePasswordChanged = () => {
     alert('Password updated successfully!');
     // Optionally refresh employee list or show toast notification
+};
+
+const handleViewReport = (employee) => {
+    selectedEmployee.value = employee;
+    showReportModal.value = true;
 };
 
 const updateStatus = (id, newStatus) => {

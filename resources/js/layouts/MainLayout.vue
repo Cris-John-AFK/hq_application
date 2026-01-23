@@ -76,7 +76,7 @@
             <!-- Topbar -->
             <header class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 shadow-sm z-20">
                 <button @click="isSidebarOpen = !isSidebarOpen" class="md:hidden text-gray-500 hover:text-gray-700">
-                    <i class="pi pi-bars text-xl"></i>
+                    <i class="pi pi-bars text-xl cursor-pointer"></i>
                 </button>
 
                 <!-- Breadcrumbs / Title Placeholder -->
