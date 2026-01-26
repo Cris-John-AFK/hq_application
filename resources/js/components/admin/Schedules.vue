@@ -18,11 +18,34 @@
                             Add Event
                         </button>
                     
-                        <div class="flex items-center gap-3 bg-white p-1 rounded-lg border border-gray-200 shadow-sm ml-2">
+                        <div class="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-sm ml-2">
+                            <button 
+                                @click="viewMode = 'calendar'"
+                                :class="[
+                                    'cursor-pointer px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-2',
+                                    viewMode === 'calendar' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+                                ]"
+                            >
+                                <i class="pi pi-calendar"></i>
+                                Grid
+                            </button>
+                            <button 
+                                @click="viewMode = 'list'"
+                                :class="[
+                                    'cursor-pointer px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-2',
+                                    viewMode === 'list' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+                                ]"
+                            >
+                                <i class="pi pi-list"></i>
+                                List
+                            </button>
+                        </div>
+
+                        <div class="flex items-center gap-3 bg-white p-1 rounded-xl border border-gray-200 shadow-sm ml-2">
                             <button @click="changeMonth(-1)" class="cursor-pointer p-2 hover:bg-gray-100 rounded-md text-gray-500 transition-colors">
                                 <i class="pi pi-chevron-left"></i>
                             </button>
-                            <span class="min-w-[140px] text-center font-bold text-gray-800 text-lg">{{ currentMonthName }} {{ currentYear }}</span>
+                            <span class="min-w-[140px] text-center font-bold text-gray-800 text-sm uppercase tracking-widest">{{ currentMonthName }} {{ currentYear }}</span>
                             <button @click="changeMonth(1)" class="cursor-pointer p-2 hover:bg-gray-100 rounded-md text-gray-500 transition-colors">
                                 <i class="pi pi-chevron-right"></i>
                             </button>
@@ -50,8 +73,8 @@
                     </div>
                 </div>
 
-                <!-- Calendar Grid -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <!-- Calendar Content -->
+                <div v-if="viewMode === 'calendar'" class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden animate-in fade-in duration-300">
                     <!-- Weekday Headers -->
                     <div class="grid grid-cols-7 border-b border-gray-200 bg-gray-50/50">
                         <div v-for="day in weekDays" :key="day" class="py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -77,9 +100,7 @@
                                 </span>
                             </div>
 
-                            <!-- Events List -->
                             <div class="space-y-1 overflow-y-auto max-h-[85px] custom-scrollbar pb-2">
-                                <!-- Holidays & Custom Events -->
                                 <div v-for="evt in date.customEvents" :key="evt.id || evt.name" 
                                     :class="[
                                         'px-2 py-0.5 text-[10px] font-semibold border-y truncate transition-all',
@@ -102,7 +123,6 @@
                                     <span v-else>&nbsp;</span>
                                 </div>
 
-                                <!-- Leaves -->
                                 <div v-for="event in date.events" :key="event.id" 
                                     :class="[
                                         'px-2 py-0.5 text-[10px] font-semibold bg-purple-50 text-purple-700 border-y border-purple-100 truncate hover:bg-purple-100 transition-colors',
@@ -125,20 +145,65 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- List View -->
+                <div v-else class="space-y-4 animate-in slide-in-from-bottom-5 duration-500">
+                    <div v-if="listDays.length === 0" class="bg-white rounded-2xl p-20 border border-dashed border-gray-200 text-center">
+                        <i class="pi pi-calendar-minus text-5xl text-gray-100 mb-4 block"></i>
+                        <p class="text-gray-400 font-medium italic">No events or leaves scheduled for this month.</p>
+                    </div>
+
+                    <div v-for="date in listDays" :key="date.fullDate" class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex flex-col md:flex-row">
+                            <div class="w-full md:w-32 bg-gray-50 flex flex-col items-center justify-center p-6 border-b md:border-b-0 md:border-r border-gray-100">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ getDayName(date.fullDate) }}</span>
+                                <span class="text-3xl font-black text-gray-800">{{ date.day }}</span>
+                                <span v-if="date.isToday" class="mt-1 px-2 py-0.5 bg-blue-600 text-white text-[8px] font-black uppercase rounded shadow-sm">Today</span>
+                            </div>
+
+                            <div class="cursor-pointer flex-1 p-2">
+                                <div class="divide-y divide-gray-50">
+                                    <div v-for="evt in date.customEvents" :key="evt.id" @click="openDayDetails(date)" class="p-4 hover:bg-gray-50 transition-colors cursor-pointer group flex items-center justify-between">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm" :class="getEventClass(evt)">
+                                                <i class="pi animate-bounce" :class="evt.type === 'holiday' || evt.type === 'Regular Holiday' ? 'pi-sun' : 'pi-calendar'"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-black text-gray-800 tracking-tight">{{ evt.title || evt.name }}</h4>
+                                                <div class="flex items-center gap-2 mt-0.5">
+                                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ evt.type }}</span>
+                                                    <span v-if="evt.from_date != evt.to_date && evt.to_date" class="text-[10px] text-teal-600 font-bold">Until {{ formatDateLabel(evt.to_date) }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <i class="pi pi-chevron-right text-xs text-gray-300 group-hover:text-teal-500 transition-colors"></i>
+                                    </div>
+
+                                    <div v-for="leave in date.events" :key="leave.id" @click="openDayDetails(date)" class="p-4 hover:bg-gray-50 transition-colors cursor-pointer group flex items-center justify-between">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-sm">
+                                                <i class="pi pi-user"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-black text-gray-800 tracking-tight">{{ leave.user_name }}</h4>
+                                                <div class="flex items-center gap-2 mt-0.5">
+                                                    <span class="text-[10px] font-bold text-purple-400 uppercase tracking-widest">{{ leave.leave_type }}</span>
+                                                    <span class="text-[10px] text-gray-400 font-medium">• {{ leave.days_taken }} Day(s)</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <i class="pi pi-chevron-right text-xs text-gray-300 group-hover:text-teal-500 transition-colors"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Modals -->
-            <AddEventModal 
-                v-model="isAddEventOpen" 
-                @success="refreshCalendar"
-            />
-            
-            <DayDetailsModal
-                v-model="isDayDetailsOpen"
-                :date="selectedDate"
-                @delete="refreshCalendar"
-            />
-
+            <AddEventModal v-model="isAddEventOpen" @success="refreshCalendar" />
+            <DayDetailsModal v-model="isDayDetailsOpen" :date="selectedDate" @delete="refreshCalendar" />
         </MainLayout>
     </div>
 </template>
@@ -162,6 +227,19 @@
     const isAddEventOpen = ref(false);
     const isDayDetailsOpen = ref(false);
     const selectedDate = ref(null);
+    const viewMode = ref('calendar'); // 'calendar' or 'list'
+
+    const listDays = computed(() => {
+        return calendarDays.value.filter(day => !day.isPadding && (day.events.length > 0 || day.customEvents.length > 0));
+    });
+
+    const getDayName = (dateStr) => {
+        return new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short' });
+    };
+
+    const formatDateLabel = (dateStr) => {
+        return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
 
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const currentDate = ref(new Date());

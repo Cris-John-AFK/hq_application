@@ -136,18 +136,18 @@
                             >
                         </div>
                         <div class="flex flex-wrap gap-3">
-                            <select v-model="filters.status" class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white min-w-[130px]">
+                            <select v-model="filters.status" class="cursor-pointer px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white min-w-[130px]">
                                 <option value="">All Statuses</option>
                                 <option value="Pending">Pending</option>
                                 <option value="Approved">Approved</option>
                                 <option value="Rejected">Rejected</option>
                                 <option value="Cancelled">Cancelled</option>
                             </select>
-                            <select v-model="filters.department" class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white min-w-[150px]">
+                            <select v-model="filters.department" class="cursor-pointer px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white min-w-[150px]">
                                 <option value="">All Departments</option>
                                 <option v-for="dept in departments" :key="dept" :value="dept">{{ dept }}</option>
                             </select>
-                             <select v-model="filters.request_type" class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white min-w-[130px]">
+                             <select v-model="filters.request_type" class="cursor-pointer px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white min-w-[130px]">
                                 <option value="">All Categories</option>
                                 <option value="Leave">Leave</option>
                                 <option value="Halfday">Halfday</option>
@@ -161,12 +161,12 @@
                     <div class="flex flex-col md:flex-row gap-4 items-center border-t border-gray-50 pt-4">
                         <div class="flex items-center gap-2">
                             <span class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Range:</span>
-                            <input type="date" v-model="filters.from_date" class="px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-teal-500/20 outline-none">
+                            <input type="date" v-model="filters.from_date" class="cursor-pointer px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-teal-500/20 outline-none">
                             <span class="text-gray-300">to</span>
-                            <input type="date" v-model="filters.to_date" class="px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-teal-500/20 outline-none">
+                            <input type="date" v-model="filters.to_date" class="cursor-pointer px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-teal-500/20 outline-none">
                         </div>
 
-                        <select v-model="filters.type" class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white flex-1">
+                        <select v-model="filters.type" class="cursor-pointer px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white flex-1">
                             <option value="">All Leave Types</option>
                             <option value="SIL">SIL (Service Incentive)</option>
                             <option value="Sick">Sick Leave</option>
@@ -181,7 +181,7 @@
                         </select>
 
                         <div class="flex gap-2">
-                           <button @click="Object.keys(filters).forEach(k => k !== 'user_id' ? filters[k] = '' : null); searchQuery = ''" class="px-3 py-2 text-xs font-bold text-gray-400 hover:text-rose-500 transition-colors uppercase tracking-widest">
+                           <button @click="Object.keys(filters).forEach(k => k !== 'user_id' ? filters[k] = '' : null); searchQuery = ''" class="cursor-pointer px-3 py-2 text-xs font-bold text-gray-400 hover:text-rose-500 transition-colors uppercase tracking-widest">
                                <i class="pi pi-refresh mr-1"></i> Reset Filters
                            </button>
                         </div>
@@ -279,7 +279,7 @@
                                         </span>
                                     </td>
                                     <td class="p-4 text-right">
-                                        <button class="p-2 hover:bg-white rounded-full text-gray-400 hover:text-teal-600 transition-colors shadow-sm border border-transparent hover:border-gray-200">
+                                        <button class="cursor-pointer p-2 hover:bg-white rounded-full text-gray-400 hover:text-teal-600 transition-colors shadow-sm border border-transparent hover:border-gray-200">
                                             <i class="pi pi-chevron-right"></i>
                                         </button>
                                     </td>
@@ -295,14 +295,14 @@
                             <span class="text-gray-400 text-xs font-bold uppercase tracking-widest">Page {{ page }} of {{ lastPage }}</span>
                             <div class="flex gap-2">
                                 <button 
-                                    class="px-3 py-1.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-white text-gray-600 transition-colors shadow-sm font-bold text-xs uppercase" 
+                                    class="cursor-pointer px-3 py-1.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-white text-gray-600 transition-colors shadow-sm font-bold text-xs uppercase" 
                                     :disabled="page === 1 || loading" 
                                     @click="page--"
                                 >
                                     Prev
                                 </button>
                                 <button 
-                                    class="px-3 py-1.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-white text-gray-600 transition-colors shadow-sm font-bold text-xs uppercase" 
+                                    class="cursor-pointer px-3 py-1.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-white text-gray-600 transition-colors shadow-sm font-bold text-xs uppercase" 
                                     :disabled="page >= lastPage || loading" 
                                     @click="page++"
                                 >
