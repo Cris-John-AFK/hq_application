@@ -22,10 +22,7 @@
                         class="h-10 pl-10 pr-8 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-white appearance-none cursor-pointer w-full"
                     >
                         <option value="All">All Departments</option>
-                        <option value="Engineering">Engineering</option>
-                        <option value="Design">Design</option>
-                        <option value="Marketing">Marketing</option>
-                        <option value="HR">Human Resources</option>
+                        <option v-for="dept in departments" :key="dept" :value="dept">{{ dept }}</option>
                     </select>
                 </div>
                 <!-- Status Filter -->
@@ -146,16 +143,16 @@
                                     </span>
                                 </div>
 
-                                <!-- Change Password -->
+                                <!-- View Report -->
                                 <div class="relative group">
                                     <button 
-                                        @click="handleChangePassword(employee)" 
-                                        class="cursor-pointer w-8 h-8 rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 flex items-center justify-center transition-colors"
+                                        @click="handleViewReport(employee)" 
+                                        class="cursor-pointer w-8 h-8 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 flex items-center justify-center transition-colors"
                                     >
-                                        <i class="pi pi-key text-xs"></i>
+                                        <i class="pi pi-chart-bar text-xs"></i>
                                     </button>
                                     <span class="absolute bottom-full mb-2 right-0 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                                        Change Password
+                                        View Report
                                         <span class="absolute top-full right-4 border-4 border-transparent border-t-gray-800"></span>
                                     </span>
                                 </div>
@@ -221,6 +218,7 @@
         <AddEmployeeModal 
             v-model="showAddModal" 
             :loading="isCreating"
+            :departments="departments"
             @submit="handleCreateEmployee"
         />
 
@@ -229,7 +227,9 @@
             v-model="showEditModal" 
             :employee="selectedEmployee"
             :loading="isEditing"
+            :departments="departments"
             @submit="handleUpdateEmployee"
+            @changePassword="handleChangePassword"
         />
 
         <!-- Leave Form Modal (Reusable Component) -->
@@ -247,6 +247,12 @@
             :employee-name="selectedEmployee?.name"
             @success="handlePasswordChanged"
         />
+
+        <!-- Employee Report Modal -->
+        <EmployeeReportModal 
+            v-model="showReportModal"
+            :employee="selectedEmployee"
+        />
     </div>
 </template>
 
@@ -257,6 +263,7 @@ import LeaveRequestModal from './LeaveRequestModal.vue';
 import AddEmployeeModal from './AddEmployeeModal.vue';
 import EditEmployeeModal from './EditEmployeeModal.vue';
 import ChangePasswordModal from './ChangePasswordModal.vue';
+import EmployeeReportModal from './EmployeeReportModal.vue';
 import axios from 'axios';
 
 const router = useRouter();
@@ -273,6 +280,7 @@ const showLeaveModal = ref(false);
 const showAddModal = ref(false);
 const showEditModal = ref(false);
 const showPasswordModal = ref(false);
+const showReportModal = ref(false);
 const isCreating = ref(false);
 const isEditing = ref(false);
 const leaveForm = ref({
@@ -284,6 +292,17 @@ const selectedEmployee = ref(null);
 // Employee Data
 const employees = ref([]);
 
+// Departments Data
+const departments = ref([]);
+const fetchDepartments = async () => {
+    try {
+        const response = await axios.get('/api/departments');
+        departments.value = response.data.map(d => d.name);
+    } catch (error) {
+        console.error('Failed to fetch departments:', error);
+    }
+};
+
 const fetchEmployees = async () => {
     isLoading.value = true;
     try {
@@ -294,7 +313,8 @@ const fetchEmployees = async () => {
             email: user.email,
             avatar: user.avatar_url, // Use the full URL provided by the backend accessor
             empId: user.id_number || 'N/A',
-            department: user.department || 'N/A',
+            // Department Logic for new users or existing
+            department: user.department?.name || user.department || 'N/A', 
             role: user.role, // admin or user
             status: user.status || 'Available',
             position: user.position || 'Employee',
@@ -308,6 +328,7 @@ const fetchEmployees = async () => {
 };
 
 const getInitials = (name) => {
+    if (!name) return '??';
     return name
         .split(' ')
         .map(n => n[0])
@@ -315,6 +336,12 @@ const getInitials = (name) => {
         .toUpperCase()
         .substring(0, 2);
 };
+
+onMounted(() => {
+    fetchEmployees();
+    fetchDepartments();
+    document.addEventListener('click', closeActionMenu);
+});
 
 const handleCreateEmployee = async (formData) => {
     isCreating.value = true;
@@ -394,6 +421,11 @@ const handleChangePassword = (employee) => {
 const handlePasswordChanged = () => {
     alert('Password updated successfully!');
     // Optionally refresh employee list or show toast notification
+};
+
+const handleViewReport = (employee) => {
+    selectedEmployee.value = employee;
+    showReportModal.value = true;
 };
 
 const updateStatus = (id, newStatus) => {

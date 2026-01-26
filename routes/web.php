@@ -27,12 +27,33 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/users', [\App\Http\Controllers\UserController::class, 'index']);
     Route::post('/api/users', [\App\Http\Controllers\UserController::class, 'store']);
     Route::put('/api/users/{id}', [\App\Http\Controllers\UserController::class, 'updateEmployee']);
+    Route::put('/api/users/{id}', [\App\Http\Controllers\UserController::class, 'updateEmployee']);
     Route::put('/api/users/{id}/password', [\App\Http\Controllers\UserController::class, 'changeUserPassword']);
+    
+    // Departments
+    Route::get('/api/departments', [\App\Http\Controllers\DepartmentController::class, 'index']);
+    Route::post('/api/departments', [\App\Http\Controllers\DepartmentController::class, 'store']);
+
+    // Reports (Mocked)
+    Route::get('/api/reports/annual', [\App\Http\Controllers\ReportController::class, 'annualAttendance']);
+    Route::get('/api/reports/monthly-department', [\App\Http\Controllers\ReportController::class, 'monthlyDepartment']);
     
     // Leave Routes
     Route::get('/api/leave-requests/export', [\App\Http\Controllers\LeaveRequestController::class, 'export']);
     Route::get('/api/leave-stats', [\App\Http\Controllers\LeaveRequestController::class, 'stats']);
+    
+    // Decision Support Routes
+    Route::get('/api/leave-requests/{id}/analysis', [\App\Http\Controllers\LeaveRequestController::class, 'getAnalysis']);
+    Route::get('/api/users/{id}/forecast', [\App\Http\Controllers\LeaveRequestController::class, 'getUserForecast']);
+    
     Route::get('/api/leave-requests', [\App\Http\Controllers\LeaveRequestController::class, 'index']);
+    Route::get('/api/calendar-events', [\App\Http\Controllers\LeaveRequestController::class, 'calendarEvents']);
+    // Custom Events
+    Route::get('/api/custom-events', [\App\Http\Controllers\CalendarEventController::class, 'index']);
+    Route::post('/api/custom-events', [\App\Http\Controllers\CalendarEventController::class, 'store']);
+    Route::post('/api/custom-events/mark-read', [\App\Http\Controllers\CalendarEventController::class, 'markAsRead']);
+    Route::delete('/api/custom-events/{id}', [\App\Http\Controllers\CalendarEventController::class, 'destroy']);
+    
     Route::post('/api/leave-requests', [\App\Http\Controllers\LeaveRequestController::class, 'store']);
     Route::put('/api/leave-requests/{leaveRequest}', [\App\Http\Controllers\LeaveRequestController::class, 'update']);
     Route::get('/api/users/{id}/leave-history', [\App\Http\Controllers\LeaveRequestController::class, 'userHistory']);

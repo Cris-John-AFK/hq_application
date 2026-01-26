@@ -1,329 +1,137 @@
-# HQ-App
+# HatQ Inc. - HQ Management System
 
-A modern web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js 3**.
+A professional, high-performance web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js 3** for streamlined employee leave management and attendance tracking.
 
-## 🌟 Features
-- **Full-Stack Integration**: Laravel (Backend) + Vue.js (Frontend) via Vite.
-- **Database**: PostgreSQL configured efficiently.
-- **Styling**: TailwindCSS v4 for modern, responsive designs.
-- **Hybrid Support**: Supports both Blade templates and Vue components.
-- **Role-Based Dashboards**: Distinct views for Admin and User roles managed by `Dashboard.vue`.
-- **Universal Layout**: Shared `MainLayout.vue` with responsive Sidebar and Topbar for consistent UX.
-- **Professional Sidebar**: Neumorphism design with image logo support, active state indicators, and smooth transitions.
-- **Real-time Clock**: 12-hour format clock in the topbar with live updates.
-- **Admin Modules**: 
-  - **Enhanced Dashboard**:
-    - Compact leave status cards (Pending, Approved, Rejected, Cancelled) with gradient backgrounds
-    - Tabbed Recent Activity Panel displaying **real-time employee data**:
-      - Recent Attendance (Time In/Out tracking with profile avatars)
-      - Recent Leaves (Status-based cards with initials/avatar support)
-    - Two-column responsive layout for optimal space usage with automatic data fetching on mount
-  - **Employee Management**:
-    - Employee List with search, filter, pagination, and **Add Employee** functionality (Manual ID `HQI-XXXX`)
-    - **Edit Employee Details**: Comprehensive modal for updating employee information including:
-      - Name, Department, Position, Role
-      - Employment Status (Probationary/Regular)
-      - **Unified Leave Credits**: Single consolidated leave credit balance (replaces separate SIL/Sick/Vacation/Emergency credits)
-    - **Inline Action Buttons**: Edit Details, View Leaves, **Change Password** (with confirmation), Mark On Leave
-    - **Instant Tooltips**: Fast-appearing custom tooltips for better UX
-  - **Manage Leaves** (Comprehensive HR Module):
-    - Detailed tracking of Employee, Status, Leave Type (SIL, Maternity, Emergency, etc.)
-    - **Digital Personnel Leave Authorization Form**:
-      - Exact digital replica of the physical "Personnel Leave Authorization Form"
-      - **Fields**: Date Filed (Auto/Manual), Request For (Leave/Halfday/Undertime/OB), Leave Type (SIL, Solo Parent, VAWS, etc.)
-      - **Smart Date Restrictions**: 
-        - Date picker only allows current date and future dates (no past dates)
-        - Prevents backdating of leave requests
-        - **Auto-sync for Single-Day Requests**: Halfday and Undertime requests automatically sync From/To dates to ensure single-day selection
-      - **Inclusive Day Calculation**: 
-        - Automatically calculates total days **including weekends**
-        - Accurate count from start date to end date (both inclusive)
-      - **Hours Tracking**: Always-visible hours input with start/end time fields for all request types
-      - **Rich Validation**: Ensures all required fields (Reason, Dates, Type) are filled before submission
-    - **Automated Credit Management**:
-      - **Precision Numeric Calculation**: Uses strict numeric parsing to ensure accurate credit comparisons (replaces unreliable string comparisons)
-      - **Real-Time Credit Calculation**: Admin modal displays dynamic credit math using **Service Incentive Leave (SIL)** terminology:
-        - **Total of SIL**: Shows current available credits
-        - **Total SIL Balance**: Shows projected balance after approval
-        - **Visual Math Display**: Shows calculation breakdown (e.g., `12.00 - 3.00 = 9.00`)
-        - **Visual Validation**: Green "Sufficient Credits" box with remaining balance
-        - **Live Stats Dashboard**: Instant overview of Pending, Approved, Rejected, Cancelled, and Total requests.
-      - **Admin Controls**:
-        - Mark leaves as "With Pay" or "Unpaid"
-        - **No. of Days Paid**: Explicitly specify the number of days to be credited as paid for each request
-        - **View Employee Leaves**: Directly view all leave history for a specific employee from the Employee List page
-        - Approve/Reject/Cancel with internal admin remarks
-      - **Enhanced User Experience**:
-        - **Dashboard Activity Pagination**: "Recent Attendance" and "Recent Leaves" now support clean pagination (5 per page) to prevent clutter
-        - **Pending Notifications**: Real-time pulse notification for pending leave requests on the dashboard tab and "New" badges on list items
-        - **Employee Insight Hero**: High-impact visual summary at the top of filtered leave views (shows avatar, status, ID, and live SIL balance)
-        - **Live Balance Tracking**: SIL credits are visible directly in the Employee List table for instant reference
-      - **Exportable Reporting**:
-        - Generate comprehensive **CSV Reports** of leave history
-        - Includes employee details, **Department**, **Position**, date ranges, leave types, status, and **Latest SIL Balance** for payroll auditing
-      - **Personnel Management Enhancements**:
-        - Clarified terminology: "Account Type" (Admin vs Standard) is now distinct from "Position/Job Title"
-        - System Admin badges integrated into employee lists for quick identification
-      - Leave credits are **automatically deducted** when a request is approved
-      - Credits are **restored** if an approved request is cancelled or rejected
-      - **Flexible Approval**: Admins can approve requests even with insufficient credits (allows negative balance)
-      - Credit shortage warnings help admins make informed decisions
-    - **Backtracking & Reporting**: Backtrack all usage, detailed duration logging
-    - **Real-Time Data**:
-        - Dashboard cards instantly reflect actual SIL credit balances from the database
-        - "Latest Leave Status" widget automatically updates with the most recent filing info
-        - **Admin Analytics**: Admin Dashboard and Manage Leaves page display real-time counts for Pending, Approved, Rejected, Cancelled, and On-Leave employees
-        - **Recent Leaves Feed**: Admin dashboard shows the 5 most recent leave requests dynamically, including relative timestamps (e.g. "2 hrs ago")
-    - **Navigation & UX**:
-        - **Deep Linking**: Click on any recent leave request to instantly jump to the Leave Management page with that request opened for review
-        - **Smart Avatars**: Auto-generated initials or uploaded photos displayed consistently across all views
-        - **Dynamic Action Buttons**: 
-          - Pending requests show Approve/Reject buttons
-          - Approved requests show Cancel button
-          - Cancelled requests show Approve/Reject buttons for reconsideration
-    - **Admin Controls**: Mark leaves as "With Pay" or "Unpaid", approve/reject/cancel with remarks
-    - **Leave Credits**: Unified leave balance tracking with employment status (Regular/Probationary) visibility
-    - **Secure Role-Based Access**: Admin-only route protection prevents unauthorized access
-    - Advanced filtering by status, type, and search
-  - Leave request management with internal workflow
-  - Attendance tracking and reporting
-  - Modern stacked area chart with ApexCharts showing attendance trends
-  - **Enhanced Calendar Modal**: Two-column layout with calendar and Today's Schedule sidebar
-- **User Modules**:
-  - Personal dashboard with quick stats showing **unified leave credits balance**
-  - Profile page with **Photo Upload**, **Edit Profile**, and **Password Change** details with **Upload Confirmation**
-  - Attendance history
-  - Leave request submission with smart date validation and automatic day calculation
-- **Reusable Components**:
-  - `LeaveRequestModal.vue` - Google Forms-style modal for leave requests with date restrictions and inclusive day counting
-  - `EventCalendar.vue` - Compact, interactive calendar with highlighted events and Today's Schedule
-  - `ChangePasswordModal.vue` - Admin password change modal with confirmation
-  - `EditEmployeeModal.vue` - Comprehensive employee editing interface with leave credit management
-  - `EmployeeList.vue` - Advanced employee management table
-  - `AttendanceChart.vue` - Interactive line chart for attendance trends (Present, Absent, Late, Leave) with date filtering
-- **Routing**: **Vue Router 4** for seamless SPA navigation.
-- **Data Visualization**: 
-  - **Chart.js** for beautiful, responsive line charts
-  - Interactive tooltips and custom legends
-  - Dynamic time-period filtering (Daily, Weekly, Monthly) with date pickers
-  - Smooth animations and gradient styling
-- **State Management**: **Pinia** for centralized auth and app state.
+## 🌟 Key Features
 
-## ⚡ Performance & Optimization
-- **Database Indexing**: Implemented global indexing on frequently queried columns (`name`, `id_number`, `department`, `status`, `role`, `position`) to ensure <50ms query times even with large datasets.
-- **Simplified Data Model**: Consolidated leave credits from 4 separate columns (SIL, Sick, Vacation, Emergency) into a single `leave_credits` field for:
-  - Reduced database complexity
-  - Faster queries and updates
-  - Simplified business logic
-  - Easier credit management
-- **Frontend Optimization**: 
-  - Efficient component lazy loading
-  - Debounced search inputs to reduce API calls
-  - Optimized asset bundling with Vite
+### 🏢 Corporate Identity & UX
+- **Rebranded Interface**: Updated to **HatQ Inc. Management** branding across all layouts.
+- **Premium Sidebar**: Neumorphism design with active state indicators, sleek transitions, and profile integration.
+- **Universal Layout**: Shared `MainLayout.vue` ensures a consistent, responsive experience across all screen sizes.
+- **Real-time Synchronization**: Live 12-hour clock and dynamic breadcrumbs in the topbar.
 
+### 📊 Advanced Admin Dashboard
+- **5-Column Stats Grid**: Real-time tracking of **Total Employees**, **Present**, **Absent**, **Late**, and **On Leave** metrics.
+- **Activity Pagination**: "Recent Attendance" and "Recent Leaves" feeds support clean pagination (5 per page).
+- **Pulse Notifications**: Real-time red pulse badges on the dashboard tabs alert admins to new pending leave requests.
+- **Pending Highlights**: "New" animated badges on list items catch immediate attention for pending tasks.
+- **Visual Analytics**: Professional grouped bar charts for clear, comparison-ready attendance visualization (Present, Absent, Late, Leave).
 
+### 📅 Smart Calendar & Scheduling
+- **Manage Calendar Activities**: A dedicated full-screen module (`/schedules`) for high-level organizational planning.
+- **Database-Backed Events**: All custom events, meetings, and holidays are persisted in a dedicated PostgreSQL `calendar_events` table.
+- **Dynamic Event Management**: Admins can **Create**, **View**, and **Delete** custom company events, meetings, and local holidays.
+- **Top-Bar Pulse Indicator**: A live red notification badge on the top-bar calendar button alerts admins to newly created events.
+- **Auto-Mark as Read**: Intelligent UX that automatically clears notification badges when the admin navigates to the calendar module.
+- **Interactive Daily Overview**: Click any date to see a detailed popup containing:
+    -   **Staff On Leave**: List of employees away with their avatars and leave types.
+    -   **Event Details**: Full titles and descriptions for company activities and holidays.
+- **Hybrid Data Layer**: Seamlessly merges Philippine Public Holidays (static) with User-Created Events (dynamic) and Approved Leaves (real-time).
+- **Color-Coded Intelligence**: Instant visual distinction between Leaves (Purple), Regular Holidays (Red), Special Holidays (Orange), and Events (Blue).
 
-## 🚀 Getting Started
+### 📁 Unified Leave Management (HR Module)
+- **Personnel Leave Authorization Form**: A pixel-perfect digital replica of the physical authorization form with strict validation.
+- **Inclusive Day Counting**: Automatically calculates duration including weekends for accurate reporting.
+- **Smart Date Blocking**: Prevents backdating of leave requests; enforces current/future dates only.
+- **Comprehensive Metrics**: 5-column dashboard summary (Pending, Approved, Rejected, Cancelled, Total All Time).
+- **Employee Insight Hero**: High-impact header displaying an employee's avatar, position, status, and live SIL balance when filtered.
+- **Search & Filter**: Debounced search by **Name** or **Employee ID** (e.g. HQI-0001) for instant retrieval.
+- **Overlap Prevention**: Intelligent validation system that prevents filing multiple leave requests for the same date, ensuring no "redundancy" in employee schedules.
 
-Follow these steps to set up the project locally.
+### 💳 SIL Credit Tracking & Precision
+- **Unified Credit System**: Consolidated SIL balance replacing fragmented credit types for simpler auditing.
+- **precision Numeric Logic**: Strict numeric parsing ensures balance deductions and restorations are 100% accurate.
+- **Visual Math Breakdowns**: Admins see the exact calculation (Original Bal - Deduction = New Bal) before approving requests.
+
+### 📤 Reporting & Auditing
+- **CSV Export Engine**: One-click generation of general or employee-specific leave reports.
+- **Audit-Ready Data**: Exported files include Department, Position, Leave Type, Payment Status, and **Latest SIL Balance**.
+
+### 🧠 Enterprise Decision Support (New)
+- **Pattern Detection**: Automatically flags "Frequent Friday Leavers" and "Long Weekend Seekers" to alert HR of potential abuse.
+- **Compliance Rules Engine**: Validates leaves against **Solo Parent Act**, **VAWS**, and **Maternity/Paternity** laws based on user demographics.
+- **Department Impact Analysis**: Visualizes absenteeism impact (Critical/High/Low) if a request is approved, showing who else is away.
+- **Credit Forecasting**: Projects year-end balances based on current burn rate and scheduled leaves.
+- **Audit Trail**: Mandatory justification for all Admin actions (Approvals/Rejections), recorded in a tamper-proof `leave_action_logs` table.
+- **File Attachments**: Optional document attachment (Medical Certificates, etc.) support for leave requests.
+
+## ⚡ Performance & Scalability
+- **Database Optimization**: Global indexing across `users` and `leave_requests` tables:
+  - `users`: Indexed on `name`, `id_number`, `department`, `status`, `role`, and `position`.
+  - `leave_requests`: Indexed on `created_at`, `from_date`, `to_date`, `request_type`, `status`, and `is_paid`.
+- **Infrastructure**: Optimized for <50ms query times on frequently filtered data.
+- **Network Efficiency**: Implemented **debouncing** on search inputs and **paginated API responses** to minimize server load.
+
+## 🛠️ Tech Stack
+- **Backend**: Laravel 12 (PHP 8.2+)
+- **Frontend**: Vue.js 3, Vite, TailwindCSS v4
+- **State Management**: Pinia
+- **Database**: PostgreSQL
+- **Data Vis**: ApexCharts & Chart.js
+
+### 📑 Integrated Reporting Center
+- **Annual Company Report**: Detailed breakdown including Headcount, Attendance Rate, Absenteeism, Tardiness, **Undertime / Half Day**, and **Total Undertime (mins)**.
+- **Departmental Analytics**: Monthly deep-dive into each department's Scheduled vs Actual Hours, **Regular Hours**, Overtime, Excess Hours, and **Excess Overtime Employee Count**.
+- **Excel Export**: One-click download of all report data for offline analysis.
+- **Mock Data Engine**: Reports are powered by a realistic simulation engine for instant demonstration.
+
+### 🏢 Dynamic Department Management
+- **Centralized Management**: Dedicated `departments` database table for scalable organizational structure.
+- **Dynamic Assignment**: Employees can be assigned to departments dynamically via the "Add/Edit Employee" modals.
+
+### 👤 Individual Employee Reports
+- **View Report Action**: Replaced "Change Password" button with "View Report" for quick access to employee analytics.
+- **Weekly Breakdown**: View individual employee working hours by week with regular hours, overtime, and days worked.
+- **Monthly Summary**: Track monthly performance including total hours, absences, and overtime trends.
+- **Yearly Overview**: Comprehensive annual statistics showing total hours worked, days worked, overtime, absences, tardiness, and undertime.
+- **Integrated Password Management**: "Change Password" functionality moved inside the Edit Employee modal for streamlined UX.
+
+### 📋 Attendance Management System
+- **Excel Import**: Bulk import attendance records via XLSX/XLS files for easy data migration.
+- **Template Download**: One-click download of properly formatted Excel template with all required columns.
+- **Advanced Filtering**: Filter attendance by date range, department, status (Present/Absent/Late/Half Day), and employee search.
+- **Real-time Search**: Instant search by employee name or ID number with debounced input.
+- **Individual Attendance View**: Click any record to view complete attendance history for that employee with summary statistics.
+- **Status Tracking**: Color-coded status badges (Green=Present, Red=Absent, Orange=Late, Yellow=Half Day).
+- **Pagination**: Clean pagination controls for large datasets (10 records per page).
+- **Summary Statistics**: Employee-specific dashboard showing total days, present count, absent count, and late count.
+
+## 🚀 Installation & Setup
 
 ### 1. Prerequisites
-- Docker (optional, if using Sail) or Local PHP/Composer/PostgreSQL setup.
-- Node.js & NPM.
+- PHP 8.2+ & Composer
+- Node.js & NPM
+- PostgreSQL 15+
 
-### 2. Installation
+### 2. Quick Setup
 ```bash
-# Clone the repository
+# Clone and Install
 git clone https://github.com/Cris-John-AFK/hq_application.git
 cd hq_application
-
-# Install PHP dependencies
 composer install
-
-# Install JS dependencies
 npm install
+
+# Environment
+cp .env.example .env
+php artisan key:generate
+
+# Database (Update .env with PGSQL credentials first)
+php artisan migrate --seed
 ```
 
-### 3. Configuration
-1. Copy the example env file:
-   ```bash
-   cp .env.example .env
-   ```
-2. Update `.env` with your PostgreSQL credentials:
-   ```ini
-   DB_CONNECTION=pgsql
-   DB_HOST=127.0.0.1
-   DB_PORT=5432
-   DB_DATABASE=hq_app
-   DB_USERNAME=root
-   DB_PASSWORD=
-   ```
-3. Generate the key and seed the database:
-   ```bash
-   php artisan key:generate
-   php artisan migrate:fresh --seed
-   ```
-   > **Note**: The `--seed` command creates default Admin and User accounts.
-
-### 4. Default Credentials
-Use these accounts to log in at `http://localhost:8000/login`:
-
-| Role  | Email           | Password |
-| :---  | :---            | :---     |
-| **Admin** | `admin@hq.app`  | `password` |
-| **User**  | `user@hq.app`   | `password` |
-
-### 5. Running the App
-Start the development servers:
+### 3. Development
 ```bash
-# Terminal 1: Laravel Backend
+# Start Backend
 php artisan serve
 
-# Terminal 2: Vite Frontend (Hot Output)
+# Start Frontend
 npm run dev
 ```
 
-## 🔐 Authentication & Roles
-The app uses a hybrid authentication system:
-- **Backend**: Laravel Session Auth (Stateful).
-- **Frontend**: Vue.js + **Pinia** for state management.
-- **Roles**: Users are assigned roles (`admin` or `user`) which determine their access level.
-
-### Logic Flow
-1. User submits login form (Vue).
-2. **Axios** sends credentials to Laravel.
-3. Laravel validates and starts a session.
-4. **Pinia** updates the user state and redirects to `/dashboard`.
-5. **Vue Router Guards** ensure protected routes cannot be accessed without valid authentication, redirecting unauthenticated users to `/login`.
-
-Visit `http://localhost:8000` to see the app.
-Visit `http://localhost:8000/vue` for a Vue.js demonstration.
-
-## 📁 Component Structure
-
-The Vue.js components are organized as follows:
-
-```
-resources/js/components/
-├── admin/              # Admin-specific components
-│   └── LeaveRequests.vue
-├── user/               # User-specific components
-│   ├── Dashboard.vue
-│   ├── Profile.vue
-│   ├── Attendance.vue
-│   └── LeaveRequests.vue
-├── common/             # Shared/reusable components
-│   ├── LeaveRequestModal.vue  # Reusable leave request form
-│   ├── EventCalendar.vue      # Interactive calendar
-│   └── EmployeeList.vue       # Employee management table
-├── login/              # Authentication components
-│   └── LoginForm.vue
-└── Dashboard.vue       # Main dashboard router
-```
-
-### Key Components
-
-- **LeaveRequestModal.vue**: A reusable Google Forms-style modal for submitting leave requests. Used by both admin (for employees) and users (for themselves).
-- **EventCalendar.vue**: Dynamic calendar with month navigation, event tooltips, and today's date highlighting.
-- **EmployeeList.vue**: Advanced table with search, filtering by department/status, pagination, and inline status management.
-
-## 🛣️ Routing
-
-The application uses **Vue Router 4** with separate routes for admin and user roles:
-
-### Admin Routes
-- `/dashboard` - Admin dashboard
-- `/employees` - Employee management
-- `/attendance` - Attendance tracking (admin view)
-- `/schedules` - Schedule management
-- `/reports` - Reports and analytics
-- `/settings` - Application settings
-
-### User Routes
-- `/dashboard` - User dashboard
-- `/profile` - Personal profile
-- `/my-attendance` - Personal attendance history
-- `/leave-requests` - Submit and view leave requests
-
-All routes are defined in `resources/js/router/index.js` and automatically set page titles via navigation guards.
-
-## 📚 Documentation
-Please refer to the [Developer Manual](manual.md) for detailed instructions on:
-- Creating new Vue components.
-- Adding new Routes and Pages.
-- Detailed architectural decisions.
-
-## Tech Stack
-- **Backend**: Laravel 12 (PHP 8.2+)
-- **Frontend**: Vue.js 3, Vite, TailwindCSS v4
-- **Charts**: Chart.js (via chart.js package)
-- **Database**: PostgreSQL
+## 🔐 Default Admin Credentials
+| Email | Password |
+| :--- | :--- |
+| `admin@hq.app` | `password` |
 
 ---
-
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
-
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
-
-## About Laravel
-
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
-
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
-
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+*Created by the HatQ Inc. Engineering Team*

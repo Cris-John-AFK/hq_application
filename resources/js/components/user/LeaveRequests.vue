@@ -137,30 +137,31 @@ const fetchRequests = async () => {
 
 const handleLeaveSubmit = async (formData) => {
     try {
-        // Map frontend fields back to backend expected snake_case if slightly different, 
-        // though our modal now aligns mostly.
-        // formData has: date_filed, requestType, leaveType, fromDate, toDate, numberOfDays, numberOfHours, startTime, endTime, reason
+        const payload = new FormData();
+        payload.append('date_filed', formData.date_filed);
+        payload.append('request_type', formData.requestType);
+        payload.append('leave_type', formData.leaveType);
+        payload.append('from_date', formData.fromDate);
+        payload.append('to_date', formData.toDate);
+        payload.append('days_taken', formData.numberOfDays);
+        if (formData.startTime) payload.append('start_time', formData.startTime);
+        if (formData.endTime) payload.append('end_time', formData.endTime);
+        payload.append('reason', formData.reason);
         
-        const payload = {
-            date_filed: formData.date_filed,
-            request_type: formData.requestType,
-            leave_type: formData.leaveType,
-            from_date: formData.fromDate,
-            to_date: formData.toDate,
-            days_taken: formData.numberOfDays,
-            start_time: formData.startTime || null,
-            end_time: formData.endTime || null,
-            reason: formData.reason
-        };
+        if (formData.attachment) {
+            payload.append('attachment', formData.attachment);
+        }
 
-        const response = await axios.post('/api/leave-requests', payload);
+        const response = await axios.post('/api/leave-requests', payload, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         
         // Add to list or refresh
         leaveRequests.value.unshift(response.data);
         alert('Leave request submitted successfully!');
     } catch (error) {
         console.error('Submission failed:', error);
-        alert('Failed to submit request. Please try again.');
+        alert('Failed to submit request. ' + (error.response?.data?.message || 'Please try again.'));
     }
 };
 

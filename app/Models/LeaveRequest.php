@@ -20,7 +20,8 @@ class LeaveRequest extends Model
         'status',
         'is_paid',
         'days_paid',
-        'admin_remarks'
+        'admin_remarks',
+        'attachment_path'
     ];
 
     protected $casts = [

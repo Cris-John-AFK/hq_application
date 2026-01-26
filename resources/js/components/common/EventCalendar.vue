@@ -66,6 +66,13 @@
 <script setup>
 import { ref, computed } from 'vue';
 
+const props = defineProps({
+    events: {
+        type: Array,
+        default: () => []
+    }
+});
+
 const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const currentDate = ref(new Date());
@@ -74,15 +81,6 @@ const showMonthPicker = ref(false);
 const currentYear = computed(() => currentDate.value.getFullYear());
 const currentMonth = computed(() => currentDate.value.getMonth());
 const currentMonthName = computed(() => currentDate.value.toLocaleString('default', { month: 'long' }));
-
-// Sample event types for demo
-const eventTypes = [
-    'Team Meeting', 
-    'Project Deadline', 
-    'Public Holiday', 
-    'John\'s Leave', 
-    'Review'
-];
 
 const calendarDays = computed(() => {
     const year = currentYear.value;
@@ -108,8 +106,14 @@ const calendarDays = computed(() => {
     // Current month days
     const today = new Date();
     for (let i = 1; i <= daysInMonth; i++) {
-        // Randomly assign events for demo (approx 20% of days)
-        const hasEvent = Math.random() < 0.2; 
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+        
+        // Find events on this day
+        const dayEvents = props.events.filter(e => {
+            return e.from_date <= dateStr && e.to_date >= dateStr;
+        });
+
+        const hasEvent = dayEvents.length > 0;
         const isToday = 
             i === today.getDate() && 
             month === today.getMonth() && 
@@ -117,7 +121,7 @@ const calendarDays = computed(() => {
 
         let eventTitle = 'No events scheduled';
         if (hasEvent) {
-             eventTitle = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+             eventTitle = dayEvents.map(e => e.title).join(', ');
         } else if (isToday) {
             eventTitle = 'Today';
         }

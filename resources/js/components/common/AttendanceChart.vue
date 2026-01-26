@@ -203,67 +203,43 @@ const chartData = computed(() => {
         datasets: [
             {
                 label: 'Present',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)', // green-500
-                borderColor: '#22c55e',
-                borderWidth: 2,
+                backgroundColor: '#22c55e', // green-500
+                borderColor: '#16a34a',
+                borderWidth: 1,
+                borderRadius: 4,
                 data: isMonthly 
                     ? generateMonthlyData({ min: 30, max: 60 })
                     : generateDayWiseTimeSeries(0, count, { min: 30, max: 60 }),
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#22c55e',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
             },
             {
                 label: 'Absent',
-                backgroundColor: 'rgba(239, 68, 68, 0.1)', // red-500
-                borderColor: '#ef4444',
-                borderWidth: 2,
+                backgroundColor: '#ef4444', // red-500
+                borderColor: '#dc2626',
+                borderWidth: 1,
+                borderRadius: 4,
                 data: isMonthly
                     ? generateMonthlyData({ min: 5, max: 25 })
                     : generateDayWiseTimeSeries(0, count, { min: 5, max: 25 }),
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#ef4444',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
             },
             {
                 label: 'Late',
-                backgroundColor: 'rgba(234, 179, 8, 0.1)', // yellow-500
-                borderColor: '#eab308',
-                borderWidth: 2,
+                backgroundColor: '#eab308', // yellow-500
+                borderColor: '#ca8a04',
+                borderWidth: 1,
+                borderRadius: 4,
                 data: isMonthly
                     ? generateMonthlyData({ min: 5, max: 20 })
                     : generateDayWiseTimeSeries(0, count, { min: 5, max: 20 }),
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#eab308',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
             },
             {
                 label: 'Leave',
-                backgroundColor: 'rgba(168, 85, 247, 0.1)', // purple-500
-                borderColor: '#a855f7',
-                borderWidth: 2,
+                backgroundColor: '#a855f7', // purple-500
+                borderColor: '#9333ea',
+                borderWidth: 1,
+                borderRadius: 4,
                 data: isMonthly
                     ? generateMonthlyData({ min: 2, max: 15 })
                     : generateDayWiseTimeSeries(0, count, { min: 2, max: 15 }),
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#a855f7',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
             }
         ]
     };
@@ -276,6 +252,8 @@ const chartOptions = {
     layout: {
         padding: { top: 10, bottom: 10, left: 0, right: 10 }
     },
+    categoryPercentage: 0.8,
+    barPercentage: 0.9,
     interaction: {
         mode: 'index',
         intersect: false,
@@ -306,11 +284,11 @@ const chartOptions = {
                 display: false,
             },
             ticks: {
-                font: { family: 'Inter, sans-serif', size: 11 },
+                font: { family: 'Inter, sans-serif', size: 10 },
                 color: '#9ca3af',
                 maxRotation: 0,
                 autoSkip: true,
-                autoSkipPadding: 20
+                autoSkipPadding: 15
             }
         },
         y: {
@@ -342,7 +320,7 @@ const updateChart = async () => {
     // Create new chart
     const ctx = chartCanvas.value.getContext('2d');
     chartInstance = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: chartData.value,
         options: chartOptions
     });

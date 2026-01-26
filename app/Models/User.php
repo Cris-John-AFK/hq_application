@@ -28,6 +28,7 @@ class User extends Authenticatable
         'position',
         'id_number',
         'department',
+        'department_id',
         'status',
         'avatar',
         'employment_status',
@@ -37,6 +38,11 @@ class User extends Authenticatable
     public function leaveRequests()
     {
         return $this->hasMany(LeaveRequest::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
     }
 
     /**

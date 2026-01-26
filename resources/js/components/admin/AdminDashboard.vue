@@ -1,7 +1,7 @@
 <template>
     <div class="max-w-7xl mx-auto">
         <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-3">
                 <StatCard 
                     icon="pi-users" 
                     :value="totalUsers" 
@@ -18,17 +18,24 @@
                 />
                 <StatCard 
                     icon="pi-times-circle" 
-                    value=" 0" 
+                    value="0" 
                     label="Absent" 
                     iconBgClass="bg-red-50"
                     iconTextClass="text-red-500"
                 />
                 <StatCard 
                     icon="pi-clock" 
+                    value="2" 
+                    label="Late" 
+                    iconBgClass="bg-amber-50"
+                    iconTextClass="text-amber-500"
+                />
+                <StatCard 
+                    icon="pi-calendar" 
                     :value="leaveStats.on_leave_today" 
                     label="On Leave" 
-                    iconBgClass="bg-yellow-50"
-                    iconTextClass="text-yellow-500"
+                    iconBgClass="bg-purple-50"
+                    iconTextClass="text-purple-500"
                 />
         </div>
 
@@ -260,6 +267,7 @@
 <script setup>
     import { ref, onMounted, computed } from 'vue';
     import { useAuthStore } from '../../stores/auth';
+    import { useLeaveStore } from '../../stores/leaves';
     import { storeToRefs } from 'pinia';
     import StatCard from '../common/StatCard.vue';
     import AttendanceChart from '../common/AttendanceChart.vue';
@@ -267,7 +275,10 @@
     import axios from 'axios';
 
     const authStore = useAuthStore();
+    const leaveStore = useLeaveStore();
     const { user } = storeToRefs(authStore);
+    const { stats: leaveStats } = storeToRefs(leaveStore);
+    
     const isLoadingEmployees = ref(false);
     const employees = ref([]);
     const totalUsers = computed(() => employees.value.length);
@@ -280,14 +291,6 @@
             .toUpperCase()
             .substring(0, 2);
     };
-    const fetchTotalUsers = async () => {
-        try {
-            const response = await axios.get('/api/users/total');
-            totalUsers.value = response.data.total;
-        } catch (err) {
-            console.error('Failed to fetch total users:', err);
-        }
-    }
 
     const fetchEmployees = async () => {
         isLoadingEmployees.value = true;
@@ -318,26 +321,9 @@
     const leavesPage = ref(1);
     const pageSize = ref(5);
 
-    const leaveStats = ref({
-        pending: 0,
-        approved: 0,
-        rejected: 0,
-        cancelled: 0,
-        on_leave_today: 0,
-        recent: []
-    });
-
-    const fetchLeaveStats = async () => {
-        try {
-            const res = await axios.get('/api/leave-stats');
-            leaveStats.value = res.data;
-        } catch (e) { console.error(e); }
-    };
-
     onMounted(() => {
         fetchEmployees();
-        fetchTotalUsers();
-        fetchLeaveStats();
+        leaveStore.fetchStats();
     });
 
     // Recent Attendance Data

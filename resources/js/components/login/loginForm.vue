@@ -9,6 +9,9 @@
         <!-- Form Content -->
         <div v-else class="animate-fade-in">
             <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center p-3 bg-teal-50 rounded-2xl mb-4 shadow-inner ring-1 ring-teal-100">
+                    <img src="/logo.png" alt="HQ Logo" class="w-16 h-16 object-contain">
+                </div>
                 <h2 class="text-3xl font-bold text-gray-800">{{ title }}</h2>
                 <p class="text-gray-500 mt-2 text-sm">Welcome back! Please enter your details.</p>
             </div>

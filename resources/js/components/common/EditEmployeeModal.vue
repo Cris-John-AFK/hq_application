@@ -34,11 +34,7 @@
                         required
                     >
                         <option value="" disabled>Select Department</option>
-                        <option value="Engineering">Engineering</option>
-                        <option value="Design">Design</option>
-                        <option value="Marketing">Marketing</option>
-                        <option value="HR">Human Resources</option>
-                        <option value="Sales">Sales</option>
+                        <option v-for="dept in departments" :key="dept" :value="dept">{{ dept }}</option>
                     </select>
                 </div>
 
@@ -109,22 +105,32 @@
                 </div>
 
                 <!-- Actions -->
-                <div class="flex justify-end gap-3 mt-6">
+                <div class="flex justify-between items-center gap-3 mt-6">
                     <button 
                         type="button" 
-                        @click="closeModal"
-                        class="cursor-pointer px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl font-medium transition-colors"
+                        @click="handleChangePassword"
+                        class="cursor-pointer px-4 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl font-medium transition-colors flex items-center gap-2 border border-gray-200"
                     >
-                        Cancel
+                        <i class="pi pi-key text-sm"></i>
+                        Change Password
                     </button>
-                    <button 
-                        type="submit" 
-                        :disabled="loading"
-                        class="cursor-pointer px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-medium shadow-lg shadow-teal-200 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                        <i v-if="loading" class="pi pi-spin pi-spinner"></i>
-                        <span>{{ loading ? 'Updating...' : 'Save Changes' }}</span>
-                    </button>
+                    <div class="flex gap-3">
+                        <button 
+                            type="button" 
+                            @click="closeModal"
+                            class="cursor-pointer px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl font-medium transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            type="submit" 
+                            :disabled="loading"
+                            class="cursor-pointer px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-medium shadow-lg shadow-teal-200 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                            <i v-if="loading" class="pi pi-spin pi-spinner"></i>
+                            <span>{{ loading ? 'Updating...' : 'Save Changes' }}</span>
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -137,10 +143,16 @@ import { reactive, watch } from 'vue';
 const props = defineProps({
     modelValue: Boolean,
     loading: Boolean,
-    employee: Object
+    modelValue: Boolean,
+    loading: Boolean,
+    employee: Object,
+    departments: {
+        type: Array,
+        default: () => []
+    }
 });
 
-const emit = defineEmits(['update:modelValue', 'submit']);
+const emit = defineEmits(['update:modelValue', 'submit', 'changePassword']);
 
 const form = reactive({
     name: '',
@@ -170,5 +182,9 @@ const closeModal = () => {
 
 const handleSubmit = () => {
     emit('submit', { id: props.employee.id, ...form });
+};
+
+const handleChangePassword = () => {
+    emit('changePassword', props.employee);
 };
 </script>
