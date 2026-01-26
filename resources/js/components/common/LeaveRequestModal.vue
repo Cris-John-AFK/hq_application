@@ -194,7 +194,7 @@
                     class="cursor-pointer bg-[#673ab7] text-white px-8 py-2.5 rounded shadow-md text-sm font-bold uppercase hover:bg-[#5e35b1] hover:shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                     <i v-if="loading" class="pi pi-spin pi-spinner"></i>
-                    <span>Submit Request</span>
+                    <span>{{ isEdit ? 'Update Request' : 'Submit Request' }}</span>
                 </button>
             </div>
         </div>
@@ -207,16 +207,14 @@ import { useAuthStore } from '../../stores/auth';
 import { storeToRefs } from 'pinia';
 
 const props = defineProps({
-    modelValue: { type: Boolean, default: false }
+    modelValue: { type: Boolean, default: false },
+    initialData: { type: Object, default: null },
+    isEdit: { type: Boolean, default: false }
 });
 
-const emit = defineEmits(['update:modelValue', 'submit']);
+const emit = defineEmits(['update:modelValue', 'submit', 'update']);
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
-
-onMounted(() => {
-    if (!user.value) authStore.fetchUser();
-});
 
 const formError = ref('');
 const loading = ref(false);
@@ -248,110 +246,12 @@ const today = computed(() => {
     return now.toISOString().split('T')[0];
 });
 
-// Watch requestType to sync dates for Halfday/Undertime
-watch(() => form.value.requestType, (newType) => {
-    if (newType === 'Halfday' || newType === 'Undertime') {
-        // If fromDate is set, sync toDate to match
-        if (form.value.fromDate) {
-            form.value.toDate = form.value.fromDate;
-        }
-    }
+onMounted(() => {
+    if (!user.value) authStore.fetchUser();
 });
-
-// Watch fromDate to sync toDate for Halfday/Undertime
-watch(() => form.value.fromDate, (newFromDate) => {
-    if ((form.value.requestType === 'Halfday' || form.value.requestType === 'Undertime') && newFromDate) {
-        form.value.toDate = newFromDate;
-    }
-});
-
-// Watch toDate to sync fromDate for Halfday/Undertime
-watch(() => form.value.toDate, (newToDate) => {
-    if ((form.value.requestType === 'Halfday' || form.value.requestType === 'Undertime') && newToDate) {
-        form.value.fromDate = newToDate;
-    }
-});
-
-// Auto-calc number of days (INCLUDING weekends as requested)
-watch([() => form.value.fromDate, () => form.value.toDate, () => form.value.requestType], ([start, end, type]) => {
-    if (start && end) {
-        const s = new Date(start);
-        const e = new Date(end);
-        
-        // Reset hours to avoid timezone/time diff issues
-        s.setHours(0, 0, 0, 0);
-        e.setHours(0, 0, 0, 0);
-
-        if (s > e) {
-            form.value.numberOfDays = 0;
-            return;
-        }
-
-        // Calculate total days INCLUDING weekends
-        const diffTime = Math.abs(e - s);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end dates
-        
-        if (type === 'Halfday') {
-             form.value.numberOfDays = 0.5;
-        } else if (type === 'Undertime') {
-            form.value.numberOfDays = 0;
-        } else {
-            form.value.numberOfDays = diffDays;
-        }
-    }
-});
-
-const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-        if (file.size > 2 * 1024 * 1024) { // 2MB
-            alert('File size exceeds 2MB limit.');
-            clearFile();
-            return;
-        }
-        form.value.attachment = file;
-        attachmentName.value = file.name;
-    }
-};
-
-const clearFile = () => {
-    form.value.attachment = null;
-    attachmentName.value = '';
-    if (fileInput.value) fileInput.value.value = '';
-};
-
-const closeModal = () => {
-    emit('update:modelValue', false);
-    resetForm();
-};
-
-const submitForm = () => {
-    formError.value = '';
-    
-    // Validation
-    if (!form.value.leaveType) return setError('Please select a leave type.');
-    if (form.value.leaveType === 'Others' && !form.value.otherLeaveType) return setError('Please specify the "Others" leave type.');
-    if (!form.value.fromDate || !form.value.toDate) return setError('Please select the date range.');
-    if (!form.value.reason) return setError('Please provide a reason.');
-
-    loading.value = true;
-
-    // Simulate Backend Delay or emit immediately
-    setTimeout(() => {
-        emit('submit', {
-            ...form.value,
-            // Consolidate 'Others' input
-            leaveType: form.value.leaveType === 'Others' ? form.value.otherLeaveType : form.value.leaveType,
-            date_filed: form.value.dateFiled // Ensure snake_case for backend if needed
-        });
-        loading.value = false;
-        closeModal();
-    }, 500);
-};
 
 const setError = (msg) => {
     formError.value = msg;
-    // Scroll to top or highlight?
 };
 
 const resetForm = () => {
@@ -372,14 +272,123 @@ const resetForm = () => {
     attachmentName.value = '';
     formError.value = '';
 };
+
+const closeModal = () => {
+    emit('update:modelValue', false);
+    resetForm();
+};
+
+// Watch for modal open and initialData to populate form
+watch(() => props.modelValue, (isOpen) => {
+    if (isOpen) {
+        if (props.isEdit && props.initialData) {
+            const data = props.initialData;
+            form.value = {
+                dateFiled: data.date_filed || new Date().toISOString().split('T')[0],
+                requestType: data.request_type || 'Leave',
+                leaveType: leaveTypes.includes(data.leave_type) ? data.leave_type : 'Others',
+                otherLeaveType: leaveTypes.includes(data.leave_type) ? '' : data.leave_type,
+                fromDate: data.from_date,
+                toDate: data.to_date || data.from_date,
+                numberOfDays: data.days_taken,
+                numberOfHours: data.numberOfHours || 0,
+                startTime: data.start_time || '',
+                endTime: data.end_time || '',
+                reason: data.reason,
+                attachment: null
+            };
+        } else {
+            resetForm();
+        }
+    }
+});
+
+const submitForm = () => {
+    formError.value = '';
+    
+    // Validation
+    if (!form.value.leaveType) return setError('Please select a leave type.');
+    if (form.value.leaveType === 'Others' && !form.value.otherLeaveType) return setError('Please specify the "Others" leave type.');
+    if (!form.value.fromDate || !form.value.toDate) return setError('Please select the date range.');
+    if (!form.value.reason) return setError('Please provide a reason.');
+
+    loading.value = true;
+
+    // Consolidate 'Others' input
+    const payload = {
+        ...form.value,
+        leaveType: form.value.leaveType === 'Others' ? form.value.otherLeaveType : form.value.leaveType,
+        date_filed: form.value.dateFiled
+    };
+
+    if (props.isEdit) {
+        emit('update', payload);
+    } else {
+        emit('submit', payload);
+    }
+    
+    // Add a small delay for UI feel then close
+    setTimeout(() => {
+        loading.value = false;
+        closeModal();
+    }, 500);
+};
+
+// Watchers for date sync
+watch(() => form.value.requestType, (newType) => {
+    if (newType === 'Halfday' || newType === 'Undertime') {
+        if (form.value.fromDate) form.value.toDate = form.value.fromDate;
+    }
+});
+
+watch(() => form.value.fromDate, (val) => {
+    if ((form.value.requestType === 'Halfday' || form.value.requestType === 'Undertime') && val) {
+        form.value.toDate = val;
+    }
+});
+
+watch([() => form.value.fromDate, () => form.value.toDate, () => form.value.requestType], ([start, end, type]) => {
+    if (start && end) {
+        const s = new Date(start);
+        const e = new Date(end);
+        s.setHours(0, 0, 0, 0);
+        e.setHours(0, 0, 0, 0);
+
+        if (s > e) {
+            form.value.numberOfDays = 0;
+            return;
+        }
+
+        const diffTime = Math.abs(e - s);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        
+        if (type === 'Halfday') form.value.numberOfDays = 0.5;
+        else if (type === 'Undertime') form.value.numberOfDays = 0;
+        else form.value.numberOfDays = diffDays;
+    }
+});
+
+const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        if (file.size > 2 * 1024 * 1024) {
+            alert('File size exceeds 2MB limit.');
+            clearFile();
+            return;
+        }
+        form.value.attachment = file;
+        attachmentName.value = file.name;
+    }
+};
+
+const clearFile = () => {
+    form.value.attachment = null;
+    attachmentName.value = '';
+    if (fileInput.value) fileInput.value.value = '';
+};
 </script>
 
 <style scoped>
-.animate-fade-in {
-    animation: fadeIn 0.2s ease-out;
-}
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
+.animate-fade-in { animation: fadeIn 0.2s ease-out; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 </style>

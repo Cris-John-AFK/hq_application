@@ -7,13 +7,30 @@
             </div>
             
             <div class="flex flex-col md:flex-row gap-3 items-center">
-                <button 
-                    @click="showAddModal = true"
-                    class="cursor-pointer h-10 px-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
-                >
-                    <i class="pi pi-plus"></i>
-                    Add Employee
-                </button>
+                <div class="flex items-center gap-2">
+                    <button 
+                        @click="showAddModal = true"
+                        class="cursor-pointer h-10 px-4 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
+                    >
+                        <i class="pi pi-plus"></i>
+                        Add Employee
+                    </button>
+                    <!-- Bulk Import (Future Intent) -->
+                    <button 
+                        @click="triggerBulkImport"
+                        class="cursor-pointer h-10 px-4 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
+                    >
+                        <i class="pi pi-upload text-teal-600"></i>
+                        Bulk Import
+                    </button>
+                    <input 
+                        type="file" 
+                        ref="importInput" 
+                        style="display: none" 
+                        accept=".xlsx,.xls,.csv"
+                        @change="handleFileUpload"
+                    />
+                </div>
                 <!-- Department Filter -->
                 <div class="relative w-full md:w-auto">
                     <i class="pi pi-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
@@ -68,121 +85,144 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    <tr v-for="(employee, index) in paginatedEmployees" :key="employee.id" class="hover:bg-gray-50/50 transition-colors">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div
-                                class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-sm bg-cover bg-center"
-                                :style="employee.avatar ? { backgroundImage: `url(${employee.avatar})` } : {}"
-                                >
-                                <span v-if="!employee.avatar">
-                                    {{ getInitials(employee.name) }}
-                                </span>
-                                </div>
-                                <div>
-                                    <div class="flex items-center gap-2">
-                                        <p class="font-medium text-gray-800">{{ employee.name }}</p>
-                                        <span v-if="employee.role === 'admin'" class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-bold rounded uppercase tracking-tighter shadow-sm border border-blue-200">Admin</span>
+                    <!-- Skeleton Loading Rows -->
+                    <template v-if="isLoading">
+                        <tr v-for="i in 5" :key="i" class="animate-pulse">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full bg-gray-100"></div>
+                                    <div class="space-y-2">
+                                        <div class="h-4 w-24 bg-gray-100 rounded"></div>
+                                        <div class="h-2 w-32 bg-gray-100 rounded"></div>
                                     </div>
-                                    <p class="text-xs text-gray-500">{{ employee.email }}</p>
                                 </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-600 font-mono">{{ employee.empId }}</td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                {{ employee.department }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ employee.position }}</td>
-                        <td class="px-4 py-4">
-                            <span 
-                                :class="{
-                                    'bg-green-100 text-green-700': employee.status === 'Available',
-                                    'bg-gray-100 text-gray-600': employee.status === 'On Leave',
-                                    'bg-blue-100 text-blue-600': employee.status === 'Working',
-                                    'bg-red-100 text-red-600': employee.status === 'Absent',
-                                }"
-                                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
-                            >
-                                {{ employee.status }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-sm font-black bg-teal-50 text-teal-700 border border-teal-100 min-w-[3rem] justify-center shadow-sm">
-                                {{ Number(employee.leave_credits) % 1 === 0 ? Number(employee.leave_credits).toFixed(0) : employee.leave_credits }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <div class="flex items-center justify-end gap-2">
-                                <!-- Edit Employee -->
-                                <div class="relative group">
-                                    <button 
-                                        @click="openEditModal(employee)" 
-                                        class="cursor-pointer w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors"
+                            </td>
+                            <td class="px-6 py-4"><div class="h-4 w-16 bg-gray-100 rounded"></div></td>
+                            <td class="px-6 py-4"><div class="h-4 w-20 bg-gray-100 rounded"></div></td>
+                            <td class="px-6 py-4"><div class="h-4 w-24 bg-gray-100 rounded"></div></td>
+                            <td class="px-4 py-4"><div class="h-6 w-16 bg-gray-100 rounded-full"></div></td>
+                            <td class="px-6 py-4"><div class="h-6 w-8 bg-gray-100 rounded mx-auto"></div></td>
+                            <td class="px-6 py-4"><div class="h-8 w-24 bg-gray-100 rounded ml-auto"></div></td>
+                        </tr>
+                    </template>
+                    
+                    <template v-else>
+                        <tr v-for="(employee, index) in paginatedEmployees" :key="employee.id" class="hover:bg-gray-50/50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                    class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-sm bg-cover bg-center"
+                                    :style="employee.avatar ? { backgroundImage: `url(${employee.avatar})` } : {}"
                                     >
-                                        <i class="pi pi-pencil text-xs"></i>
-                                    </button>
-                                    <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                                        Edit Details
-                                        <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></span>
+                                    <span v-if="!employee.avatar">
+                                        {{ getInitials(employee.name) }}
                                     </span>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <p class="font-medium text-gray-800">{{ employee.name }}</p>
+                                            <span v-if="employee.role === 'admin'" class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-bold rounded uppercase tracking-tighter shadow-sm border border-blue-200">Admin</span>
+                                        </div>
+                                        <p class="text-xs text-gray-500">{{ employee.email }}</p>
+                                    </div>
                                 </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600 font-mono">{{ employee.empId }}</td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    {{ employee.department }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">{{ employee.position }}</td>
+                            <td class="px-4 py-4">
+                                <span 
+                                    :class="{
+                                        'bg-green-100 text-green-700': employee.status === 'Available',
+                                        'bg-gray-100 text-gray-600': employee.status === 'On Leave',
+                                        'bg-blue-100 text-blue-600': employee.status === 'Working',
+                                        'bg-red-100 text-red-600': employee.status === 'Absent',
+                                    }"
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                >
+                                    {{ employee.status }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-sm font-black bg-teal-50 text-teal-700 border border-teal-100 min-w-[3rem] justify-center shadow-sm">
+                                    {{ Number(employee.leave_credits) % 1 === 0 ? Number(employee.leave_credits).toFixed(0) : employee.leave_credits }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <!-- Edit Employee -->
+                                    <div class="relative group">
+                                        <button 
+                                            @click="openEditModal(employee)" 
+                                            class="cursor-pointer w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors"
+                                        >
+                                            <i class="pi pi-pencil text-xs"></i>
+                                        </button>
+                                        <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                            Edit Details
+                                            <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></span>
+                                        </span>
+                                    </div>
 
-                                <!-- View Leaves -->
-                                <div class="relative group">
-                                    <button 
-                                        @click="handleViewLeaves(employee)" 
-                                        class="cursor-pointer w-8 h-8 rounded-full bg-teal-50 text-teal-600 hover:bg-teal-100 flex items-center justify-center transition-colors"
-                                    >
-                                        <i class="pi pi-calendar text-xs"></i>
-                                    </button>
-                                    <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                                        View Leaves
-                                        <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></span>
-                                    </span>
-                                </div>
+                                    <!-- View Leaves -->
+                                    <div class="relative group">
+                                        <button 
+                                            @click="handleViewLeaves(employee)" 
+                                            class="cursor-pointer w-8 h-8 rounded-full bg-teal-50 text-teal-600 hover:bg-teal-100 flex items-center justify-center transition-colors"
+                                        >
+                                            <i class="pi pi-calendar text-xs"></i>
+                                        </button>
+                                        <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                            View Leaves
+                                            <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></span>
+                                        </span>
+                                    </div>
 
-                                <!-- View Report -->
-                                <div class="relative group">
-                                    <button 
-                                        @click="handleViewReport(employee)" 
-                                        class="cursor-pointer w-8 h-8 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 flex items-center justify-center transition-colors"
-                                    >
-                                        <i class="pi pi-chart-bar text-xs"></i>
-                                    </button>
-                                    <span class="absolute bottom-full mb-2 right-0 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                                        View Report
-                                        <span class="absolute top-full right-4 border-4 border-transparent border-t-gray-800"></span>
-                                    </span>
-                                </div>
+                                    <!-- View Report -->
+                                    <div class="relative group">
+                                        <button 
+                                            @click="handleViewReport(employee)" 
+                                            class="cursor-pointer w-8 h-8 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 flex items-center justify-center transition-colors"
+                                        >
+                                            <i class="pi pi-chart-bar text-xs"></i>
+                                        </button>
+                                        <span class="absolute bottom-full mb-2 right-0 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                            View Report
+                                            <span class="absolute top-full right-4 border-4 border-transparent border-t-gray-800"></span>
+                                        </span>
+                                    </div>
 
-                                <!-- Mark On Leave -->
-                                <div class="relative group">
-                                    <button 
-                                        @click="openLeaveModal(employee.id, 'On Leave')"
-                                        :class="[
-                                            'cursor-pointer w-8 h-8 rounded-full flex items-center justify-center transition-colors',
-                                            employee.status === 'On Leave' 
-                                                ? 'bg-orange-100 text-orange-600 hover:bg-orange-200' 
-                                                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                                        ]"
-                                    >
-                                        <i class="pi pi-clock text-xs"></i>
-                                    </button>
-                                    <span class="absolute bottom-full mb-2 right-0 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                                        Mark On Leave
-                                        <span class="absolute top-full right-2 border-4 border-transparent border-t-gray-800"></span>
-                                    </span>
+                                    <!-- Mark On Leave -->
+                                    <div class="relative group">
+                                        <button 
+                                            @click="openLeaveModal(employee.id, 'On Leave')"
+                                            :class="[
+                                                'cursor-pointer w-8 h-8 rounded-full flex items-center justify-center transition-colors',
+                                                employee.status === 'On Leave' 
+                                                    ? 'bg-orange-100 text-orange-600 hover:bg-orange-200' 
+                                                    : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                                            ]"
+                                        >
+                                            <i class="pi pi-clock text-xs"></i>
+                                        </button>
+                                        <span class="absolute bottom-full mb-2 right-0 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                            Mark On Leave
+                                            <span class="absolute top-full right-2 border-4 border-transparent border-t-gray-800"></span>
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr v-if="filteredEmployees.length === 0">
-                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
-                            No employees found matching your criteria.
-                        </td>
-                    </tr>
+                            </td>
+                        </tr>
+                        <tr v-if="filteredByStatus.length === 0">
+                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                No employees found matching your criteria.
+                            </td>
+                        </tr>
+                    </template>
                 </tbody>
             </table>
         </div>
@@ -278,6 +318,7 @@ const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = 10;
 const openActionMenuId = ref(null);
+const importInput = ref(null);
 
 // Modal Logic
 const showLeaveModal = ref(false);
@@ -287,6 +328,18 @@ const showPasswordModal = ref(false);
 const showReportModal = ref(false);
 const isCreating = ref(false);
 const isEditing = ref(false);
+
+const triggerBulkImport = () => {
+    importInput.value.click();
+};
+
+const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        alert(`Bulk Import initialized for: ${file.name}. \n\nThis feature is ready for the master access integration. Data validation and processing will occur in the next update.`);
+        // Placeholder for future axios.post('/api/users/import', formData)
+    }
+};
 const leaveForm = ref({
     employeeId: null,
     type: ''

@@ -105,6 +105,11 @@
                         <div class="w-px h-6 bg-gray-200"></div>
                     </div>
 
+                    <!-- Notifications -->
+                    <NotificationDropdown />
+
+                    <div class="w-px h-6 bg-gray-200"></div>
+
                     <!-- Logout -->
                     <button 
                         @click="handleLogout" 
@@ -243,6 +248,7 @@ import { useCalendarStore } from '../stores/calendar';
 import { storeToRefs } from 'pinia';
 import EventCalendar from '../components/common/EventCalendar.vue';
 import ScrollIndicator from '../components/common/ScrollIndicator.vue';
+import NotificationDropdown from '../components/common/NotificationDropdown.vue';
 import axios from 'axios';
 
 const props = defineProps({
@@ -367,6 +373,7 @@ const menuItems = computed(() => {
         { label: 'Calendar', icon: 'pi-calendar', href: '/schedules' },
         { label: 'Reports', icon: 'pi-chart-bar', href: '/reports' },
         { label: 'Manage Leaves', icon: 'pi-calendar-times', href: '/manage-leaves' },
+        { label: 'Activity Logs', icon: 'pi-list', href: '/activity-logs' },
     ] : [
         { label: 'Dashboard', icon: 'pi-home', href: '/dashboard' },
         { label: 'My Profile', icon: 'pi-user', href: '/profile' },

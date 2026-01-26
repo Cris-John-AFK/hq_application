@@ -122,46 +122,78 @@
                     </div>
                 </div>
 
-                <!-- Filters -->
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row gap-4 items-center">
-                    <div class="relative flex-1 w-full">
-                        <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input 
-                            v-model="searchQuery" 
-                            type="text" 
-                            placeholder="Search by name or Employee ID (e.g. HQI-0001)..." 
-                            class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
-                        >
+                <!-- Enhanced Filters -->
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 mb-6 space-y-4">
+                    <!-- Top Row: Search & Status -->
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <div class="relative flex-1">
+                            <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input 
+                                v-model="searchQuery" 
+                                type="text" 
+                                placeholder="Search by name or Employee ID (e.g. HQI-0001)..." 
+                                class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-sm"
+                            >
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <select v-model="filters.status" class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white min-w-[130px]">
+                                <option value="">All Statuses</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Rejected">Rejected</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                            <select v-model="filters.department" class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white min-w-[150px]">
+                                <option value="">All Departments</option>
+                                <option v-for="dept in departments" :key="dept" :value="dept">{{ dept }}</option>
+                            </select>
+                             <select v-model="filters.request_type" class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white min-w-[130px]">
+                                <option value="">All Categories</option>
+                                <option value="Leave">Leave</option>
+                                <option value="Halfday">Halfday</option>
+                                <option value="Undertime">Undertime</option>
+                                <option value="Official Business">Official Business</option>
+                            </select>
+                        </div>
                     </div>
-                    <select v-model="filters.status" class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 bg-white min-w-[150px]">
-                        <option value="">All Statuses</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Approved">Approved</option>
-                        <option value="Rejected">Rejected</option>
-                        <option value="Cancelled">Cancelled</option>
-                    </select>
-                    <select v-model="filters.type" class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 bg-white min-w-[150px]">
-                        <option value="">All Leave Types</option>
-                        <option value="SIL">SIL (Service Incentive)</option>
-                        <option value="Sick">Sick Leave</option>
-                        <option value="Vacation">Vacation Leave</option>
-                        <option value="Emergency">Emergency Leave</option>
-                        <option value="Maternity">Maternity Leave</option>
-                        <option value="Paternity">Paternity Leave</option>
-                        <option value="Solo Parent">Solo Parent</option>
-                        <option value="VAWS">VAWS</option>
-                        <option value="Magna Carta">Magna Carta</option>
-                        <option value="Official Business">Official Business</option>
-                        <option value="Others">Others</option>
-                    </select>
-                    
-                    <!-- User Filter Indicator -->
-                    <div v-if="filters.user_id" class="flex items-center gap-2 px-3 py-2 bg-teal-50 text-teal-700 rounded-lg border border-teal-200 text-xs font-bold animate-in fade-in slide-in-from-right-2">
-                        <i class="pi pi-user"></i>
-                        <span>Filtered by Employee</span>
-                        <button @click="filters.user_id = ''" class="ml-1 p-1 hover:bg-teal-100 rounded-full transition-colors cursor-pointer" title="Clear employee filter">
-                            <i class="pi pi-times text-[10px]"></i>
-                        </button>
+
+                    <!-- Bottom Row: Date Range & Type -->
+                    <div class="flex flex-col md:flex-row gap-4 items-center border-t border-gray-50 pt-4">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Range:</span>
+                            <input type="date" v-model="filters.from_date" class="px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-teal-500/20 outline-none">
+                            <span class="text-gray-300">to</span>
+                            <input type="date" v-model="filters.to_date" class="px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-teal-500/20 outline-none">
+                        </div>
+
+                        <select v-model="filters.type" class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white flex-1">
+                            <option value="">All Leave Types</option>
+                            <option value="SIL">SIL (Service Incentive)</option>
+                            <option value="Sick">Sick Leave</option>
+                            <option value="Vacation">Vacation Leave</option>
+                            <option value="Emergency">Emergency Leave</option>
+                            <option value="Maternity">Maternity Leave</option>
+                            <option value="Paternity">Paternity Leave</option>
+                            <option value="Solo Parent">Solo Parent</option>
+                            <option value="VAWS">VAWS</option>
+                            <option value="Magna Carta">Magna Carta</option>
+                            <option value="Others">Others</option>
+                        </select>
+
+                        <div class="flex gap-2">
+                           <button @click="Object.keys(filters).forEach(k => k !== 'user_id' ? filters[k] = '' : null); searchQuery = ''" class="px-3 py-2 text-xs font-bold text-gray-400 hover:text-rose-500 transition-colors uppercase tracking-widest">
+                               <i class="pi pi-refresh mr-1"></i> Reset Filters
+                           </button>
+                        </div>
+
+                        <!-- User Filter Indicator -->
+                        <div v-if="filters.user_id" class="flex items-center gap-2 px-3 py-1.5 bg-teal-50 text-teal-700 rounded-lg border border-teal-200 text-xs font-bold animate-in fade-in slide-in-from-right-2">
+                            <i class="pi pi-user"></i>
+                            <span>Single Employee View</span>
+                            <button @click="filters.user_id = ''" class="ml-1 p-1 hover:bg-teal-100 rounded-full transition-colors cursor-pointer">
+                                <i class="pi pi-times text-[10px]"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -176,7 +208,7 @@
                                     <th class="p-4">Dates</th>
                                     <th class="p-4">Duration</th>
                                     <th class="p-4">Status</th>
-                                    <th class="p-4">Payment</th>
+                                    <th class="p-4">Pay Status</th>
                                     <th class="p-4 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -444,7 +476,7 @@
 
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                             <div>
-                                                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Payment Settings</label>
+                                                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Pay Configuration</label>
                                                 <div class="flex items-center gap-2 mb-3">
                                                     <button 
                                                         @click="selectedRequest.is_paid = !selectedRequest.is_paid"
@@ -482,9 +514,20 @@
 
                                         <div class="flex gap-3 border-t border-gray-100 pt-6">
                                             <button 
+                                                @click="handleAction(selectedRequest.status)" 
+                                                class="cursor-pointer flex-1 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold shadow-lg shadow-teal-200 transition-all flex items-center justify-center gap-2"
+                                                v-if="['Approved', 'Rejected', 'Cancelled'].includes(selectedRequest.status)"
+                                                :disabled="processing"
+                                            >
+                                                <i class="pi pi-save" v-if="!processing"></i>
+                                                <i class="pi pi-spin pi-spinner" v-else></i>
+                                                Update Configuration
+                                            </button>
+
+                                            <button 
                                                 @click="handleAction('Approved')" 
                                                 class="cursor-pointer flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0"
-                                                v-if="selectedRequest.status !== 'Approved'"
+                                                v-if="selectedRequest.status === 'Pending'"
                                                 :disabled="processing"
                                             >
                                                 <i class="pi pi-check" v-if="!processing"></i>
@@ -505,7 +548,7 @@
                                             <button 
                                                 @click="handleAction('Cancelled')"
                                                 class="cursor-pointer flex-1 py-3 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-lg font-bold transition-all flex items-center justify-center gap-2"
-                                                v-if="selectedRequest.status === 'Approved'"
+                                                v-if="selectedRequest.status === 'Approved' || selectedRequest.status === 'Pending'"
                                                 :disabled="processing"
                                             >
                                                 Cancel Request
@@ -527,13 +570,16 @@ import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import { useAuthStore } from '../../stores/auth';
 import { useLeaveStore } from '../../stores/leaves';
+import { useEmployeeStore } from '../../stores/employees';
 import { storeToRefs } from 'pinia';
 import MainLayout from '../../layouts/MainLayout.vue';
 
 const authStore = useAuthStore();
 const leaveStore = useLeaveStore();
+const employeeStore = useEmployeeStore();
 const { user } = storeToRefs(authStore);
 const { stats } = storeToRefs(leaveStore);
+const { departments } = storeToRefs(employeeStore);
 
 const requests = ref([]);
 const loading = ref(false);
@@ -554,6 +600,10 @@ const filters = ref({
     search: '',
     status: '',
     type: '',
+    request_type: '',
+    department: '',
+    from_date: '',
+    to_date: '',
     user_id: ''
 });
 
@@ -599,6 +649,7 @@ const filteredEmployeeData = computed(() => {
 
 onMounted(async () => {
     authStore.fetchUser();
+    employeeStore.fetchDepartments();
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('user_id');
     if (userId) filters.value.user_id = userId;
@@ -613,6 +664,10 @@ const fetchRequests = async () => {
             page: page.value,
             status: filters.value.status,
             leave_type: filters.value.type,
+            request_type: filters.value.request_type,
+            department: filters.value.department,
+            from_date: filters.value.from_date,
+            to_date: filters.value.to_date,
             search: filters.value.search,
             user_id: filters.value.user_id
         };

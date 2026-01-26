@@ -54,6 +54,9 @@ class UserController extends Controller
             'employment_status' => $validated['employment_status'],
         ]);
 
+        // Audit Log
+        \App\Utils\AuditLogger::log('Employees', 'Created', "Registered a new employee: {$user->name} ({$user->id_number}).", null, $user->toArray());
+
         return response()->json([
             'message' => 'Employee created successfully',
             'user' => $user,
@@ -80,7 +83,12 @@ class UserController extends Controller
              'leave_credits' => 'sometimes|numeric|min:0',
         ]);
 
+        $oldData = $user->toArray();
         $user->update($validated);
+        
+        // Audit Log
+        \App\Utils\AuditLogger::log('Employees', 'Updated', "Updated profile of employee: {$user->name} (#{$user->id}).", $oldData, $user->toArray());
+        
         return response()->json($user);
     }
     public function uploadAvatar(Request $request)
@@ -149,8 +157,11 @@ class UserController extends Controller
         ]);
 
         $user->update([
-            'password' => Hash::make($validated['password']),
+            'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
         ]);
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('Employees', 'Security', "Reset password for employee: {$user->name} (#{$user->id}).");
 
         return response()->json(['message' => 'Password updated successfully']);
     }

@@ -1,5 +1,8 @@
 <template>
     <div class="max-w-7xl mx-auto space-y-6 pb-10">
+        <!-- 0. Company Bulletins -->
+        <BulletinBoard />
+
         <!-- 1. Stats Grid (5 Columns) -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             <StatCard 
@@ -8,6 +11,7 @@
                 label="Total Employees" 
                 iconBgClass="bg-orange-50"
                 iconTextClass="text-orange-500"
+                :loading="loading"
             />
             <StatCard 
                 icon="pi-check-circle" 
@@ -15,6 +19,7 @@
                 label="Present" 
                 iconBgClass="bg-green-50"
                 iconTextClass="text-green-500"
+                :loading="loading"
             />
             <StatCard 
                 icon="pi-times-circle" 
@@ -22,6 +27,7 @@
                 label="Absent" 
                 iconBgClass="bg-red-50"
                 iconTextClass="text-red-500"
+                :loading="loading"
             />
             <StatCard 
                 icon="pi-clock" 
@@ -29,6 +35,7 @@
                 label="Late" 
                 iconBgClass="bg-amber-50"
                 iconTextClass="text-amber-500"
+                :loading="loading"
             />
             <StatCard 
                 icon="pi-calendar" 
@@ -36,6 +43,7 @@
                 label="On Leave" 
                 iconBgClass="bg-purple-50"
                 iconTextClass="text-purple-500"
+                :loading="loading"
             />
         </div>
 
@@ -49,7 +57,14 @@
                         Leave Requests
                     </h3>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div v-if="loading" class="grid grid-cols-2 gap-3">
+                    <div v-for="i in 4" :key="i" class="animate-pulse bg-gray-50 border border-gray-100 rounded-2xl h-32 flex flex-col items-center justify-center">
+                        <div class="w-10 h-10 rounded-xl bg-gray-200 mb-3"></div>
+                        <div class="h-4 w-8 bg-gray-200 rounded mb-2"></div>
+                        <div class="h-2 w-12 bg-gray-200 rounded"></div>
+                    </div>
+                </div>
+                <div v-else class="grid grid-cols-2 gap-3">
                     <!-- Status Cards -->
                     <div 
                         v-for="stat in [
@@ -112,105 +127,122 @@
 
                     <!-- Tab Content -->
                     <div class="p-4">
-                        <!-- Attendance Tab -->
-                        <div v-if="activeTab === 'attendance'" class="space-y-3">
-                            <div v-if="paginatedAttendance.length === 0" class="py-10 text-center text-gray-500">
-                                <i class="pi pi-info-circle mb-2 block text-xl"></i>
-                                <p class="text-xs">No recent attendance records found.</p>
-                            </div>
-                            <div v-for="record in paginatedAttendance" :key="record.id" class="group flex items-center justify-between p-4 bg-white rounded-xl hover:shadow-md transition-all duration-200 border border-gray-100 hover:border-teal-200 shadow-sm mb-3">
+                        <div v-if="loading" class="space-y-4">
+                            <div v-for="i in 3" :key="i" class="animate-pulse flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
                                 <div class="flex items-center gap-4">
-                                    <!-- Avatar with Ring -->
-                                    <div class="relative">
-                                        <div class="w-12 h-12 rounded-full overflow-hidden ring-4 ring-teal-50 shadow-inner flex items-center justify-center bg-gray-100 group-hover:scale-105 transition-transform duration-200">
-                                            <img v-if="record.avatar" :src="record.avatar" class="w-full h-full object-cover">
-                                            <span v-else class="text-sm font-black text-teal-600 uppercase tracking-widest">{{ record.initials }}</span>
-                                        </div>
-                                        <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
-                                    </div>
-
-                                    <div>
-                                        <p class="font-black text-gray-800 text-sm leading-tight mb-0.5 tracking-tight">{{ record.name }}</p>
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                                                <i class="pi pi-calendar text-[10px]"></i>
-                                                {{ record.date }}
-                                            </span>
-                                            <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-                                            <span class="text-[10px] font-bold text-teal-600 uppercase tracking-wider">Present</span>
-                                        </div>
+                                    <div class="w-12 h-12 rounded-full bg-gray-200"></div>
+                                    <div class="space-y-2">
+                                        <div class="h-4 w-24 bg-gray-200 rounded"></div>
+                                        <div class="h-2 w-16 bg-gray-200 rounded"></div>
                                     </div>
                                 </div>
-
-                                <div class="flex items-center gap-6">
-                                    <div class="flex flex-col items-center">
-                                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.1em] mb-0.5">Time In</span>
-                                        <div class="px-2.5 py-1 bg-emerald-50 rounded-lg border border-emerald-100">
-                                            <span class="text-xs font-black text-emerald-700 tabular-nums uppercase">{{ record.timeIn }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-col items-center">
-                                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.1em] mb-0.5">Time Out</span>
-                                        <div class="px-2.5 py-1 bg-rose-50 rounded-lg border border-rose-100">
-                                            <span class="text-xs font-black text-rose-700 tabular-nums uppercase">{{ record.timeOut }}</span>
-                                        </div>
-                                    </div>
+                                <div class="flex gap-4">
+                                    <div class="h-8 w-12 bg-gray-200 rounded"></div>
+                                    <div class="h-8 w-12 bg-gray-200 rounded"></div>
                                 </div>
-                            </div>
-
-                            <!-- Attendance Pagination -->
-                            <div v-if="recentAttendance.length > pageSize" class="flex justify-center items-center gap-4 mt-4 pt-4 border-t border-gray-100">
-                                <button @click="attendancePage > 1 ? attendancePage-- : null" :disabled="attendancePage === 1" class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30">
-                                    <i class="pi pi-chevron-left text-xs"></i>
-                                </button>
-                                <span class="text-xs font-bold text-gray-400 uppercase">Page {{ attendancePage }} of {{ Math.ceil(recentAttendance.length / pageSize) }}</span>
-                                <button @click="attendancePage < Math.ceil(recentAttendance.length / pageSize) ? attendancePage++ : null" :disabled="attendancePage === Math.ceil(recentAttendance.length / pageSize)" class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30">
-                                    <i class="pi pi-chevron-right text-xs"></i>
-                                </button>
                             </div>
                         </div>
-
-                        <!-- Leaves Tab -->
-                        <div v-if="activeTab === 'leaves'" class="space-y-3">
-                            <div v-if="paginatedLeaves.length === 0" class="py-10 text-center text-gray-500">
-                                <i class="pi pi-info-circle mb-2 block text-xl"></i>
-                                <p class="text-xs">No recent leave requests found.</p>
-                            </div>
-                            <div v-for="leave in paginatedLeaves" :key="leave.id" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer border border-gray-100 group" @click="goToRequest(leave.id)">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center overflow-hidden ring-2 ring-white shadow-sm">
-                                        <img v-if="leave.avatar" :src="leave.avatar" class="w-full h-full object-cover">
-                                        <span v-else class="text-sm font-bold text-amber-600">{{ leave.initials }}</span>
-                                    </div>
-                                    <div>
-                                        <div class="flex items-center gap-2">
-                                            <p class="font-bold text-gray-800 text-sm">{{ leave.name }}</p>
-                                            <span v-if="leave.status === 'Pending'" class="px-1.5 py-0.5 bg-rose-500 text-white text-[9px] font-black rounded uppercase tracking-tighter animate-bounce h-fit">New</span>
+                        <template v-else>
+                            <!-- Attendance Tab -->
+                            <div v-if="activeTab === 'attendance'" class="space-y-3">
+                                <div v-if="paginatedAttendance.length === 0" class="py-10 text-center text-gray-500">
+                                    <i class="pi pi-info-circle mb-2 block text-xl"></i>
+                                    <p class="text-xs">No recent attendance records found.</p>
+                                </div>
+                                <div v-for="record in paginatedAttendance" :key="record.id" class="group flex items-center justify-between p-4 bg-white rounded-xl hover:shadow-md transition-all duration-200 border border-gray-100 hover:border-teal-200 shadow-sm mb-3">
+                                    <div class="flex items-center gap-4">
+                                        <!-- Avatar with Ring -->
+                                        <div class="relative">
+                                            <div class="w-12 h-12 rounded-full overflow-hidden ring-4 ring-teal-50 shadow-inner flex items-center justify-center bg-gray-100 group-hover:scale-105 transition-transform duration-200">
+                                                <img v-if="record.avatar" :src="record.avatar" class="w-full h-full object-cover">
+                                                <span v-else class="text-sm font-black text-teal-600 uppercase tracking-widest">{{ record.initials }}</span>
+                                            </div>
+                                            <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
                                         </div>
-                                        <p class="text-[10px] text-gray-500 font-medium">
-                                            {{ leave.type }} • <span class="bg-amber-50 text-amber-700 px-1 rounded">{{ leave.duration }}</span> • <span class="text-teal-600 font-bold">{{ leave.timeAgo }}</span>
-                                        </p>
+
+                                        <div>
+                                            <p class="font-black text-gray-800 text-sm leading-tight mb-0.5 tracking-tight">{{ record.name }}</p>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                                                    <i class="pi pi-calendar text-[10px]"></i>
+                                                    {{ record.date }}
+                                                </span>
+                                                <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                                                <span class="text-[10px] font-bold text-teal-600 uppercase tracking-wider">Present</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-6">
+                                        <div class="flex flex-col items-center">
+                                            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.1em] mb-0.5">Time In</span>
+                                            <div class="px-2.5 py-1 bg-emerald-50 rounded-lg border border-emerald-100">
+                                                <span class="text-xs font-black text-emerald-700 tabular-nums uppercase">{{ record.timeIn }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.1em] mb-0.5">Time Out</span>
+                                            <div class="px-2.5 py-1 bg-rose-50 rounded-lg border border-rose-100">
+                                                <span class="text-xs font-black text-rose-700 tabular-nums uppercase">{{ record.timeOut }}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <span :class="[
-                                    'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm',
-                                    leave.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                    leave.status === 'Pending' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                                    'bg-rose-50 text-rose-700 border-rose-100'
-                                ]">{{ leave.status }}</span>
+
+                                <!-- Attendance Pagination -->
+                                <div v-if="recentAttendance.length > pageSize" class="flex justify-center items-center gap-4 mt-4 pt-4 border-t border-gray-100">
+                                    <button @click="attendancePage > 1 ? attendancePage-- : null" :disabled="attendancePage === 1" class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30">
+                                        <i class="pi pi-chevron-left text-xs"></i>
+                                    </button>
+                                    <span class="text-xs font-bold text-gray-400 uppercase">Page {{ attendancePage }} of {{ Math.ceil(recentAttendance.length / pageSize) }}</span>
+                                    <button @click="attendancePage < Math.ceil(recentAttendance.length / pageSize) ? attendancePage++ : null" :disabled="attendancePage === Math.ceil(recentAttendance.length / pageSize)" class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30">
+                                        <i class="pi pi-chevron-right text-xs"></i>
+                                    </button>
+                                </div>
                             </div>
 
-                            <!-- Leaves Pagination -->
-                            <div v-if="recentLeaves.length > pageSize" class="flex justify-center items-center gap-4 mt-4 pt-4 border-t border-gray-100">
-                                <button @click="leavesPage > 1 ? leavesPage-- : null" :disabled="leavesPage === 1" class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30">
-                                    <i class="pi pi-chevron-left text-xs"></i>
-                                </button>
-                                <span class="text-xs font-bold text-gray-400 uppercase">Page {{ leavesPage }} of {{ Math.ceil(recentLeaves.length / pageSize) }}</span>
-                                <button @click="leavesPage < Math.ceil(recentLeaves.length / pageSize) ? leavesPage++ : null" :disabled="leavesPage === Math.ceil(recentLeaves.length / pageSize)" class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30">
-                                    <i class="pi pi-chevron-right text-xs"></i>
-                                </button>
+                            <!-- Leaves Tab -->
+                            <div v-if="activeTab === 'leaves'" class="space-y-3">
+                                <div v-if="paginatedLeaves.length === 0" class="py-10 text-center text-gray-500">
+                                    <i class="pi pi-info-circle mb-2 block text-xl"></i>
+                                    <p class="text-xs">No recent leave requests found.</p>
+                                </div>
+                                <div v-for="leave in paginatedLeaves" :key="leave.id" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer border border-gray-100 group" @click="goToRequest(leave.id)">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center overflow-hidden ring-2 ring-white shadow-sm">
+                                            <img v-if="leave.avatar" :src="leave.avatar" class="w-full h-full object-cover">
+                                            <span v-else class="text-sm font-bold text-amber-600">{{ leave.initials }}</span>
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <p class="font-bold text-gray-800 text-sm">{{ leave.name }}</p>
+                                                <span v-if="leave.status === 'Pending'" class="px-1.5 py-0.5 bg-rose-500 text-white text-[9px] font-black rounded uppercase tracking-tighter animate-bounce h-fit">New</span>
+                                            </div>
+                                            <p class="text-[10px] text-gray-500 font-medium">
+                                                {{ leave.type }} • <span class="bg-amber-50 text-amber-700 px-1 rounded">{{ leave.duration }}</span> • <span class="text-teal-600 font-bold">{{ leave.timeAgo }}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span :class="[
+                                        'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm',
+                                        leave.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                        leave.status === 'Pending' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                                        'bg-rose-50 text-rose-700 border-rose-100'
+                                    ]">{{ leave.status }}</span>
+                                </div>
+
+                                <!-- Leaves Pagination -->
+                                <div v-if="recentLeaves.length > pageSize" class="flex justify-center items-center gap-4 mt-4 pt-4 border-t border-gray-100">
+                                    <button @click="leavesPage > 1 ? leavesPage-- : null" :disabled="leavesPage === 1" class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30">
+                                        <i class="pi pi-chevron-left text-xs"></i>
+                                    </button>
+                                    <span class="text-xs font-bold text-gray-400 uppercase">Page {{ leavesPage }} of {{ Math.ceil(recentLeaves.length / pageSize) }}</span>
+                                    <button @click="leavesPage < Math.ceil(recentLeaves.length / pageSize) ? leavesPage++ : null" :disabled="leavesPage === Math.ceil(recentLeaves.length / pageSize)" class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30">
+                                        <i class="pi pi-chevron-right text-xs"></i>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -241,6 +273,7 @@
     import { useEmployeeStore } from '../../stores/employees';
     import { storeToRefs } from 'pinia';
     import StatCard from '../common/StatCard.vue';
+    import BulletinBoard from '../common/BulletinBoard.vue';
     import AttendanceChart from '../common/AttendanceChart.vue';
     import EmployeeList from '../common/EmployeeList.vue';
     import DepartmentStats from './DepartmentStats.vue';
@@ -253,6 +286,7 @@
     const { stats: leaveStats } = storeToRefs(leaveStore);
     const { employees, loading: isLoadingEmployees } = storeToRefs(employeeStore);
     
+    const loading = ref(true);
     const totalUsers = computed(() => employees.value.length);
     const getInitials = (name) => employeeStore.getInitials(name);
 
@@ -262,9 +296,13 @@
     const leavesPage = ref(1);
     const pageSize = ref(5);
 
-    onMounted(() => {
-        employeeStore.fetchEmployees();
-        leaveStore.fetchStats();
+    onMounted(async () => {
+        loading.value = true;
+        await Promise.all([
+            employeeStore.fetchEmployees(),
+            leaveStore.fetchStats()
+        ]);
+        loading.value = false;
     });
 
     // Recent Attendance Data

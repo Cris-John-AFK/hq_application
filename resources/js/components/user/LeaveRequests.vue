@@ -8,7 +8,7 @@
                         <p class="text-sm text-gray-500 mt-1">Submit and manage your leave requests</p>
                     </div>
                     <button 
-                        @click="showLeaveModal = true" 
+                        @click="openNewRequest" 
                         class="cursor-pointer bg-teal-600 text-white px-6 py-2.5 rounded-lg hover:bg-teal-700 transition-colors flex items-center gap-2 shadow-sm font-medium"
                     >
                         <i class="pi pi-plus"></i>
@@ -44,6 +44,7 @@
                                     <th class="px-6 py-4 font-semibold">Reason</th>
                                     <th class="px-6 py-4 font-semibold">Duration</th>
                                     <th class="px-6 py-4 font-semibold">Status</th>
+                                    <th class="px-6 py-4 font-semibold text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
@@ -70,6 +71,26 @@
                                             {{ request.status || 'Pending' }}
                                         </span>
                                     </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <div class="flex justify-end gap-2">
+                                            <button 
+                                                v-if="(request.status || 'Pending') === 'Pending'"
+                                                @click="editRequest(request)"
+                                                class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                title="Edit Request"
+                                            >
+                                                <i class="pi pi-pencil"></i>
+                                            </button>
+                                            <button 
+                                                v-if="['Pending', 'Approved'].includes(request.status || 'Pending')"
+                                                @click="cancelRequest(request)"
+                                                class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                                title="Cancel Request"
+                                            >
+                                                <i class="pi pi-times"></i>
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                                 <tr v-if="leaveRequests.length === 0 && !loading">
                                     <td colspan="5" class="px-6 py-8 text-center text-gray-500">
@@ -87,8 +108,10 @@
                 <!-- Leave Request Modal -->
                 <LeaveRequestModal 
                     v-model="showLeaveModal" 
-                    leave-type="Leave"
+                    :is-edit="isEditMode"
+                    :initial-data="editingRequest"
                     @submit="handleLeaveSubmit"
+                    @update="handleLeaveUpdate"
                 />
             </div>
         </MainLayout>
@@ -113,6 +136,8 @@ const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
 const showLeaveModal = ref(false);
+const isEditMode = ref(false);
+const editingRequest = ref(null);
 const leaveRequests = ref([]);
 const loading = ref(false);
 
@@ -137,6 +162,31 @@ const fetchRequests = async () => {
     }
 };
 
+const openNewRequest = () => {
+    isEditMode.value = false;
+    editingRequest.value = null;
+    showLeaveModal.value = true;
+};
+
+const editRequest = (request) => {
+    isEditMode.value = true;
+    editingRequest.value = request;
+    showLeaveModal.value = true;
+};
+
+const cancelRequest = async (request) => {
+    if (!confirm('Are you sure you want to cancel this leave request? This action will be logged.')) return;
+    
+    try {
+        await axios.put(`/api/leave-requests/${request.id}`, { status: 'Cancelled' });
+        fetchRequests();
+        alert('Request cancelled successfully.');
+    } catch (error) {
+        console.error('Cancel failed:', error);
+        alert('Failed to cancel request.');
+    }
+};
+
 const handleLeaveSubmit = async (formData) => {
     try {
         const payload = new FormData();
@@ -158,12 +208,38 @@ const handleLeaveSubmit = async (formData) => {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         
-        // Add to list or refresh
-        leaveRequests.value.unshift(response.data);
+        fetchRequests();
         alert('Leave request submitted successfully!');
     } catch (error) {
         console.error('Submission failed:', error);
         alert('Failed to submit request. ' + (error.response?.data?.message || 'Please try again.'));
+    }
+};
+
+const handleLeaveUpdate = async (formData) => {
+    try {
+        // Use PUT for updates. Note: Laravel might need _method for FormData if using PUT, 
+        // but here we are not using FormData for update yet (optional).
+        // Let's use simple JSON for update if no new file is attached.
+        const payload = {
+            date_filed: formData.date_filed,
+            request_type: formData.requestType,
+            leave_type: formData.leaveType,
+            from_date: formData.fromDate,
+            to_date: formData.toDate,
+            days_taken: formData.numberOfDays,
+            start_time: formData.startTime,
+            end_time: formData.endTime,
+            reason: formData.reason
+        };
+
+        await axios.put(`/api/leave-requests/${editingRequest.value.id}`, payload);
+        
+        fetchRequests();
+        alert('Leave request updated successfully!');
+    } catch (error) {
+        console.error('Update failed:', error);
+        alert('Failed to update request. ' + (error.response?.data?.message || 'Please try again.'));
     }
 };
 
