@@ -231,6 +231,7 @@
 
         <!-- Global Scroll Indicator -->
         <ScrollIndicator />
+
     </div>
 </template>
 

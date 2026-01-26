@@ -1,31 +1,39 @@
 <template>
     <Transition
-        enter-active-class="transition duration-500 ease-out"
-        enter-from-class="opacity-0 translate-y-4"
+        enter-active-class="transition duration-700 ease-out"
+        enter-from-class="opacity-0 translate-y-10"
         enter-to-class="opacity-100 translate-y-0"
-        leave-active-class="transition duration-300 ease-in"
+        leave-active-class="transition duration-500 ease-in"
         leave-from-class="opacity-100 translate-y-0"
-        leave-to-class="opacity-0 translate-y-4"
+        leave-to-class="opacity-0 translate-y-10"
     >
         <div 
             v-if="isVisible" 
-            class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+            class="fixed bottom-12 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none filter drop-shadow-2xl"
         >
-            <div class="flex flex-col items-center gap-2">
-                <!-- Text Label -->
-                <span class="text-[10px] font-black text-teal-600 uppercase tracking-[0.3em] bg-white/80 backdrop-blur-md px-3 py-1 rounded-full border border-teal-100 shadow-sm">
-                    Scroll for more
-                </span>
+            <div class="flex flex-col items-center gap-3">
+                <!-- Text Label with Strong Contrast -->
+                <div class="bg-gray-900/90 backdrop-blur-xl px-6 py-2.5 rounded-full border border-gray-700/50 shadow-2xl flex items-center gap-3">
+                    <span class="text-xs font-black text-white uppercase tracking-[0.25em]">Scroll Down</span>
+                    <span class="flex h-2 w-2 relative">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+                    </span>
+                </div>
                 
-                <!-- Animated Mouse/Arrow Icon -->
-                <div class="w-6 h-10 border-2 border-teal-500/30 rounded-full flex justify-center p-1 bg-white/50 backdrop-blur-sm shadow-lg">
-                    <div class="w-1 h-2 bg-teal-500 rounded-full animate-bounce mt-1"></div>
+                <!-- Large Animated Mouse Icon -->
+                <div class="relative">
+                    <div class="w-8 h-12 border-2 border-gray-800 rounded-full flex justify-center p-1 bg-white/90 backdrop-blur-md shadow-xl ring-4 ring-white/30">
+                        <div class="w-1.5 h-3 bg-teal-600 rounded-full animate-bounce mt-1.5 shadow-sm"></div>
+                    </div>
+                    <!-- Glow effect -->
+                    <div class="absolute -inset-4 bg-teal-500/20 blur-xl rounded-full -z-10 animate-pulse"></div>
                 </div>
 
-                <!-- Down Arrows -->
-                <div class="flex flex-col -mt-1 opacity-50">
-                    <i class="pi pi-chevron-down text-[8px] text-teal-600 animate-pulse"></i>
-                    <i class="pi pi-chevron-down text-[8px] text-teal-600 animate-pulse delay-75 -mt-1"></i>
+                <!-- Prominent Down Arrows -->
+                <div class="flex flex-col -mt-2 space-y-[-8px]">
+                    <i class="pi pi-angle-down text-xl text-teal-600 animate-pulse drop-shadow-md font-bold"></i>
+                    <i class="pi pi-angle-down text-xl text-teal-600 animate-pulse delay-100 drop-shadow-md font-bold opacity-70"></i>
                 </div>
             </div>
         </div>
@@ -33,31 +41,41 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 
-const isVisible = ref(true);
+const isVisible = ref(false);
 
 const checkScroll = () => {
-    // Only show if the page is scrollable
-    const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
-    
-    // If we've scrolled more than 100px or reached near the bottom, hide it
-    if (window.scrollY > 100 || scrollableHeight <= 0 || (window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 50) {
-        isVisible.value = false;
-    } else {
-        isVisible.value = true;
-    }
+    const mainContent = document.querySelector('main');
+    if (!mainContent) return;
+
+    // Use main content for scroll calculation instead of window if scrolling happens there
+    // But mostly we used overflow-y-auto on main, so we check that element
+    const isScrollable = mainContent.scrollHeight > mainContent.clientHeight + 50; // 50px buffer
+    const isScrolledToTop = mainContent.scrollTop < 100;
+
+    // Show if scrollable AND currently near top
+    isVisible.value = isScrollable && isScrolledToTop;
 };
 
 onMounted(() => {
-    // Initial check
-    setTimeout(checkScroll, 500); // Small delay to ensure DOM is ready
-    window.addEventListener('scroll', checkScroll);
+    const mainContent = document.querySelector('main');
+    
+    // Initial check with delay for dynamic content
+    setTimeout(checkScroll, 1000);
+    setTimeout(checkScroll, 3000); // Secondary check for slow loads
+
+    if (mainContent) {
+        mainContent.addEventListener('scroll', checkScroll);
+    }
     window.addEventListener('resize', checkScroll);
 });
 
 onUnmounted(() => {
-    window.removeEventListener('scroll', checkScroll);
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+        mainContent.removeEventListener('scroll', checkScroll);
+    }
     window.removeEventListener('resize', checkScroll);
 });
 </script>

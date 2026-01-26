@@ -19,7 +19,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/api/user', [AuthController::class, 'user']);
     Route::post('/api/user/avatar', [\App\Http\Controllers\UserController::class, 'uploadAvatar']);

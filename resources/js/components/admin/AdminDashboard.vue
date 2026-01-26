@@ -51,24 +51,26 @@
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <!-- Status Cards -->
-                    <div v-for="stat in [
-                        { label: 'Pending', count: leaveStats.pending, from: 'amber-50', to: 'orange-50', border: 'amber-200/50', icon: 'pi-clock', iconFrom: 'amber-400', iconTo: 'orange-500' },
-                        { label: 'Approved', count: leaveStats.approved, from: 'emerald-50', to: 'teal-50', border: 'emerald-200/50', icon: 'pi-check-circle', iconFrom: 'emerald-400', iconTo: 'teal-500' },
-                        { label: 'Rejected', count: leaveStats.rejected, from: 'rose-50', to: 'pink-50', border: 'rose-200/50', icon: 'pi-times-circle', iconFrom: 'rose-400', iconTo: 'pink-500' },
-                        { label: 'Cancelled', count: leaveStats.cancelled, from: 'slate-50', to: 'gray-50', border: 'slate-200/50', icon: 'pi-ban', iconFrom: 'slate-400', iconTo: 'gray-500' }
-                    ]" :key="stat.label" 
-                    class="group relative bg-gradient-to-br rounded-xl p-4 border transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
-                    :class="[`from-${stat.from} to-${stat.to} border-${stat.border} hover:border-${stat.from.split('-')[0]}-300`]"
+                    <div 
+                        v-for="stat in [
+                            { label: 'Pending', count: leaveStats.pending, bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', icon: 'pi-clock', iconBg: 'bg-amber-500' },
+                            { label: 'Approved', count: leaveStats.approved, bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: 'pi-check-circle', iconBg: 'bg-emerald-500' },
+                            { label: 'Rejected', count: leaveStats.rejected, bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700', icon: 'pi-times-circle', iconBg: 'bg-rose-500' },
+                            { label: 'Cancelled', count: leaveStats.cancelled, bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700', icon: 'pi-ban', iconBg: 'bg-slate-500' }
+                        ]" 
+                        :key="stat.label" 
+                        class="group relative rounded-2xl p-4 border transition-all duration-300 hover:shadow-md h-full flex flex-col items-center justify-center text-center"
+                        :class="[stat.bg, stat.border]"
                     >
-                        <div class="flex flex-col items-center text-center space-y-2">
-                            <div class="w-12 h-12 rounded-lg bg-gradient-to-br flex items-center justify-center shadow-md group-hover:scale-105 transition-transform"
-                                 :class="[`from-${stat.iconFrom} to-${stat.iconTo}`]">
-                                <i class="pi text-white text-lg" :class="stat.icon"></i>
-                            </div>
-                            <div>
-                                <p class="text-2xl font-bold text-gray-800">{{ stat.count }}</p>
-                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ stat.label }}</p>
-                            </div>
+                        <div 
+                            class="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 transition-transform text-white"
+                            :class="stat.iconBg"
+                        >
+                            <i class="pi text-lg" :class="stat.icon"></i>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-black text-gray-900 leading-none mb-1">{{ stat.count }}</p>
+                            <p class="text-[10px] font-black uppercase tracking-[0.1em]" :class="stat.text">{{ stat.label }}</p>
                         </div>
                     </div>
                 </div>
@@ -82,7 +84,7 @@
                         <button 
                             @click="activeTab = 'attendance'"
                             :class="[
-                                'flex-1 px-6 py-3 text-sm font-semibold transition-all relative flex flex-col items-center justify-center h-16',
+                                'cursor-pointer flex-1 px-6 py-3 text-sm font-semibold transition-all relative flex flex-col items-center justify-center h-16',
                                 activeTab === 'attendance' 
                                     ? 'text-teal-600 border-b-2 border-teal-600 bg-white' 
                                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
@@ -94,7 +96,7 @@
                         <button 
                             @click="activeTab = 'leaves'"
                             :class="[
-                                'flex-1 px-6 py-3 text-sm font-semibold transition-all relative h-16',
+                                'cursor-pointer flex-1 px-6 py-3 text-sm font-semibold transition-all relative h-16',
                                 activeTab === 'leaves' 
                                     ? 'text-teal-600 border-b-2 border-teal-600 bg-white' 
                                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
@@ -116,29 +118,41 @@
                                 <i class="pi pi-info-circle mb-2 block text-xl"></i>
                                 <p class="text-xs">No recent attendance records found.</p>
                             </div>
-                            <div v-for="record in paginatedAttendance" :key="record.id" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-100">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center overflow-hidden ring-2 ring-white shadow-sm">
-                                        <img v-if="record.avatar" :src="record.avatar" class="w-full h-full object-cover">
-                                        <span v-else class="text-sm font-bold text-teal-600">{{ record.initials }}</span>
+                            <div v-for="record in paginatedAttendance" :key="record.id" class="group flex items-center justify-between p-4 bg-white rounded-xl hover:shadow-md transition-all duration-200 border border-gray-100 hover:border-teal-200 shadow-sm mb-3">
+                                <div class="flex items-center gap-4">
+                                    <!-- Avatar with Ring -->
+                                    <div class="relative">
+                                        <div class="w-12 h-12 rounded-full overflow-hidden ring-4 ring-teal-50 shadow-inner flex items-center justify-center bg-gray-100 group-hover:scale-105 transition-transform duration-200">
+                                            <img v-if="record.avatar" :src="record.avatar" class="w-full h-full object-cover">
+                                            <span v-else class="text-sm font-black text-teal-600 uppercase tracking-widest">{{ record.initials }}</span>
+                                        </div>
+                                        <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
                                     </div>
+
                                     <div>
-                                        <p class="font-bold text-gray-800 text-sm mb-0.5">{{ record.name }}</p>
-                                        <p class="text-[10px] text-gray-500 uppercase tracking-tighter flex items-center gap-1">
-                                            <i class="pi pi-calendar text-[10px]"></i> {{ record.date }}
-                                        </p>
+                                        <p class="font-black text-gray-800 text-sm leading-tight mb-0.5 tracking-tight">{{ record.name }}</p>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                                                <i class="pi pi-calendar text-[10px]"></i>
+                                                {{ record.date }}
+                                            </span>
+                                            <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                                            <span class="text-[10px] font-bold text-teal-600 uppercase tracking-wider">Present</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="text-right">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex flex-col items-end">
-                                            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">In</span>
-                                            <span class="text-xs font-black text-green-600">{{ record.timeIn }}</span>
+
+                                <div class="flex items-center gap-6">
+                                    <div class="flex flex-col items-center">
+                                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.1em] mb-0.5">Time In</span>
+                                        <div class="px-2.5 py-1 bg-emerald-50 rounded-lg border border-emerald-100">
+                                            <span class="text-xs font-black text-emerald-700 tabular-nums uppercase">{{ record.timeIn }}</span>
                                         </div>
-                                        <div class="w-px h-8 bg-gray-200"></div>
-                                        <div class="flex flex-col items-end">
-                                            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Out</span>
-                                            <span class="text-xs font-black text-red-600">{{ record.timeOut }}</span>
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.1em] mb-0.5">Time Out</span>
+                                        <div class="px-2.5 py-1 bg-rose-50 rounded-lg border border-rose-100">
+                                            <span class="text-xs font-black text-rose-700 tabular-nums uppercase">{{ record.timeOut }}</span>
                                         </div>
                                     </div>
                                 </div>

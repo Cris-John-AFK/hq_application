@@ -161,37 +161,39 @@ class LeaveRequestController extends Controller
 
         $oldStatus = $leaveRequest->status;
         
-        // Log the action if status is changing
-        if (isset($validated['status']) && $validated['status'] !== $oldStatus) {
-            \App\Models\LeaveActionLog::create([
-                'leave_request_id' => $leaveRequest->id,
-                'user_id' => Auth::id(), // Admin
-                'action' => $validated['status'],
-                'justification' => $validated['justification'] ?? $validated['admin_remarks'] ?? 'Status updated',
-                'snapshot_data' => [
-                     'old_status' => $oldStatus,
-                     'credits_before' => $leaveRequest->user->leave_credits,
-                     'impact' => $this->impactService->checkImpact($leaveRequest->user, $leaveRequest->from_date, $leaveRequest->to_date)
-                ]
-            ]);
-        }
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($leaveRequest, $validated, $oldStatus) {
+            // Log the action if status is changing
+            if (isset($validated['status']) && $validated['status'] !== $oldStatus) {
+                \App\Models\LeaveActionLog::create([
+                    'leave_request_id' => $leaveRequest->id,
+                    'user_id' => Auth::id(), // Admin
+                    'action' => $validated['status'],
+                    'justification' => $validated['justification'] ?? $validated['admin_remarks'] ?? 'Status updated',
+                    'snapshot_data' => [
+                         'old_status' => $oldStatus,
+                         'credits_before' => $leaveRequest->user->leave_credits,
+                         'impact' => $this->impactService->checkImpact($leaveRequest->user, $leaveRequest->from_date, $leaveRequest->to_date)
+                    ]
+                ]);
+            }
 
-        $leaveRequest->update($validated);
+            $leaveRequest->update($validated);
 
-        // Deduct credits when status changes to Approved
-        if (isset($validated['status']) && $validated['status'] === 'Approved' && $oldStatus !== 'Approved') {
-            $user = $leaveRequest->user;
-            $daysToDeduct = $leaveRequest->days_taken;
-            $user->decrement('leave_credits', $daysToDeduct);
-        }
-        
-        // Restore credits if status changes from Approved to something else
-        if (isset($validated['status']) && $validated['status'] !== 'Approved' && $oldStatus === 'Approved') {
-            $user = $leaveRequest->user;
-            $user->increment('leave_credits', $leaveRequest->days_taken);
-        }
+            // Deduct credits when status changes to Approved
+            if (isset($validated['status']) && $validated['status'] === 'Approved' && $oldStatus !== 'Approved') {
+                $user = $leaveRequest->user;
+                $daysToDeduct = $leaveRequest->days_taken;
+                $user->decrement('leave_credits', $daysToDeduct);
+            }
+            
+            // Restore credits if status changes from Approved to something else
+            if (isset($validated['status']) && $validated['status'] !== 'Approved' && $oldStatus === 'Approved') {
+                $user = $leaveRequest->user;
+                $user->increment('leave_credits', $leaveRequest->days_taken);
+            }
 
-        return response()->json($leaveRequest);
+            return response()->json($leaveRequest);
+        });
     }
     
     // New Endpoints for Decision Support
