@@ -12,22 +12,23 @@ A professional, high-performance web application built with **Laravel 12**, **Po
 
 ### 📊 Advanced Admin Dashboard
 - **5-Column Stats Grid**: Real-time tracking of **Total Employees**, **Present**, **Absent**, **Late**, and **On Leave** metrics.
+- **Corporate Performance Ranking**: A sleek, data-driven leaderboard that ranks departments by attendance excellence, encouraging healthy organizational competition.
+- **Historical Department Insights**: A "Previous Week" aggregate view showing headcount, average daily presence, and attendance rates per department.
 - **Activity Pagination**: "Recent Attendance" and "Recent Leaves" feeds support clean pagination (5 per page).
 - **Pulse Notifications**: Real-time red pulse badges on the dashboard tabs alert admins to new pending leave requests.
-- **Pending Highlights**: "New" animated badges on list items catch immediate attention for pending tasks.
 - **Visual Analytics**: Professional grouped bar charts for clear, comparison-ready attendance visualization (Present, Absent, Late, Leave).
 
 ### 📅 Smart Calendar & Scheduling
+- **Continuous Multi-Day Events**: Advanced logic that renders events spanning several days as a single unbroken bar for maximum visual clarity.
+- **Intelligent Labeling**: Titles only appear on the first day of an event or at the start of a new week, reducing clutter.
 - **Manage Calendar Activities**: A dedicated full-screen module (`/schedules`) for high-level organizational planning.
-- **Database-Backed Events**: All custom events, meetings, and holidays are persisted in a dedicated PostgreSQL `calendar_events` table.
-- **Dynamic Event Management**: Admins can **Create**, **View**, and **Delete** custom company events, meetings, and local holidays.
-- **Top-Bar Pulse Indicator**: A live red notification badge on the top-bar calendar button alerts admins to newly created events.
-- **Auto-Mark as Read**: Intelligent UX that automatically clears notification badges when the admin navigates to the calendar module.
-- **Interactive Daily Overview**: Click any date to see a detailed popup containing:
-    -   **Staff On Leave**: List of employees away with their avatars and leave types.
-    -   **Event Details**: Full titles and descriptions for company activities and holidays.
 - **Hybrid Data Layer**: Seamlessly merges Philippine Public Holidays (static) with User-Created Events (dynamic) and Approved Leaves (real-time).
-- **Color-Coded Intelligence**: Instant visual distinction between Leaves (Purple), Regular Holidays (Red), Special Holidays (Orange), and Events (Blue).
+
+### ✨ Global UX Enhancements
+- **Smart Scroll Indicator**: A professional, animated "Scroll for more" component that automatically appears on pages with deep content, guiding users through long dashboards or calendars.
+- **Structural Integrity**: Hardened dashboard layout that prevents component overlapping and ensures stability across different screen resolutions.
+- **Rebranded Interface**: Updated to **HatQ Inc. Management** branding across all layouts.
+- **Universal Layout**: Shared `MainLayout.vue` ensures a consistent, responsive experience across all screen sizes.
 
 ### 📁 Unified Leave Management (HR Module)
 - **Personnel Leave Authorization Form**: A pixel-perfect digital replica of the physical authorization form with strict validation.
@@ -133,5 +134,11 @@ npm run dev
 | :--- | :--- |
 | `admin@hq.app` | `password` |
 
+## 🔐 Default Employee Credentials
+| Email | Password |
+| :--- | :--- |
+| `user@hq.app` | `password` |
+
 ---
-*Created by the HatQ Inc. Engineering Team*
+*Created by Cris John M. Cañales & Jessica Roque*
+*For Other concers email us at: crisjohn.canales@gmail.com & jessicaroque12@gmail.com*

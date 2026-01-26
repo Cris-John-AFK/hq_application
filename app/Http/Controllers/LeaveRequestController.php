@@ -140,7 +140,8 @@ class LeaveRequestController extends Controller
             ['attachment_path' => $attachmentPath]
         ));
 
-        return response()->json($leaveRequest, 201);
+        // Return the fresh model with DB defaults (like status = 'Pending')
+        return response()->json($leaveRequest->fresh(), 201);
     }
 
     public function update(Request $request, LeaveRequest $leaveRequest)

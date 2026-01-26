@@ -259,6 +259,8 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useEmployeeStore } from '../../stores/employees';
+import { storeToRefs } from 'pinia';
 import LeaveRequestModal from './LeaveRequestModal.vue';
 import AddEmployeeModal from './AddEmployeeModal.vue';
 import EditEmployeeModal from './EditEmployeeModal.vue';
@@ -267,13 +269,15 @@ import EmployeeReportModal from './EmployeeReportModal.vue';
 import axios from 'axios';
 
 const router = useRouter();
+const employeeStore = useEmployeeStore();
+const { employees, departments, loading: isLoading } = storeToRefs(employeeStore);
+
 const selectedDepartment = ref('All');
 const selectedStatus = ref('All');
 const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = 10;
 const openActionMenuId = ref(null);
-const isLoading = ref(false);
 
 // Modal Logic
 const showLeaveModal = ref(false);
@@ -289,57 +293,11 @@ const leaveForm = ref({
 });
 const selectedEmployee = ref(null);
 
-// Employee Data
-const employees = ref([]);
-
-// Departments Data
-const departments = ref([]);
-const fetchDepartments = async () => {
-    try {
-        const response = await axios.get('/api/departments');
-        departments.value = response.data.map(d => d.name);
-    } catch (error) {
-        console.error('Failed to fetch departments:', error);
-    }
-};
-
-const fetchEmployees = async () => {
-    isLoading.value = true;
-    try {
-        const response = await axios.get('/api/users');
-        employees.value = response.data.map(user => ({
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            avatar: user.avatar_url, // Use the full URL provided by the backend accessor
-            empId: user.id_number || 'N/A',
-            // Department Logic for new users or existing
-            department: user.department?.name || user.department || 'N/A', 
-            role: user.role, // admin or user
-            status: user.status || 'Available',
-            position: user.position || 'Employee',
-            leave_credits: user.leave_credits || 0
-        }));
-    } catch (error) {
-        console.error('Failed to fetch employees:', error);
-    } finally {
-        isLoading.value = false;
-    }
-};
-
-const getInitials = (name) => {
-    if (!name) return '??';
-    return name
-        .split(' ')
-        .map(n => n[0])
-        .join('')
-        .toUpperCase()
-        .substring(0, 2);
-};
+const getInitials = (name) => employeeStore.getInitials(name);
 
 onMounted(() => {
-    fetchEmployees();
-    fetchDepartments();
+    employeeStore.fetchEmployees();
+    employeeStore.fetchDepartments();
     document.addEventListener('click', closeActionMenu);
 });
 
@@ -348,7 +306,7 @@ const handleCreateEmployee = async (formData) => {
     try {
         await axios.post('/api/users', formData);
         showAddModal.value = false;
-        await fetchEmployees(); // Refresh list
+        await employeeStore.fetchEmployees(true); // Refresh list
         // Could show success toast here
     } catch (error) {
         console.error('Failed to create employee:', error);
@@ -502,7 +460,7 @@ const handleUpdateEmployee = async (formData) => {
 };
 
 onMounted(() => {
-    fetchEmployees();
+    employeeStore.fetchEmployees();
     document.addEventListener('click', closeActionMenu);
 });
 

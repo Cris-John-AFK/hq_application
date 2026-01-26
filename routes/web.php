@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function () {
     // Departments
     Route::get('/api/departments', [\App\Http\Controllers\DepartmentController::class, 'index']);
     Route::post('/api/departments', [\App\Http\Controllers\DepartmentController::class, 'store']);
+    Route::get('/api/departments/stats', [\App\Http\Controllers\DepartmentController::class, 'getStats']);
 
     // Reports (Mocked)
     Route::get('/api/reports/annual', [\App\Http\Controllers\ReportController::class, 'annualAttendance']);

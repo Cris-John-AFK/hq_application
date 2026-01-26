@@ -58,14 +58,16 @@
                                     <td class="px-6 py-4">
                                         <span 
                                             :class="{
-                                                'bg-yellow-100 text-yellow-700': request.status === 'Pending',
+                                                'bg-yellow-100 text-yellow-700': (request.status || 'Pending') === 'Pending',
                                                 'bg-green-100 text-green-700': request.status === 'Approved',
-                                                'bg-red-100 text-red-700': request.status === 'Rejected'
+                                                'bg-red-100 text-red-700': request.status === 'Rejected',
+                                                'bg-gray-100 text-gray-700': request.status === 'Cancelled',
+                                                'bg-gray-100 text-gray-700': !['Pending', 'Approved', 'Rejected', 'Cancelled'].includes(request.status) && request.status
                                             }"
                                             class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
                                         >
                                             <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-                                            {{ request.status }}
+                                            {{ request.status || 'Pending' }}
                                         </span>
                                     </td>
                                 </tr>

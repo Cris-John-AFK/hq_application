@@ -60,15 +60,15 @@
                     </div>
                     
                     <!-- Days -->
-                    <div class="grid grid-cols-7 auto-rows-fr bg-gray-200 gap-px border-b border-gray-200">
+                    <div class="grid grid-cols-7 auto-rows-fr border-l border-t border-gray-200">
                         <div 
                             v-for="(date, index) in calendarDays" 
                             :key="index" 
                             @click="openDayDetails(date)"
-                            class="min-h-[120px] bg-white p-2 relative group hover:bg-gray-50/50 transition-colors cursor-pointer"
+                            class="min-h-[120px] bg-white relative group hover:bg-gray-50/50 transition-colors cursor-pointer border-r border-b border-gray-200"
                             :class="{'bg-gray-50/30 text-gray-400': date.isPadding, 'bg-blue-50/30': date.isToday}"
                         >
-                            <div class="flex justify-between items-start mb-1">
+                            <div class="p-2 flex justify-between items-start mb-1">
                                 <span :class="[
                                     'text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full',
                                     date.isToday ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-700'
@@ -78,26 +78,48 @@
                             </div>
 
                             <!-- Events List -->
-                            <div class="space-y-1.5 overflow-y-auto max-h-[90px] pr-1 custom-scrollbar">
+                            <div class="space-y-1 overflow-y-auto max-h-[85px] custom-scrollbar pb-2">
                                 <!-- Holidays & Custom Events -->
-                                <div v-for="evt in date.customEvents" :key="evt.id" 
+                                <div v-for="evt in date.customEvents" :key="evt.id || evt.name" 
                                     :class="[
-                                        'px-2 py-1 rounded text-[10px] font-medium border truncate',
-                                        getEventClass(evt)
+                                        'px-2 py-0.5 text-[10px] font-semibold border-y truncate transition-all',
+                                        getEventClass(evt),
+                                        {
+                                            'rounded-l ml-1 border-l': isEventStart(evt, date.fullDate),
+                                            'rounded-r mr-1 border-r': isEventEnd(evt, date.fullDate),
+                                            'border-l-0': !isEventStart(evt, date.fullDate),
+                                            'border-r-0': !isEventEnd(evt, date.fullDate),
+                                            'mb-0.5 shadow-sm': isEventStart(evt, date.fullDate) || isEventEnd(evt, date.fullDate)
+                                        }
                                     ]"
                                     :title="evt.title || evt.name"
                                 >
-                                    <span v-if="evt.type === 'holiday' || evt.type === 'Regular Holiday' || evt.type === 'Special Non-Working'">🎉</span>
-                                    <span v-else>📅</span>
-                                    {{ evt.title || evt.name }}
+                                    <template v-if="isEventStart(evt, date.fullDate) || isFirstDayOfWeek(date.fullDate)">
+                                        <span v-if="evt.type === 'holiday' || evt.type === 'Regular Holiday' || evt.type === 'Special Non-Working'">🎉</span>
+                                        <span v-else>📅</span>
+                                        {{ evt.title || evt.name }}
+                                    </template>
+                                    <span v-else>&nbsp;</span>
                                 </div>
 
                                 <!-- Leaves -->
                                 <div v-for="event in date.events" :key="event.id" 
-                                    class="px-2 py-1 rounded text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-100 truncate hover:bg-purple-100 transition-colors"
+                                    :class="[
+                                        'px-2 py-0.5 text-[10px] font-semibold bg-purple-50 text-purple-700 border-y border-purple-100 truncate hover:bg-purple-100 transition-colors',
+                                        {
+                                            'rounded-l ml-1 border-l': isEventStart(event, date.fullDate),
+                                            'rounded-r mr-1 border-r': isEventEnd(event, date.fullDate),
+                                            'border-l-0': !isEventStart(event, date.fullDate),
+                                            'border-r-0': !isEventEnd(event, date.fullDate),
+                                            'mb-1 shadow-sm': isEventStart(event, date.fullDate) || isEventEnd(event, date.fullDate)
+                                        }
+                                    ]"
                                     :title="`${event.user_name} - ${event.leave_type}`"
                                 >
-                                    👤 {{ event.user_name }}
+                                    <template v-if="isEventStart(event, date.fullDate) || isFirstDayOfWeek(date.fullDate)">
+                                        👤 {{ event.user_name }}
+                                    </template>
+                                    <span v-else>&nbsp;</span>
                                 </div>
                             </div>
                         </div>
@@ -203,7 +225,14 @@
             // Filter PH Holidays (Static list)
             const dayStaticHolidays = phHolidays.value.filter(h => h.date === dateStr);
             
-            const mergedEvents = [...dayStaticHolidays, ...dayCustom];
+            // Stable sort by name/title to keep vertical alignment
+            const mergedEvents = [...dayStaticHolidays, ...dayCustom].sort((a, b) => {
+                const titleA = a.title || a.name || '';
+                const titleB = b.title || b.name || '';
+                return titleA.localeCompare(titleB);
+            });
+            
+            dayLeaves.sort((a, b) => (a.user_name || '').localeCompare(b.user_name || ''));
 
             const isToday = 
                 i === today.getDate() && 
@@ -235,6 +264,24 @@
         
         return days;
     });
+
+    // Continuity Helpers
+    const isEventStart = (evt, currentDate) => {
+        if (!currentDate) return false;
+        const start = evt.from_date || evt.date;
+        return start === currentDate;
+    };
+
+    const isEventEnd = (evt, currentDate) => {
+        if (!currentDate) return false;
+        const end = evt.to_date || evt.date;
+        return end === currentDate;
+    };
+
+    const isFirstDayOfWeek = (dateStr) => {
+        if (!dateStr) return false;
+        return new Date(dateStr).getDay() === 0; // Sunday
+    };
 
     const changeMonth = (step) => {
         currentDate.value = new Date(currentYear.value, currentMonth.value + step, 1);

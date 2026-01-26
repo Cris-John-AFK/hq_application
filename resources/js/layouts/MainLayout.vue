@@ -228,6 +228,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- Global Scroll Indicator -->
+        <ScrollIndicator />
     </div>
 </template>
 
@@ -238,6 +241,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useCalendarStore } from '../stores/calendar';
 import { storeToRefs } from 'pinia';
 import EventCalendar from '../components/common/EventCalendar.vue';
+import ScrollIndicator from '../components/common/ScrollIndicator.vue';
 import axios from 'axios';
 
 const props = defineProps({

@@ -5,27 +5,33 @@ export const useCalendarStore = defineStore('calendar', {
     state: () => ({
         events: [],
         lastFetched: null,
-        loading: false
+        loading: false,
+        fetchingPromise: null,
     }),
 
     actions: {
         async fetchEvents(force = false) {
-            if (this.loading) return;
+            if (this.fetchingPromise) return this.fetchingPromise;
+
             // Cache for 5 minutes
             if (!force && this.lastFetched && (Date.now() - this.lastFetched < 5 * 60 * 1000)) {
-                return;
+                return this.events;
             }
 
             this.loading = true;
-            try {
-                const response = await axios.get('/api/calendar-events');
+            this.fetchingPromise = axios.get('/api/calendar-events').then(response => {
                 this.events = response.data;
                 this.lastFetched = Date.now();
-            } catch (error) {
+                return this.events;
+            }).catch(error => {
                 console.error('Failed to fetch calendar events', error);
-            } finally {
+                throw error;
+            }).finally(() => {
                 this.loading = false;
-            }
+                this.fetchingPromise = null;
+            });
+
+            return this.fetchingPromise;
         },
 
         invalidate() {
