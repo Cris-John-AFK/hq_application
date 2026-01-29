@@ -15,6 +15,29 @@
                         <i class="pi pi-plus"></i>
                         Add Employee
                     </button>
+
+                    <!-- Bulk Credits Action -->
+                    <button 
+                        v-if="selectedEmployeeIds.length > 0"
+                        @click="showBulkCreditsModal = true"
+                        class="cursor-pointer h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl shadow-indigo-100 animate-in slide-in-from-left-4 duration-300 whitespace-nowrap group"
+                    >
+                        <i class="pi pi-bolt text-indigo-200 group-hover:text-white transition-colors"></i>
+                        <span>Apply Bulk Credits</span>
+                        <span class="bg-indigo-500 text-[10px] px-2 py-0.5 rounded-full border border-indigo-400/50 shadow-inner">
+                            {{ selectedEmployeeIds.length }}
+                        </span>
+                    </button>
+
+                    <!-- Nuclear Reset Action -->
+                    <button 
+                        @click="openNuclearReset"
+                        class="cursor-pointer h-10 px-4 bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
+                    >
+                        <i class="pi pi-trash text-[10px]"></i>
+                        Reset All
+                    </button>
+
                     <!-- Bulk Import (Future Intent) -->
                     <button 
                         @click="triggerBulkImport"
@@ -75,12 +98,20 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                        <th class="px-8 py-4 font-semibold">Employee</th>
+                        <th class="px-4 py-4 font-semibold text-center w-12">
+                            <input 
+                                type="checkbox" 
+                                :checked="isAllSelected" 
+                                @change="toggleSelectAll" 
+                                class="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500 cursor-pointer"
+                            >
+                        </th>
+                        <th class="px-6 py-4 font-semibold">Employee</th>
                         <th class="px-6 py-4 font-semibold">ID</th>
                         <th class="px-6 py-4 font-semibold">Department</th>
                         <th class="px-6 py-4 font-semibold">Position</th>
-                        <th class="px-6 py-4 font-semibold">Status</th>
                         <th class="px-6 py-4 font-semibold text-center whitespace-nowrap">SIL Credits</th>
+                        <th class="px-6 py-4 font-semibold">Status</th>
                         <th class="px-12 py-4 font-semibold text-right">Actions</th>
                     </tr>
                 </thead>
@@ -88,6 +119,7 @@
                     <!-- Skeleton Loading Rows -->
                     <template v-if="isLoading">
                         <tr v-for="i in 5" :key="i" class="animate-pulse">
+                            <td class="px-4 py-4 text-center"><div class="w-4 h-4 bg-gray-100 rounded mx-auto"></div></td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
                                     <div class="w-10 h-10 rounded-full bg-gray-100"></div>
@@ -100,14 +132,21 @@
                             <td class="px-6 py-4"><div class="h-4 w-16 bg-gray-100 rounded"></div></td>
                             <td class="px-6 py-4"><div class="h-4 w-20 bg-gray-100 rounded"></div></td>
                             <td class="px-6 py-4"><div class="h-4 w-24 bg-gray-100 rounded"></div></td>
-                            <td class="px-4 py-4"><div class="h-6 w-16 bg-gray-100 rounded-full"></div></td>
                             <td class="px-6 py-4"><div class="h-6 w-8 bg-gray-100 rounded mx-auto"></div></td>
                             <td class="px-6 py-4"><div class="h-8 w-24 bg-gray-100 rounded ml-auto"></div></td>
                         </tr>
                     </template>
                     
                     <template v-else>
-                        <tr v-for="(employee, index) in paginatedEmployees" :key="employee.id" class="hover:bg-gray-50/50 transition-colors">
+                        <tr v-for="(employee, index) in paginatedEmployees" :key="employee.id" class="hover:bg-gray-50/50 transition-colors" :class="{'bg-teal-50/30': selectedEmployeeIds.includes(employee.id)}">
+                            <td class="px-4 py-4 text-center">
+                                <input 
+                                    type="checkbox" 
+                                    :value="employee.id" 
+                                    v-model="selectedEmployeeIds"
+                                    class="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500 cursor-pointer"
+                                >
+                            </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
                                     <div
@@ -134,6 +173,11 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-600">{{ employee.position }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-sm font-black bg-teal-50 text-teal-700 border border-teal-100 min-w-[3rem] justify-center shadow-sm">
+                                    {{ Number(employee.leave_credits) % 1 === 0 ? Number(employee.leave_credits).toFixed(0) : employee.leave_credits }}
+                                </span>
+                            </td>
                             <td class="px-4 py-4">
                                 <span 
                                     :class="{
@@ -145,11 +189,6 @@
                                     class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
                                 >
                                     {{ employee.status }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-sm font-black bg-teal-50 text-teal-700 border border-teal-100 min-w-[3rem] justify-center shadow-sm">
-                                    {{ Number(employee.leave_credits) % 1 === 0 ? Number(employee.leave_credits).toFixed(0) : employee.leave_credits }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-right">
@@ -293,6 +332,140 @@
             v-model="showReportModal"
             :employee="selectedEmployee"
         />
+
+        <!-- Bulk Credits Modal -->
+        <div v-if="showBulkCreditsModal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <div>
+                        <h3 class="text-xl font-black text-gray-800 tracking-tight">Bulk Crediting</h3>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Update {{ selectedEmployeeIds.length }} Employees</p>
+                    </div>
+                    <button @click="showBulkCreditsModal = false" class="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-400">
+                        <i class="pi pi-times text-sm"></i>
+                    </button>
+                </div>
+                <div class="p-8">
+                    <div class="mb-6 bg-teal-50 border border-teal-100 p-4 rounded-xl flex items-center gap-4">
+                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-teal-600">
+                            <i class="pi pi-bolt text-xl animate-pulse"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-teal-900 uppercase tracking-widest">Automatic Add</p>
+                            <p class="text-[10px] text-teal-600">Enter the amount to add to all selected candidates.</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 pl-1">Amount of Points/Credits</label>
+                            <div class="relative">
+                                <input 
+                                    v-model="bulkCreditAmount" 
+                                    type="number" 
+                                    step="0.5"
+                                    class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all outline-none font-bold text-lg"
+                                    placeholder="e.g. 5.0"
+                                >
+                                <i class="pi pi-plus-circle absolute left-4 top-1/2 -translate-y-1/2 text-teal-500 text-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex gap-3">
+                        <button 
+                            @click="handleBulkCredits"
+                            :disabled="isBulkSaving || bulkCreditAmount === 0"
+                            class="cursor-pointer flex-1 py-4 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-100 disabled:text-gray-400 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-teal-100 flex items-center justify-center gap-2"
+                        >
+                            <i class="pi pi-check-circle" v-if="!isBulkSaving"></i>
+                            <i class="pi pi-spin pi-spinner" v-else></i>
+                            {{ isBulkSaving ? 'Processing...' : 'Apply to Selected' }}
+                        </button>
+                        <button @click="showBulkCreditsModal = false" class="px-6 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-gray-200 transition-colors">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nuclear Reset Modal (3-Step Confirmation) -->
+        <div v-if="showNuclearModal" class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 border-4 border-rose-500/20">
+                <!-- Progress Header -->
+                <div class="flex h-1.5 bg-gray-100">
+                    <div :class="['transition-all duration-500 bg-rose-500', nuclearStep === 1 ? 'w-1/3' : nuclearStep === 2 ? 'w-2/3' : 'w-full']"></div>
+                </div>
+
+                <div class="p-8 text-center">
+                    <!-- Step 1: Warning -->
+                    <div v-if="nuclearStep === 1" class="animate-in slide-in-from-bottom-4">
+                        <div class="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-500 ring-8 ring-rose-50/50">
+                            <i class="pi pi-exclamation-triangle text-3xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-black text-gray-800 mb-2">Nuclear Reset</h3>
+                        <p class="text-gray-500 mb-8 px-4 leading-relaxed">You are about to wipe <span class="font-black text-rose-600">ALL employee leave credits</span> to zero. This action is permanent and cannot be undone.</p>
+                        
+                        <div class="flex gap-3">
+                            <button @click="showNuclearModal = false" class="flex-1 py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-2xl font-black uppercase tracking-widest text-xs transition-colors cursor-pointer">Abort Mission</button>
+                            <button @click="nuclearStep = 2" class="flex-1 py-4 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-rose-100 cursor-pointer">I Understand</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Impact -->
+                    <div v-if="nuclearStep === 2" class="animate-in slide-in-from-bottom-4">
+                        <div class="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 text-amber-500 ring-8 ring-amber-50/50">
+                            <i class="pi pi-users text-3xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-black text-gray-800 mb-2">Are you really sure?</h3>
+                        <p class="text-gray-500 mb-6 leading-relaxed">This will affect <span class="font-black text-gray-900">{{ employees.length }} employees</span>. This is usually done only at the end of a fiscal year.</p>
+                        
+                        <div class="bg-amber-50 border border-amber-100 p-4 rounded-2xl mb-8 text-left">
+                            <ul class="text-[11px] text-amber-800 space-y-2 font-medium">
+                                <li class="flex items-center gap-2"><i class="pi pi-check-circle"></i> SIL Credits will become 0.00</li>
+                                <li class="flex items-center gap-2"><i class="pi pi-check-circle"></i> Personal balances will be cleared</li>
+                                <li class="flex items-center gap-2"><i class="pi pi-check-circle"></i> Security audit log will be triggered</li>
+                            </ul>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <button @click="nuclearStep = 1" class="px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-2xl font-black uppercase tracking-widest text-xs transition-colors cursor-pointer">Go Back</button>
+                            <button @click="nuclearStep = 3" class="flex-1 py-4 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-rose-100 cursor-pointer">Proceed to Step 3</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Confirmation -->
+                    <div v-if="nuclearStep === 3" class="animate-in slide-in-from-bottom-4">
+                        <div class="w-20 h-20 bg-rose-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white shadow-xl shadow-rose-200 ring-8 ring-rose-50">
+                            <i class="pi pi-lock-open text-3xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-black text-gray-800 mb-2">Final Confirmation</h3>
+                        <p class="text-sm text-gray-500 mb-6 italic">To authorize this purge, please type the word below:</p>
+                        
+                        <div class="mb-4">
+                            <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 pl-1">Typed word must match "CONFIRM"</div>
+                            <input 
+                                v-model="nuclearConfirmText" 
+                                type="text" 
+                                class="w-full px-6 py-4 bg-gray-50 border-2 border-gray-100 focus:border-rose-500 rounded-2xl text-center font-black tracking-[0.3em] transition-all outline-none text-rose-600"
+                                placeholder="TYPE HERE..."
+                            >
+                        </div>
+
+                        <div class="flex gap-3 mt-8">
+                            <button @click="resetNuclear" class="px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-2xl font-black uppercase tracking-widest text-xs transition-colors cursor-pointer">Cancel</button>
+                            <button 
+                                @click="handleNuclearReset"
+                                :disabled="nuclearConfirmText.toUpperCase() !== 'CONFIRM' || isPurging"
+                                class="flex-1 py-4 bg-rose-600 hover:bg-rose-700 disabled:bg-gray-100 disabled:text-gray-300 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-rose-100 cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <i class="pi pi-spin pi-spinner" v-if="isPurging"></i>
+                                <span>EXECUTE RESET</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -328,6 +501,82 @@ const showPasswordModal = ref(false);
 const showReportModal = ref(false);
 const isCreating = ref(false);
 const isEditing = ref(false);
+
+// Nuclear Reset State
+const showNuclearModal = ref(false);
+const nuclearStep = ref(1);
+const nuclearConfirmText = ref('');
+const isPurging = ref(false);
+
+const openNuclearReset = () => {
+    nuclearStep.value = 1;
+    nuclearConfirmText.value = '';
+    showNuclearModal.value = true;
+};
+
+const resetNuclear = () => {
+    showNuclearModal.value = false;
+    nuclearStep.value = 1;
+    nuclearConfirmText.value = '';
+};
+
+const handleNuclearReset = async () => {
+    if (nuclearConfirmText.value !== 'CONFIRM') return;
+    
+    isPurging.value = true;
+    try {
+        await axios.post('/api/users/reset-all-credits');
+        await employeeStore.fetchEmployees(true);
+        resetNuclear();
+        alert('GLOBAL RESET COMPLETE: All employee credits have been set to 0.');
+    } catch (e) {
+        alert('System error during purge.');
+    } finally {
+        isPurging.value = false;
+    }
+};
+
+// Bulk Action State
+const selectedEmployeeIds = ref([]);
+const showBulkCreditsModal = ref(false);
+const bulkCreditAmount = ref(0);
+const isBulkSaving = ref(false);
+
+const isAllSelected = computed(() => {
+    const pageIds = paginatedEmployees.value.map(e => e.id);
+    return pageIds.length > 0 && pageIds.every(id => selectedEmployeeIds.value.includes(id));
+});
+
+const toggleSelectAll = () => {
+    const pageIds = paginatedEmployees.value.map(e => e.id);
+    if (isAllSelected.value) {
+        selectedEmployeeIds.value = selectedEmployeeIds.value.filter(id => !pageIds.includes(id));
+    } else {
+        selectedEmployeeIds.value = Array.from(new Set([...selectedEmployeeIds.value, ...pageIds]));
+    }
+};
+
+const handleBulkCredits = async () => {
+    if (bulkCreditAmount.value === 0) return;
+    
+    isBulkSaving.value = true;
+    try {
+        await axios.post('/api/users/bulk-credits', {
+            user_ids: selectedEmployeeIds.value,
+            amount: bulkCreditAmount.value
+        });
+        
+        await employeeStore.fetchEmployees(true);
+        selectedEmployeeIds.value = [];
+        showBulkCreditsModal.value = false;
+        bulkCreditAmount.value = 0;
+        alert('Bulk credits added successfully!');
+    } catch (e) {
+        alert('Failed to apply credits.');
+    } finally {
+        isBulkSaving.value = false;
+    }
+};
 
 const triggerBulkImport = () => {
     importInput.value.click();

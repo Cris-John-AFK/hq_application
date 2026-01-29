@@ -165,4 +165,45 @@ class UserController extends Controller
 
         return response()->json(['message' => 'Password updated successfully']);
     }
+
+    public function bulkAddCredits(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+             return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'exists:users,id',
+            'amount' => 'required|numeric',
+        ]);
+
+        $amount = $validated['amount'];
+        $count = User::whereIn('id', $validated['user_ids'])->increment('leave_credits', $amount);
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('Employees', 'Updated', "Bulk updated leave credits (+{$amount}) for {$count} employee(s).");
+
+        return response()->json([
+            'message' => "Successfully added {$amount} credits to {$count} employees.",
+            'updated_count' => $count
+        ]);
+    }
+
+    public function resetAllCredits(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+             return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $count = User::query()->update(['leave_credits' => 0]);
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('Employees', 'Security', "NUCLEAR RESET: All leave credits reset to 0 for {$count} employee(s).");
+
+        return response()->json([
+            'message' => "Successfully reset credits for {$count} employees.",
+            'count' => $count
+        ]);
+    }
 }

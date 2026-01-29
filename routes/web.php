@@ -29,6 +29,8 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     Route::put('/api/users/{id}', [\App\Http\Controllers\UserController::class, 'updateEmployee']);
     Route::put('/api/users/{id}', [\App\Http\Controllers\UserController::class, 'updateEmployee']);
     Route::put('/api/users/{id}/password', [\App\Http\Controllers\UserController::class, 'changeUserPassword']);
+    Route::post('/api/users/bulk-credits', [\App\Http\Controllers\UserController::class, 'bulkAddCredits']);
+    Route::post('/api/users/reset-all-credits', [\App\Http\Controllers\UserController::class, 'resetAllCredits']);
     
     // Departments
     Route::get('/api/departments', [\App\Http\Controllers\DepartmentController::class, 'index']);
