@@ -48,9 +48,18 @@
                 </ul>
             </nav>
 
-            <!-- User Profile -->
-            <router-link to="/profile">
-                <div class="p-4 border-t border-slate-800 bg-[#0f172a]">
+            <!-- Bottom Actions -->
+            <div class="p-4 mt-auto border-t border-slate-800">
+                <button 
+                    @click="router.push('/leave-requests')" 
+                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-all duration-200 font-bold text-sm shadow-lg shadow-teal-900/20 cursor-pointer mb-4 group"
+                >
+                    <i class="pi pi-calendar-plus group-hover:scale-110 transition-transform"></i>
+                    <span>Request Leave</span>
+                </button>
+
+                <!-- User Profile -->
+                <router-link to="/profile">
                     <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/80 transition-colors cursor-pointer group">
                         <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-teal-900/20 ring-2 ring-slate-900 group-hover:ring-teal-500/30 transition-all overflow-hidden">
                             <img v-if="user?.avatar_url" :src="user.avatar_url" alt="Profile" class="w-full h-full object-cover">
@@ -65,8 +74,8 @@
                         </div>
                         <i class="pi pi-chevron-right text-xs text-slate-500 group-hover:text-white transition-colors"></i>
                     </div>
-                </div>
-            </router-link>
+                </router-link>
+            </div>
         </aside>
 
         <!-- Main Content Wrapper -->
@@ -104,6 +113,11 @@
                         </button>
                         <div class="w-px h-6 bg-gray-200"></div>
                     </div>
+
+                    <!-- Notifications -->
+                    <NotificationDropdown />
+
+                    <div class="w-px h-6 bg-gray-200"></div>
 
                     <!-- Logout -->
                     <button 
@@ -228,6 +242,10 @@
                 </div>
             </div>
         </div>
+
+        <!-- Global Scroll Indicator -->
+        <ScrollIndicator />
+
     </div>
 </template>
 
@@ -238,6 +256,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { useCalendarStore } from '../stores/calendar';
 import { storeToRefs } from 'pinia';
 import EventCalendar from '../components/common/EventCalendar.vue';
+import ScrollIndicator from '../components/common/ScrollIndicator.vue';
+import NotificationDropdown from '../components/common/NotificationDropdown.vue';
 import axios from 'axios';
 
 const props = defineProps({
@@ -362,6 +382,8 @@ const menuItems = computed(() => {
         { label: 'Calendar', icon: 'pi-calendar', href: '/schedules' },
         { label: 'Reports', icon: 'pi-chart-bar', href: '/reports' },
         { label: 'Manage Leaves', icon: 'pi-calendar-times', href: '/manage-leaves' },
+        { label: 'My Leaves', icon: 'pi-calendar-plus', href: '/leave-requests' },
+        { label: 'Activity Logs', icon: 'pi-list', href: '/activity-logs' },
     ] : [
         { label: 'Dashboard', icon: 'pi-home', href: '/dashboard' },
         { label: 'My Profile', icon: 'pi-user', href: '/profile' },

@@ -75,7 +75,7 @@ class User extends Authenticatable
     protected function avatarUrl(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
         return \Illuminate\Database\Eloquent\Casts\Attribute::make(
-            get: fn () => $this->avatar ? Storage::url($this->avatar) : null,
+            get: fn () => $this->avatar ? Storage::disk('public')->url($this->avatar) : null,
         );
     }
 }

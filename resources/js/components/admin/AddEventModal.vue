@@ -30,17 +30,28 @@
                             class="cursor-pointer w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all font-medium text-gray-800"
                         >
                     </div>
-                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Type</label>
-                        <select 
-                            v-model="form.type" 
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">End Date</label>
+                        <input 
+                            v-model="form.end_date" 
+                            type="date" 
+                            :min="form.start_date"
                             class="cursor-pointer w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all font-medium text-gray-800"
                         >
-                            <option value="event">General Event</option>
-                            <option value="holiday">Holiday</option>
-                            <option value="meeting">Meeting</option>
-                        </select>
+                        <p class="text-[10px] text-gray-400 mt-1 italic">Optional for single day</p>
                     </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Type</label>
+                    <select 
+                        v-model="form.type" 
+                        class="cursor-pointer w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all font-medium text-gray-800"
+                    >
+                        <option value="event">General Event</option>
+                        <option value="holiday">Holiday</option>
+                        <option value="meeting">Meeting</option>
+                    </select>
                 </div>
 
                 <div>
@@ -86,6 +97,7 @@ const loading = ref(false);
 const form = reactive({
     title: '',
     start_date: new Date().toISOString().split('T')[0],
+    end_date: '',
     type: 'event',
     description: ''
 });
@@ -96,6 +108,7 @@ const close = () => {
     setTimeout(() => {
         form.title = '';
         form.description = '';
+        form.end_date = '';
         form.type = 'event';
     }, 200);
 };

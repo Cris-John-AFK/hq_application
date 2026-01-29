@@ -19,7 +19,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/api/user', [AuthController::class, 'user']);
     Route::post('/api/user/avatar', [\App\Http\Controllers\UserController::class, 'uploadAvatar']);
@@ -29,6 +29,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/api/users/{id}', [\App\Http\Controllers\UserController::class, 'updateEmployee']);
     Route::put('/api/users/{id}', [\App\Http\Controllers\UserController::class, 'updateEmployee']);
     Route::put('/api/users/{id}/password', [\App\Http\Controllers\UserController::class, 'changeUserPassword']);
+    Route::post('/api/users/bulk-credits', [\App\Http\Controllers\UserController::class, 'bulkAddCredits']);
+    Route::post('/api/users/reset-all-credits', [\App\Http\Controllers\UserController::class, 'resetAllCredits']);
     
     // Employee Masterlist (No User Account)
     Route::get('/api/employees', [\App\Http\Controllers\EmployeeController::class, 'index']);
@@ -41,6 +43,7 @@ Route::middleware('auth')->group(function () {
     // Departments
     Route::get('/api/departments', [\App\Http\Controllers\DepartmentController::class, 'index']);
     Route::post('/api/departments', [\App\Http\Controllers\DepartmentController::class, 'store']);
+    Route::get('/api/departments/stats', [\App\Http\Controllers\DepartmentController::class, 'getStats']);
 
     // Reports (Mocked)
     Route::get('/api/reports/annual', [\App\Http\Controllers\ReportController::class, 'annualAttendance']);
@@ -66,6 +69,23 @@ Route::middleware('auth')->group(function () {
     Route::put('/api/leave-requests/{leaveRequest}', [\App\Http\Controllers\LeaveRequestController::class, 'update']);
     Route::get('/api/users/{id}/leave-history', [\App\Http\Controllers\LeaveRequestController::class, 'userHistory']);
     
+    // System Logs
+    Route::get('/api/system-logs', [\App\Http\Controllers\SystemLogsController::class, 'index']);
+
+    // Notifications
+    Route::get('/api/notifications', [\App\Http\Controllers\NotificationController::class, 'index']);
+    Route::post('/api/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead']);
+    Route::put('/api/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead']);
+    Route::delete('/api/notifications/{id}', [\App\Http\Controllers\NotificationController::class, 'destroy']);
+
+    // Announcements
+    Route::get('/api/announcements', [\App\Http\Controllers\AnnouncementController::class, 'index']);
+    Route::get('/api/announcements/all', [\App\Http\Controllers\AnnouncementController::class, 'all']);
+    Route::post('/api/announcements', [\App\Http\Controllers\AnnouncementController::class, 'store']);
+    Route::put('/api/announcements/{id}', [\App\Http\Controllers\AnnouncementController::class, 'update']);
+    Route::delete('/api/announcements/{id}', [\App\Http\Controllers\AnnouncementController::class, 'destroy']);
+    Route::patch('/api/announcements/{id}/toggle', [\App\Http\Controllers\AnnouncementController::class, 'toggle']);
+
     // Catch-all meant for Vue Router
     Route::get('/{any}', function () {
         return response()

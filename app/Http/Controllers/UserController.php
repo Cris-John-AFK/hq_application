@@ -54,6 +54,9 @@ class UserController extends Controller
             'employment_status' => $validated['employment_status'],
         ]);
 
+        // Audit Log
+        \App\Utils\AuditLogger::log('Employees', 'Created', "Registered a new employee: {$user->name} ({$user->id_number}).", null, $user->toArray());
+
         return response()->json([
             'message' => 'Employee created successfully',
             'user' => $user,
@@ -80,7 +83,12 @@ class UserController extends Controller
              'leave_credits' => 'sometimes|numeric|min:0',
         ]);
 
+        $oldData = $user->toArray();
         $user->update($validated);
+        
+        // Audit Log
+        \App\Utils\AuditLogger::log('Employees', 'Updated', "Updated profile of employee: {$user->name} (#{$user->id}).", $oldData, $user->toArray());
+        
         return response()->json($user);
     }
     public function uploadAvatar(Request $request)
@@ -149,9 +157,53 @@ class UserController extends Controller
         ]);
 
         $user->update([
-            'password' => Hash::make($validated['password']),
+            'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
         ]);
 
+        // Audit Log
+        \App\Utils\AuditLogger::log('Employees', 'Security', "Reset password for employee: {$user->name} (#{$user->id}).");
+
         return response()->json(['message' => 'Password updated successfully']);
+    }
+
+    public function bulkAddCredits(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+             return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'exists:users,id',
+            'amount' => 'required|numeric',
+        ]);
+
+        $amount = $validated['amount'];
+        $count = User::whereIn('id', $validated['user_ids'])->increment('leave_credits', $amount);
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('Employees', 'Updated', "Bulk updated leave credits (+{$amount}) for {$count} employee(s).");
+
+        return response()->json([
+            'message' => "Successfully added {$amount} credits to {$count} employees.",
+            'updated_count' => $count
+        ]);
+    }
+
+    public function resetAllCredits(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+             return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $count = User::query()->update(['leave_credits' => 0]);
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('Employees', 'Security', "NUCLEAR RESET: All leave credits reset to 0 for {$count} employee(s).");
+
+        return response()->json([
+            'message' => "Successfully reset credits for {$count} employees.",
+            'count' => $count
+        ]);
     }
 }

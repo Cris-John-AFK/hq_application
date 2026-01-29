@@ -5,6 +5,7 @@ export const useAuthStore = defineStore('auth', {
     state: () => ({
         user: null,
         isAuthenticated: false,
+        fetchingPromise: null,
     }),
     actions: {
         async login(credentials) {
@@ -13,14 +14,21 @@ export const useAuthStore = defineStore('auth', {
             await this.fetchUser();
         },
         async fetchUser() {
-            try {
-                const response = await axios.get('/api/user');
+            if (this.fetchingPromise) return this.fetchingPromise;
+
+            this.fetchingPromise = axios.get('/api/user').then(response => {
                 this.user = response.data;
                 this.isAuthenticated = true;
-            } catch (error) {
+                return this.user;
+            }).catch(error => {
                 this.user = null;
                 this.isAuthenticated = false;
-            }
+                throw error;
+            }).finally(() => {
+                this.fetchingPromise = null;
+            });
+
+            return this.fetchingPromise;
         },
         async logout() {
             await axios.post('/logout');

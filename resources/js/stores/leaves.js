@@ -15,27 +15,33 @@ export const useLeaveStore = defineStore('leaves', {
             total_all_time: 0
         },
         lastFetched: null,
-        loading: false
+        loading: false,
+        fetchingPromise: null
     }),
 
     actions: {
         async fetchStats(force = false) {
-            if (this.loading) return;
+            if (this.fetchingPromise) return this.fetchingPromise;
+
             // Cache for 1 minute
             if (!force && this.lastFetched && (Date.now() - this.lastFetched < 60 * 1000)) {
-                return;
+                return this.stats;
             }
 
             this.loading = true;
-            try {
-                const response = await axios.get('/api/leave-stats');
+            this.fetchingPromise = axios.get('/api/leave-stats').then(response => {
                 this.stats = response.data;
                 this.lastFetched = Date.now();
-            } catch (error) {
+                return this.stats;
+            }).catch(error => {
                 console.error('Failed to fetch leave stats', error);
-            } finally {
+                throw error;
+            }).finally(() => {
                 this.loading = false;
-            }
+                this.fetchingPromise = null;
+            });
+
+            return this.fetchingPromise;
         },
 
         invalidate() {

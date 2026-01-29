@@ -1,11 +1,33 @@
 <template>
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-4xl mx-auto space-y-6">
+        <BulletinBoard />
         <div class="bg-white rounded-xl shadow-lg overflow-hidden">
             <div class="p-8">
-                <div v-if="user">
+                <div v-if="loading">
+                    <!-- Profile Skeleton -->
+                    <div class="flex items-center gap-6 mb-8 animate-pulse">
+                        <div class="w-24 h-24 rounded-full bg-gray-100 shadow-lg border-2 border-white"></div>
+                        <div class="space-y-3 flex-1">
+                            <div class="h-8 w-1/3 bg-gray-100 rounded"></div>
+                            <div class="h-4 w-1/4 bg-gray-100 rounded"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div v-for="i in 4" :key="i" class="bg-gray-50 p-6 rounded-xl border border-gray-100 animate-pulse h-32 flex flex-col justify-end">
+                            <div class="h-3 w-1/4 bg-gray-200 rounded mb-4"></div>
+                            <div class="h-6 w-1/2 bg-gray-200 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-else-if="user">
                     <div class="flex items-center gap-6 mb-8">
                         <div v-if="user.avatar_url" class="w-24 h-24 rounded-full overflow-hidden shadow-lg border-2 border-white">
                             <img :src="user.avatar_url" alt="Profile Photo" class="w-full h-full object-cover">
+                        </div>
+                        <div v-else class="w-24 h-24 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-3xl shadow-lg border-2 border-white">
+                            {{ authStore.getInitials(user.name) }}
                         </div>
                         <div>
                             <h2 class="text-2xl font-bold text-gray-800">{{ user.name }}</h2>
@@ -14,42 +36,45 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Role</h3>
-                            <div class="flex items-center gap-2">
-                                <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium capitalize">
-                                    <p class="text-gray-800 mt-1 capitalize">{{ user.role }}</p>
+                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 transition-all hover:bg-white hover:shadow-md">
+                            <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Role</h3>
+                            <div class="flex">
+                                <span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border border-blue-100">
+                                    {{ user.role }}
                                 </span>
                             </div>
                         </div>
 
-                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Position</h3>
-                            <p class="text-lg font-medium text-gray-800">{{ user.position || 'Not Assigned' }}</p>
+                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 transition-all hover:bg-white hover:shadow-md">
+                            <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Position</h3>
+                            <p class="text-sm font-bold text-gray-800 tracking-tight">{{ user.position || 'Not Assigned' }}</p>
                         </div>
 
-                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">ID Number</h3>
-                            <p class="text-lg font-mono font-medium text-gray-800">{{ user.id_number || 'N/A' }}</p>
+                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 transition-all hover:bg-white hover:shadow-md">
+                            <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">ID Number</h3>
+                            <p class="text-sm font-black text-gray-800 tracking-wider font-mono uppercase">{{ user.id_number || 'N/A' }}</p>
                         </div>
                         
                         <!-- User Specific Card -->
-                            <div class="bg-teal-50 p-6 rounded-xl border border-teal-100">
-                                <h3 class="text-sm font-semibold text-teal-600 uppercase tracking-wider mb-2">Latest Leave Request Status</h3>
-                                <div v-if="latestRequest">
-                                    <p class="text-gray-800 font-medium">{{ formatDate(latestRequest.date_filed) }}</p>
-                                    <p class="text-gray-600 text-sm mt-1 truncate">{{ latestRequest.leave_type }}</p>
-                                    <span class="inline-block mt-2 px-2 py-0.5 rounded text-xs font-bold capitalize"
-                                          :class="{
-                                            'bg-yellow-100 text-yellow-700': latestRequest.status === 'Pending',
-                                            'bg-green-100 text-green-700': latestRequest.status === 'Approved',
-                                            'bg-red-100 text-red-700': latestRequest.status === 'Rejected'
-                                          }">
-                                        {{ latestRequest.status }}
-                                    </span>
-                                </div>
-                                <div v-else>
-                                    <p class="text-gray-500 italic text-sm">No recent leave requests.</p>
+                            <div class="bg-teal-50 p-6 rounded-xl border border-teal-100 transition-all hover:bg-white hover:shadow-md h-full flex flex-col">
+                                <h3 class="text-xs font-black text-teal-600 uppercase tracking-widest mb-3">Latest Leave Request Status</h3>
+                                <div class="flex-1">
+                                    <div v-if="latestRequest">
+                                        <p class="text-sm font-bold text-gray-800">{{ formatDate(latestRequest.date_filed) }}</p>
+                                        <p class="text-xs text-gray-500 mt-1 truncate">{{ latestRequest.leave_type }}</p>
+                                        <span class="inline-flex mt-3 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest shadow-sm"
+                                              :class="{
+                                                'bg-yellow-50 text-yellow-700 border border-yellow-200': (latestRequest.status || 'Pending') === 'Pending',
+                                                'bg-emerald-50 text-emerald-700 border border-emerald-200': latestRequest.status === 'Approved',
+                                                'bg-rose-50 text-rose-700 border border-rose-200': latestRequest.status === 'Rejected',
+                                                'bg-gray-50 text-gray-500 border border-gray-200': latestRequest.status === 'Cancelled'
+                                              }">
+                                            {{ latestRequest.status || 'Pending' }}
+                                        </span>
+                                    </div>
+                                    <div v-else class="flex flex-col items-center justify-center py-2">
+                                        <p class="text-gray-400 italic text-[10px] font-bold uppercase tracking-widest">No recent requests</p>
+                                    </div>
                                 </div>
                             
                             <!-- From Uiverse.io by adamgiebl --> 
@@ -77,11 +102,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div v-else class="text-center text-gray-500">
-                    <i class="pi pi-spin pi-spinner text-4xl mb-4"></i>
-                    <p>Loading user profile...</p>
-                </div>
             </div>
         </div>
     </div>
@@ -91,11 +111,13 @@
     import { useAuthStore } from '../../stores/auth';
     import { storeToRefs } from 'pinia';
     import { ref, onMounted } from 'vue';
+    import BulletinBoard from '../common/BulletinBoard.vue';
     import axios from 'axios';
 
     const authStore = useAuthStore();
     const { user } = storeToRefs(authStore);
     const latestRequest = ref(null);
+    const loading = ref(true);
 
     const openLeaveRequest = () => {
         window.location.href = '/leave-requests';
@@ -107,6 +129,7 @@
     };
 
     onMounted(async () => {
+        loading.value = true;
         if (!user.value) {
            await authStore.fetchUser();
         }
@@ -118,6 +141,8 @@
             }
         } catch (error) {
             console.error('Failed to fetch latest request', error);
+        } finally {
+            loading.value = false;
         }
     });
 </script>

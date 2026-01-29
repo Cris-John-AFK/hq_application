@@ -8,6 +8,7 @@ import Reports from '../components/admin/Reports.vue';
 import ManageLeaves from '../components/admin/ManageLeaves.vue';
 import Settings from '../components/admin/Settings.vue';
 import LoginForm from '../components/login/loginForm.vue';
+import SystemLogs from '../pages/SystemLogs.vue';
 
 // User Components
 import UserDashboard from '../components/user/UserDashboard.vue';
@@ -58,6 +59,12 @@ const routes = [
         name: 'ManageLeaves',
         component: ManageLeaves,
         meta: { title: 'HQ Inc. - Manage Leaves', requiresAuth: true, requiresAdmin: true }
+    },
+    {
+        path: '/activity-logs',
+        name: 'SystemLogs',
+        component: SystemLogs,
+        meta: { title: 'HQ Inc. - System Logs', requiresAuth: true, requiresAdmin: true }
     },
     // User Routes
     {

@@ -14,6 +14,8 @@ class ComplianceService
     public function validateRule(User $user, string $leaveType, float $days)
     {
         switch (strtoupper($leaveType)) {
+            case 'SIL':
+                return $this->checkSIL($user, $days);
             case 'SOLO PARENT':
                 return $this->checkSoloParent($user, $days);
             case 'VAWS':
@@ -104,6 +106,17 @@ class ComplianceService
              return [
                 'passed' => false,
                 'message' => 'Paternity Leave usually requires being married (Labor Code).'
+            ];
+        }
+        return ['passed' => true];
+    }
+
+    private function checkSIL($user, $days)
+    {
+        if (($user->leave_credits - $days) < 0) {
+            return [
+                'passed' => false,
+                'message' => "Insufficient SIL credits. Available: {$user->leave_credits}, Requested: {$days}."
             ];
         }
         return ['passed' => true];

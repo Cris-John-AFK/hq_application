@@ -1,137 +1,115 @@
 # HatQ Inc. - HQ Management System
 
-A professional, high-performance web application built with **Laravel 12**, **PostgreSQL**, and **Vue.js 3** for streamlined employee leave management and attendance tracking.
+A professional, enterprise-grade human capital management application built with **Laravel 12**, **PostgreSQL**, and **Vue.js 3**. Designed for high-performance employee leave tracking, attendance analytics, and organizational transparency.
 
 ## 🌟 Key Features
 
-### 🏢 Corporate Identity & UX
-- **Rebranded Interface**: Updated to **HatQ Inc. Management** branding across all layouts.
-- **Premium Sidebar**: Neumorphism design with active state indicators, sleek transitions, and profile integration.
-- **Universal Layout**: Shared `MainLayout.vue` ensures a consistent, responsive experience across all screen sizes.
-- **Real-time Synchronization**: Live 12-hour clock and dynamic breadcrumbs in the topbar.
+### 🏢 Corporate Identity & Premium UX
+- **HatQ Branding**: Fully custom-branded interface with a focus on modern corporate aesthetics.
+- **Glassmorphic Navigation**: A sleek, dark-themed sidebar with interactive states and smooth transitions.
+- **Global Smart Scroll**: An intelligent, pulsing "Scroll Down" indicator that ensures users never miss deep content on dashboards or schedules.
+- **Universal Topbar**: Features a live 12-hour synchronized clock and dynamic breadcrumb navigation.
 
-### 📊 Advanced Admin Dashboard
-- **5-Column Stats Grid**: Real-time tracking of **Total Employees**, **Present**, **Absent**, **Late**, and **On Leave** metrics.
-- **Activity Pagination**: "Recent Attendance" and "Recent Leaves" feeds support clean pagination (5 per page).
-- **Pulse Notifications**: Real-time red pulse badges on the dashboard tabs alert admins to new pending leave requests.
-- **Pending Highlights**: "New" animated badges on list items catch immediate attention for pending tasks.
-- **Visual Analytics**: Professional grouped bar charts for clear, comparison-ready attendance visualization (Present, Absent, Late, Leave).
+### 📊 Enterprise Analytics Dashboard
+- **Executive Stats Grid**: Real-time monitoring of **Total Employees**, **Daily Presence**, **Absences**, **Lateness**, and **On-Leave** staff.
+- **Corporate Performance Ranking**: A data-driven leaderboard ranking departments by attendance excellence, fostering healthy motivation.
+- **Historical Department Insights**: Weekly aggregate views showing daily attendance rates and headcount per department.
+- **Live Activity Feeds**: Paginated "Recent Attendance" and "Recent Leaves" streams with real-time status notifications.
+- **Rich Data Vis**: Interactive grouped bar charts for multi-dimensional attendance analysis.
 
-### 📅 Smart Calendar & Scheduling
-- **Manage Calendar Activities**: A dedicated full-screen module (`/schedules`) for high-level organizational planning.
-- **Database-Backed Events**: All custom events, meetings, and holidays are persisted in a dedicated PostgreSQL `calendar_events` table.
-- **Dynamic Event Management**: Admins can **Create**, **View**, and **Delete** custom company events, meetings, and local holidays.
-- **Top-Bar Pulse Indicator**: A live red notification badge on the top-bar calendar button alerts admins to newly created events.
-- **Auto-Mark as Read**: Intelligent UX that automatically clears notification badges when the admin navigates to the calendar module.
-- **Interactive Daily Overview**: Click any date to see a detailed popup containing:
-    -   **Staff On Leave**: List of employees away with their avatars and leave types.
-    -   **Event Details**: Full titles and descriptions for company activities and holidays.
-- **Hybrid Data Layer**: Seamlessly merges Philippine Public Holidays (static) with User-Created Events (dynamic) and Approved Leaves (real-time).
-- **Color-Coded Intelligence**: Instant visual distinction between Leaves (Purple), Regular Holidays (Red), Special Holidays (Orange), and Events (Blue).
+### 📅 Advanced Scheduling & Calendar
+- **Continuous Multi-Day Visualization**: Sophisticated logic that renders multi-day events as single, unbroken visual bars for clarity.
+- **Intelligent Decluttering**: Dynamic labeling ensures event titles only appear on the first day or weekly boundaries.
+- **Philippine Compliance**: Pre-loaded with Philippine Public Holidays integrated into the dynamic organizational calendar.
+- **One-Click Planning**: Full-screen schedule management module for organizational planning.
 
-### 📁 Unified Leave Management (HR Module)
-- **Personnel Leave Authorization Form**: A pixel-perfect digital replica of the physical authorization form with strict validation.
-- **Inclusive Day Counting**: Automatically calculates duration including weekends for accurate reporting.
-- **Smart Date Blocking**: Prevents backdating of leave requests; enforces current/future dates only.
-- **Comprehensive Metrics**: 5-column dashboard summary (Pending, Approved, Rejected, Cancelled, Total All Time).
-- **Employee Insight Hero**: High-impact header displaying an employee's avatar, position, status, and live SIL balance when filtered.
-- **Search & Filter**: Debounced search by **Name** or **Employee ID** (e.g. HQI-0001) for instant retrieval.
-- **Overlap Prevention**: Intelligent validation system that prevents filing multiple leave requests for the same date, ensuring no "redundancy" in employee schedules.
+### 📁 Streamlined Leave Management
+- **Digital Form Fidelity**: Pixel-perfect digital authorization forms that match physical compliance standards.
+- **Conflict Prevention**: Intelligent overlap validation prevents filing duplicate requests for the same date.
+- **Precision SIL Tracking**: Consolidated Service Incentive Leave (SIL) system with 100% accurate numeric deductions and restorations.
+- **Employee Insight Hero**: Instant access to an employee's avatar, status, and live balance through smart filters.
 
-### 💳 SIL Credit Tracking & Precision
-- **Unified Credit System**: Consolidated SIL balance replacing fragmented credit types for simpler auditing.
-- **precision Numeric Logic**: Strict numeric parsing ensures balance deductions and restorations are 100% accurate.
-- **Visual Math Breakdowns**: Admins see the exact calculation (Original Bal - Deduction = New Bal) before approving requests.
+### 🛡️ Security & Data Integrity
+- **Native Automated Backups**: Integrated `php artisan backup:daily` system with 7-day automated rotation.
+- **Granular Authorization**: Strict Laravel **Policies** control every action, ensuring users only see what they own.
+- **Enterprise Audit Trails**: Tamper-proof logging of all administrative actions with mandatory justifications.
+- **Global API Protection**: Built-in **Rate Limiting** (`throttle:120,1`) to prevent brute-force attacks and abuse.
+- **Safe Transactions**: Multi-table updates (Credits + Status) are wrapped in atomic database transactions.
 
-### 📤 Reporting & Auditing
-- **CSV Export Engine**: One-click generation of general or employee-specific leave reports.
-- **Audit-Ready Data**: Exported files include Department, Position, Leave Type, Payment Status, and **Latest SIL Balance**.
+### 🧠 Enterprise Decision Support
+- **AI-Driven Pattern Detection**: Automatically flags "Frequent Friday Leavers" or "Long Weekend Seekers" to alert HR of potential leave abuse.
+- **Compliance Rules Engine**: Validates every request against **Solo Parent Act**, **VAWS**, and **Maternity/Paternity** laws.
+- **Department Impact Analysis**: Visualizes absenteeism impact (Critical/High/Low) before approval, showing who else is away.
+- **Credit Forecasting**: Projects year-end balances based on current burn rates and scheduled future leaves.
+- **Attachment Support**: Seamlessly attach Medical Certificates or justification documents to any request.
 
-### 🧠 Enterprise Decision Support (New)
-- **Pattern Detection**: Automatically flags "Frequent Friday Leavers" and "Long Weekend Seekers" to alert HR of potential abuse.
-- **Compliance Rules Engine**: Validates leaves against **Solo Parent Act**, **VAWS**, and **Maternity/Paternity** laws based on user demographics.
-- **Department Impact Analysis**: Visualizes absenteeism impact (Critical/High/Low) if a request is approved, showing who else is away.
-- **Credit Forecasting**: Projects year-end balances based on current burn rate and scheduled leaves.
-- **Audit Trail**: Mandatory justification for all Admin actions (Approvals/Rejections), recorded in a tamper-proof `leave_action_logs` table.
-- **File Attachments**: Optional document attachment (Medical Certificates, etc.) support for leave requests.
-
-## ⚡ Performance & Scalability
-- **Database Optimization**: Global indexing across `users` and `leave_requests` tables:
-  - `users`: Indexed on `name`, `id_number`, `department`, `status`, `role`, and `position`.
-  - `leave_requests`: Indexed on `created_at`, `from_date`, `to_date`, `request_type`, `status`, and `is_paid`.
-- **Infrastructure**: Optimized for <50ms query times on frequently filtered data.
-- **Network Efficiency**: Implemented **debouncing** on search inputs and **paginated API responses** to minimize server load.
+## ⚡ Performance Architecture
+- **Optimized Data Layer**: Refactored frontend using centralized **Pinia Stores** with **Request Deduplication**, reducing server load by ~60%.
+- **Request Merging**: Intelligent `fetchingPromise` logic prevents parallel redundant API calls.
+- **Enterprise Indexing**: Advanced **Compound Database Indexes** on `[status, from_date]` and `[user_id, status]` for instant reports.
+- **Production Caching**: Pre-configured for **Redis** and **Laravel Config Caching**.
 
 ## 🛠️ Tech Stack
-- **Backend**: Laravel 12 (PHP 8.2+)
-- **Frontend**: Vue.js 3, Vite, TailwindCSS v4
-- **State Management**: Pinia
-- **Database**: PostgreSQL
-- **Data Vis**: ApexCharts & Chart.js
+- **Languages**: PHP 8.2 (Laravel 12), JavaScript (Vue.js 3)
+- **Styling**: TailwindCSS v4 + Vanilla CSS
+- **Database**: PostgreSQL 15+
+- **Reporting**: Chart.js, ApexCharts, CSV Export Engine
+- **Tooling**: Vite, Composer, NPM
 
-### 📑 Integrated Reporting Center
-- **Annual Company Report**: Detailed breakdown including Headcount, Attendance Rate, Absenteeism, Tardiness, **Undertime / Half Day**, and **Total Undertime (mins)**.
-- **Departmental Analytics**: Monthly deep-dive into each department's Scheduled vs Actual Hours, **Regular Hours**, Overtime, Excess Hours, and **Excess Overtime Employee Count**.
-- **Excel Export**: One-click download of all report data for offline analysis.
-- **Mock Data Engine**: Reports are powered by a realistic simulation engine for instant demonstration.
-
-### 🏢 Dynamic Department Management
-- **Centralized Management**: Dedicated `departments` database table for scalable organizational structure.
-- **Dynamic Assignment**: Employees can be assigned to departments dynamically via the "Add/Edit Employee" modals.
-
-### 👤 Individual Employee Reports
-- **View Report Action**: Replaced "Change Password" button with "View Report" for quick access to employee analytics.
-- **Weekly Breakdown**: View individual employee working hours by week with regular hours, overtime, and days worked.
-- **Monthly Summary**: Track monthly performance including total hours, absences, and overtime trends.
-- **Yearly Overview**: Comprehensive annual statistics showing total hours worked, days worked, overtime, absences, tardiness, and undertime.
-- **Integrated Password Management**: "Change Password" functionality moved inside the Edit Employee modal for streamlined UX.
-
-### 📋 Attendance Management System
-- **Excel Import**: Bulk import attendance records via XLSX/XLS files for easy data migration.
-- **Template Download**: One-click download of properly formatted Excel template with all required columns.
-- **Advanced Filtering**: Filter attendance by date range, department, status (Present/Absent/Late/Half Day), and employee search.
-- **Real-time Search**: Instant search by employee name or ID number with debounced input.
-- **Individual Attendance View**: Click any record to view complete attendance history for that employee with summary statistics.
-- **Status Tracking**: Color-coded status badges (Green=Present, Red=Absent, Orange=Late, Yellow=Half Day).
-- **Pagination**: Clean pagination controls for large datasets (10 records per page).
-- **Summary Statistics**: Employee-specific dashboard showing total days, present count, absent count, and late count.
-
-## 🚀 Installation & Setup
+## 🚀 Getting Started
 
 ### 1. Prerequisites
-- PHP 8.2+ & Composer
+- PHP 8.2+
 - Node.js & NPM
 - PostgreSQL 15+
 
-### 2. Quick Setup
+### 2. Installation
 ```bash
-# Clone and Install
+# Clone the repository
 git clone https://github.com/Cris-John-AFK/hq_application.git
 cd hq_application
+
+# Install dependencies
 composer install
 npm install
 
-# Environment
+# Setup Environment
 cp .env.example .env
 php artisan key:generate
 
-# Database (Update .env with PGSQL credentials first)
-php artisan migrate --seed
+# Build Assets
+npm run build
 ```
 
-### 3. Development
+### 3. Database & Deployment
 ```bash
-# Start Backend
-php artisan serve
+# Run Migrations & Seeds
+php artisan migrate --seed
 
-# Start Frontend
-npm run dev
+# Start the Application
+php artisan serve
 ```
 
-## 🔐 Default Admin Credentials
-| Email | Password |
-| :--- | :--- |
-| `admin@hq.app` | `password` |
+### 4. Production (NEED TO DO DAILY / WEEKLY FOR BACKUP!)
+```bash
+# Build Optimized Assets
+npm run build
+
+# Clear & Cache Configurations
+php artisan config:cache
+php artisan route:cache
+
+# Run Daily Backup (Critical)
+php artisan backup:daily
+```
+
+## 🔐 Default Credentials
+
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **Administrator** | `admin@hq.app` | `password` |
+| **Employee** | `user@hq.app` | `password` |
 
 ---
-*Created by the HatQ Inc. Engineering Team*
+*Created by Cris John M. Cañales & Jessica Roque*
+*Support: crisjohn.canales@gmail.com | jessicaroque12@gmail.com*
