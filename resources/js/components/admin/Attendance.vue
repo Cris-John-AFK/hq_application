@@ -96,7 +96,7 @@
                                     <td class="px-6 py-3">
                                         <div class="flex items-center gap-3">
                                             <div class="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-xs">
-                                                {{ getInitials(record.employee_name) }}
+                                                {{ record.avatar }}
                                             </div>
                                             <div>
                                                 <p class="font-medium text-gray-800">{{ record.employee_name }}</p>
@@ -321,7 +321,7 @@ const generateSampleAttendance = () => {
                 time_in: timeIn,
                 time_out: timeOut,
                 hours_worked: hoursWorked,
-                status: status
+                status: status,
             });
         });
     }
@@ -413,7 +413,8 @@ const importFile = async () => {
                     time_in: row['Time In'] || '-',
                     time_out: row['Time Out'] || '-',
                     hours_worked: row['Hours Worked'] || '-',
-                    status: row.Status || 'Present'
+                    status: row.Status || 'Present',
+                    avatar: avatar_url
                 });
             });
             

@@ -2,42 +2,46 @@
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-                <h3 class="text-lg font-bold text-gray-800">Employee List</h3>
-                <p class="text-sm text-gray-500">Manage and view all registered employees</p>
+                <h3 class="text-lg font-bold text-gray-800">Employee Masterlist</h3>
+                <p class="text-sm text-gray-500">Centralized database of all employees.</p>
             </div>
             
             <div class="flex flex-col md:flex-row gap-3 items-center">
                 <button 
                     @click="showAddModal = true"
-                    class="cursor-pointer h-10 px-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
+                    class="cursor-pointer h-10 px-4 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
                 >
                     <i class="pi pi-plus"></i>
                     Add Employee
                 </button>
+                
+                <button 
+                    @click="triggerImport"
+                    class="cursor-pointer h-10 px-4 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-sm whitespace-nowrap relative"
+                    :disabled="isImporting"
+                >
+                    <i v-if="isImporting" class="pi pi-spin pi-spinner text-teal-600"></i>
+                    <i v-else class="pi pi-upload text-teal-600"></i>
+                    {{ isImporting ? 'Importing...' : 'Import Masterlist' }}
+                    
+                    <input 
+                        ref="fileInput" 
+                        type="file" 
+                        class="hidden" 
+                        accept=".xls,.xlsx,.csv" 
+                        @change="handleImport"
+                    >
+                </button>
+                
                 <!-- Department Filter -->
                 <div class="relative w-full md:w-auto">
                     <i class="pi pi-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                     <select 
                         v-model="selectedDepartment" 
-                        class="h-10 pl-10 pr-8 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-white appearance-none cursor-pointer w-full"
+                        class="h-10 pl-10 pr-8 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white appearance-none cursor-pointer w-full"
                     >
                         <option value="All">All Departments</option>
-                        <option v-for="dept in departments" :key="dept" :value="dept">{{ dept }}</option>
-                    </select>
-                </div>
-                <!-- Status Filter -->
-                <div class="relative w-full md:w-auto">
-                    <i class="pi pi-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-                    <select 
-                        v-model="selectedStatus" 
-                        class="h-10 pl-10 pr-8 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-white appearance-none cursor-pointer w-full"
-                    >
-                        <option value="All">All Status</option>
-                        <option value="Available">Available</option>
-                        <option value="Working">Working</option>
-                        <option value="Not Yet Arrived">Not Yet Arrived</option>
-                        <option value="On Leave">On Leave</option>
-                        <option value="Absent">Absent</option>
+                        <option v-for="dept in departments" :key="dept.id" :value="dept.id">{{ dept.name }}</option>
                     </select>
                 </div>
 
@@ -47,558 +51,403 @@
                     <input 
                         v-model="searchQuery" 
                         type="text" 
-                        placeholder="Search employees..." 
-                        class="h-10 pl-10 pr-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none w-full md:w-45"
+                        placeholder="Search name or ID..." 
+                        class="h-10 pl-10 pr-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none w-full md:w-64"
                     >
                 </div>
+
+                <!-- Filter Toggle -->
+                <button 
+                    @click="showFilters = !showFilters"
+                    :class="showFilters ? 'bg-teal-50 text-teal-600 border-teal-200' : 'bg-white text-gray-600 border-gray-200'"
+                    class="cursor-pointer h-10 px-4 border rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
+                >
+                    <i class="pi pi-filter"></i>
+                    <span>Smart Filters</span>
+                    <i :class="showFilters ? 'pi-chevron-up' : 'pi-chevron-down'" class="pi text-[10px] ml-1"></i>
+                </button>
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <!-- Expanded Filters -->
+        <div v-show="showFilters" class="px-6 py-4 bg-gray-50 border-b border-gray-100 animate-in slide-in-from-top-2 duration-200">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <!-- Status Filter -->
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Emp. Status</label>
+                    <select v-model="filterStatus" class="w-full h-9 px-3 border border-gray-200 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="All">All Statuses</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Probationary">Probationary</option>
+                        <option value="Contractual">Contractual</option>
+                        <option value="Resigned">Resigned</option>
+                        <option value="Terminated">Terminated</option>
+                    </select>
+                </div>
+
+                <!-- Gender Filter -->
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Gender</label>
+                    <select v-model="filterGender" class="w-full h-9 px-3 border border-gray-200 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="All">All Genders</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+
+                <!-- Civil Status -->
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Civil Status</label>
+                    <select v-model="filterCivilStatus" class="w-full h-9 px-3 border border-gray-200 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="All">All Status</option>
+                        <option value="Single">Single</option>
+                        <option value="Married">Married</option>
+                        <option value="Widowed">Widowed</option>
+                        <option value="Separated">Separated</option>
+                    </select>
+                </div>
+
+                <!-- ID Compliance -->
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Compliance Check</label>
+                    <select v-model="filterMissingId" class="w-full h-9 px-3 border border-gray-200 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="All">Full Compliance</option>
+                        <option value="sss">Missing SSS</option>
+                        <option value="philhealth">Missing PhilHealth</option>
+                        <option value="pagibig">Missing Pag-IBIG</option>
+                        <option value="tin">Missing TIN</option>
+                    </select>
+                </div>
+
+                <!-- Hired Year -->
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Hired Year</label>
+                    <select v-model="filterHiredYear" class="w-full h-9 px-3 border border-gray-200 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="All">All Years</option>
+                        <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mt-3 flex justify-end">
+                <button @click="resetFilters" class="text-[10px] font-bold text-teal-600 hover:text-teal-700 uppercase tracking-widest flex items-center gap-1 cursor-pointer">
+                    <i class="pi pi-refresh text-[8px]"></i>
+                    Reset All Filters
+                </button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto min-h-[400px]">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                        <th class="px-8 py-4 font-semibold">Employee</th>
+                        <th class="px-6 py-4 font-semibold">Employee</th>
                         <th class="px-6 py-4 font-semibold">ID</th>
                         <th class="px-6 py-4 font-semibold">Department</th>
                         <th class="px-6 py-4 font-semibold">Position</th>
                         <th class="px-6 py-4 font-semibold">Status</th>
-                        <th class="px-6 py-4 font-semibold text-center whitespace-nowrap">SIL Credits</th>
-                        <th class="px-12 py-4 font-semibold text-right">Actions</th>
+                        <th class="px-6 py-4 font-semibold">Date Hired</th>
+                        <th class="px-6 py-4 font-semibold text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    <tr v-for="(employee, index) in paginatedEmployees" :key="employee.id" class="hover:bg-gray-50/50 transition-colors">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div
-                                class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-sm bg-cover bg-center"
-                                :style="employee.avatar ? { backgroundImage: `url(${employee.avatar})` } : {}"
-                                >
-                                <span v-if="!employee.avatar">
-                                    {{ getInitials(employee.name) }}
-                                </span>
-                                </div>
-                                <div>
-                                    <div class="flex items-center gap-2">
-                                        <p class="font-medium text-gray-800">{{ employee.name }}</p>
-                                        <span v-if="employee.role === 'admin'" class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-bold rounded uppercase tracking-tighter shadow-sm border border-blue-200">Admin</span>
-                                    </div>
-                                    <p class="text-xs text-gray-500">{{ employee.email }}</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-600 font-mono">{{ employee.empId }}</td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                {{ employee.department }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ employee.position }}</td>
-                        <td class="px-4 py-4">
-                            <span 
-                                :class="{
-                                    'bg-green-100 text-green-700': employee.status === 'Available',
-                                    'bg-gray-100 text-gray-600': employee.status === 'On Leave',
-                                    'bg-blue-100 text-blue-600': employee.status === 'Working',
-                                    'bg-red-100 text-red-600': employee.status === 'Absent',
-                                }"
-                                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
-                            >
-                                {{ employee.status }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-sm font-black bg-teal-50 text-teal-700 border border-teal-100 min-w-[3rem] justify-center shadow-sm">
-                                {{ Number(employee.leave_credits) % 1 === 0 ? Number(employee.leave_credits).toFixed(0) : employee.leave_credits }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <div class="flex items-center justify-end gap-2">
-                                <!-- Edit Employee -->
-                                <div class="relative group">
-                                    <button 
-                                        @click="openEditModal(employee)" 
-                                        class="cursor-pointer w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors"
-                                    >
-                                        <i class="pi pi-pencil text-xs"></i>
-                                    </button>
-                                    <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                                        Edit Details
-                                        <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></span>
-                                    </span>
-                                </div>
-
-                                <!-- View Leaves -->
-                                <div class="relative group">
-                                    <button 
-                                        @click="handleViewLeaves(employee)" 
-                                        class="cursor-pointer w-8 h-8 rounded-full bg-teal-50 text-teal-600 hover:bg-teal-100 flex items-center justify-center transition-colors"
-                                    >
-                                        <i class="pi pi-calendar text-xs"></i>
-                                    </button>
-                                    <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                                        View Leaves
-                                        <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></span>
-                                    </span>
-                                </div>
-
-                                <!-- View Report -->
-                                <div class="relative group">
-                                    <button 
-                                        @click="handleViewReport(employee)" 
-                                        class="cursor-pointer w-8 h-8 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 flex items-center justify-center transition-colors"
-                                    >
-                                        <i class="pi pi-chart-bar text-xs"></i>
-                                    </button>
-                                    <span class="absolute bottom-full mb-2 right-0 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                                        View Report
-                                        <span class="absolute top-full right-4 border-4 border-transparent border-t-gray-800"></span>
-                                    </span>
-                                </div>
-
-                                <!-- Mark On Leave -->
-                                <div class="relative group">
-                                    <button 
-                                        @click="openLeaveModal(employee.id, 'On Leave')"
-                                        :class="[
-                                            'cursor-pointer w-8 h-8 rounded-full flex items-center justify-center transition-colors',
-                                            employee.status === 'On Leave' 
-                                                ? 'bg-orange-100 text-orange-600 hover:bg-orange-200' 
-                                                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                                        ]"
-                                    >
-                                        <i class="pi pi-clock text-xs"></i>
-                                    </button>
-                                    <span class="absolute bottom-full mb-2 right-0 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                                        Mark On Leave
-                                        <span class="absolute top-full right-2 border-4 border-transparent border-t-gray-800"></span>
-                                    </span>
-                                </div>
-                            </div>
+                    <tr v-if="isLoading">
+                        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                            <i class="pi pi-spin pi-spinner text-2xl text-teal-600 mb-2"></i>
+                            <p>Loading masterlist...</p>
                         </td>
                     </tr>
-                    <tr v-if="filteredEmployees.length === 0">
-                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
-                            No employees found matching your criteria.
+                    <tr v-else-if="employees.length === 0">
+                        <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                            No employees found. Add one to get started.
+                        </td>
+                    </tr>
+                    <tr v-else v-for="employee in employees" :key="employee.id" class="hover:bg-gray-50/50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-sm bg-cover bg-center shrink-0 border border-slate-200"
+                                    :style="employee.avatar ? { backgroundImage: `url(${employee.avatar})` } : {}">
+                                    <span v-if="!employee.avatar">{{ getInitials(employee.first_name, employee.last_name) }}</span>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-gray-800 text-sm">{{ employee.last_name }}, {{ employee.first_name }} {{ employee.suffix || '' }}</p>
+                                    <p class="text-xs text-gray-500">{{ employee.email || 'No email' }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-xs font-mono font-semibold text-gray-600 bg-gray-50 rounded w-fit my-auto h-fit">{{ employee.employee_id }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ employee.department?.name || 'N/A' }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ employee.position }}</td>
+                        <td class="px-6 py-4">
+                            <span :class="getStatusClass(employee.employment_status)" class="px-2 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider">
+                                {{ employee.employment_status }}
+                            </span>
+                        </td>
+                         <td class="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{{ formatDate(employee.date_hired) }}</td>
+                        <td class="px-6 py-4 text-right">
+                             <div class="flex items-center justify-end gap-2">
+                                <button 
+                                    @click="openEditModal(employee)" 
+                                    class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors cursor-pointer"
+                                    title="Edit Details"
+                                >
+                                    <i class="pi pi-pencil text-xs"></i>
+                                </button>
+                                <button 
+                                    @click="deleteEmployee(employee.id)" 
+                                    class="w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center transition-colors cursor-pointer"
+                                    title="Delete Record"
+                                >
+                                    <i class="pi pi-trash text-xs"></i>
+                                </button>
+                             </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
         
-        <!-- Pagination Controls -->
+        <!-- Pagination -->
         <div class="p-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
-            <span>Showing {{ startEntry }} to {{ endEntry }} of {{ filteredEmployees.length }} entries</span>
-            <div class="flex gap-2">
-                <button 
-                    @click="prevPage" 
-                    :disabled="currentPage === 1"
-                    class="px-3 py-1 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                >
-                    Previous
-                </button>
-                <div class="flex items-center gap-1 px-2">
-                    <span class="font-medium text-gray-700">{{ currentPage }}</span>
-                    <span class="text-gray-400">/</span>
-                    <span>{{ totalPages || 1 }}</span>
-                </div>
-                <button 
-                    @click="nextPage" 
-                    :disabled="currentPage === totalPages || totalPages === 0"
-                    class="px-3 py-1 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                >
-                    Next
-                </button>
-            </div>
+             <span>Page {{ currentPage }} of {{ lastPage }}</span>
+             <div class="flex gap-2">
+                 <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1" class="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50">Prev</button>
+                 <button @click="changePage(currentPage + 1)" :disabled="currentPage === lastPage" class="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50">Next</button>
+             </div>
         </div>
-        
 
-        <!-- Add Employee Modal -->
+        <!-- Modals -->
         <AddEmployeeModal 
             v-model="showAddModal" 
+            :departments="departments"
             :loading="isCreating"
-            :departments="departments"
-            @submit="handleCreateEmployee"
+            @submit="handleCreate"
         />
 
-        <!-- Edit Employee Modal -->
         <EditEmployeeModal 
-            v-model="showEditModal" 
+            v-model="showEditModal"
             :employee="selectedEmployee"
-            :loading="isEditing"
             :departments="departments"
-            @submit="handleUpdateEmployee"
-            @changePassword="handleChangePassword"
-        />
-
-        <!-- Leave Form Modal (Reusable Component) -->
-        <LeaveRequestModal 
-            v-model="showLeaveModal" 
-            :leave-type="leaveForm.type"
-            :employee-name="getEmployeeName(leaveForm.employeeId)"
-            @submit="handleLeaveSubmit"
-        />
-
-        <!-- Change Password Modal -->
-        <ChangePasswordModal 
-            v-model="showPasswordModal"
-            :employee-id="selectedEmployee?.id"
-            :employee-name="selectedEmployee?.name"
-            @success="handlePasswordChanged"
-        />
-
-        <!-- Employee Report Modal -->
-        <EmployeeReportModal 
-            v-model="showReportModal"
-            :employee="selectedEmployee"
+            :loading="isEditing"
+            @submit="handleUpdate"
         />
     </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
-import LeaveRequestModal from './LeaveRequestModal.vue';
+import { ref, onMounted, watch } from 'vue';
+import axios from 'axios';
 import AddEmployeeModal from './AddEmployeeModal.vue';
 import EditEmployeeModal from './EditEmployeeModal.vue';
-import ChangePasswordModal from './ChangePasswordModal.vue';
-import EmployeeReportModal from './EmployeeReportModal.vue';
-import axios from 'axios';
 
-const router = useRouter();
-const selectedDepartment = ref('All');
-const selectedStatus = ref('All');
-const searchQuery = ref('');
-const currentPage = ref(1);
-const itemsPerPage = 10;
-const openActionMenuId = ref(null);
+// State
+const employees = ref([]);
+const departments = ref([]);
 const isLoading = ref(false);
+const isImporting = ref(false);
+const fileInput = ref(null);
+const currentPage = ref(1);
+const lastPage = ref(1);
 
-// Modal Logic
-const showLeaveModal = ref(false);
+// Filters
+const searchQuery = ref('');
+const selectedDepartment = ref('All');
+const showFilters = ref(false);
+const filterStatus = ref('All');
+const filterGender = ref('All');
+const filterCivilStatus = ref('All');
+const filterMissingId = ref('All');
+const filterHiredYear = ref('All');
+const availableYears = ref([]);
+
+let debounceTimer = null;
+
+// Modals
 const showAddModal = ref(false);
 const showEditModal = ref(false);
-const showPasswordModal = ref(false);
-const showReportModal = ref(false);
 const isCreating = ref(false);
 const isEditing = ref(false);
-const leaveForm = ref({
-    employeeId: null,
-    type: ''
-});
 const selectedEmployee = ref(null);
 
-// Employee Data
-const employees = ref([]);
-
-// Departments Data
-const departments = ref([]);
+// Fetch Data
 const fetchDepartments = async () => {
     try {
-        const response = await axios.get('/api/departments');
-        departments.value = response.data.map(d => d.name);
-    } catch (error) {
-        console.error('Failed to fetch departments:', error);
+        const response = await axios.get('/api/departments'); // Returns [{id, name, ...}]
+        departments.value = response.data;
+    } catch (e) {
+        console.error("Dept fetch error", e);
     }
 };
 
-const fetchEmployees = async () => {
+const resetFilters = () => {
+    selectedDepartment.value = 'All';
+    filterStatus.value = 'All';
+    filterGender.value = 'All';
+    filterCivilStatus.value = 'All';
+    filterMissingId.value = 'All';
+    filterHiredYear.value = 'All';
+    searchQuery.value = '';
+};
+
+const fetchEmployees = async (page = 1) => {
     isLoading.value = true;
     try {
-        const response = await axios.get('/api/users');
-        employees.value = response.data.map(user => ({
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            avatar: user.avatar_url, // Use the full URL provided by the backend accessor
-            empId: user.id_number || 'N/A',
-            // Department Logic for new users or existing
-            department: user.department?.name || user.department || 'N/A', 
-            role: user.role, // admin or user
-            status: user.status || 'Available',
-            position: user.position || 'Employee',
-            leave_credits: user.leave_credits || 0
-        }));
-    } catch (error) {
-        console.error('Failed to fetch employees:', error);
+        const params = {
+            page: page,
+            search: searchQuery.value,
+            department_id: selectedDepartment.value === 'All' ? null : selectedDepartment.value,
+            employment_status: filterStatus.value === 'All' ? null : filterStatus.value,
+            gender: filterGender.value === 'All' ? null : filterGender.value,
+            civil_status: filterCivilStatus.value === 'All' ? null : filterCivilStatus.value,
+            missing_id: filterMissingId.value === 'All' ? null : filterMissingId.value,
+            hired_year: filterHiredYear.value === 'All' ? null : filterHiredYear.value,
+        };
+        const response = await axios.get('/api/employees', { params });
+        employees.value = response.data.data;
+        currentPage.value = response.data.current_page;
+        lastPage.value = response.data.last_page;
+        
+        // Generate years from data if we don't have them (just a helper)
+        if (availableYears.value.length === 0) {
+            const years = new Set();
+            const currentYear = new Date().getFullYear();
+            for (let i = 0; i < 20; i++) years.add(currentYear - i);
+            availableYears.value = Array.from(years);
+        }
+    } catch (e) {
+        console.error("Employee fetch error", e);
     } finally {
         isLoading.value = false;
     }
 };
 
-const getInitials = (name) => {
-    if (!name) return '??';
-    return name
-        .split(' ')
-        .map(n => n[0])
-        .join('')
-        .toUpperCase()
-        .substring(0, 2);
+// Actions
+const getInitials = (first, last) => {
+    return (first[0] + last[0]).toUpperCase();
 };
 
-onMounted(() => {
-    fetchEmployees();
-    fetchDepartments();
-    document.addEventListener('click', closeActionMenu);
-});
+const getStatusClass = (status) => {
+    switch(status) {
+        case 'Regular': return 'bg-green-100 text-green-700';
+        case 'Probationary': return 'bg-orange-100 text-orange-700';
+        case 'Contractual': return 'bg-blue-100 text-blue-700';
+        case 'Resigned': return 'bg-gray-100 text-gray-500';
+        case 'Terminated': return 'bg-red-100 text-red-700';
+        default: return 'bg-slate-100 text-slate-700';
+    }
+};
 
-const handleCreateEmployee = async (formData) => {
+const formatDate = (date) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString();
+};
+
+const changePage = (page) => {
+    if (page >= 1 && page <= lastPage.value) {
+        fetchEmployees(page);
+    }
+};
+
+// Create
+const handleCreate = async (formData) => {
     isCreating.value = true;
     try {
-        await axios.post('/api/users', formData);
+        // formData is already structured by the modal
+        await axios.post('/api/employees', formData);
         showAddModal.value = false;
-        await fetchEmployees(); // Refresh list
-        // Could show success toast here
-    } catch (error) {
-        console.error('Failed to create employee:', error);
-        alert('Failed to create employee. Please try again.');
+        fetchEmployees(1); // Reset to first page
+        alert('Employee added successfully!');
+    } catch (e) {
+        console.error(e);
+        alert('Failed to add employee: ' + (e.response?.data?.message || 'Unknown error'));
     } finally {
         isCreating.value = false;
     }
 };
 
-const filteredEmployees = computed(() => {
-    return employees.value.filter(employee => {
-        const matchesDepartment = selectedDepartment.value === 'All' || employee.department === selectedDepartment.value;
-        const matchesSearch = employee.name.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-                              employee.email.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-                              employee.empId.toLowerCase().includes(searchQuery.value.toLowerCase());
-        return matchesDepartment && matchesSearch;
-    });
-});
-
-const filteredByStatus = computed(() => {
-    return filteredEmployees.value.filter(employee => {
-        return employee.status === selectedStatus.value || selectedStatus.value === 'All';
-    });
-});
-
-// Pagination Logic
-const totalPages = computed(() => Math.ceil(filteredByStatus.value.length / itemsPerPage));
-
-const paginatedEmployees = computed(() => {
-    const start = (currentPage.value - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    return filteredByStatus.value.slice(start, end);
-});
-
-const startEntry = computed(() => filteredByStatus.value.length === 0 ? 0 : (currentPage.value - 1) * itemsPerPage + 1);
-const endEntry = computed(() => Math.min(currentPage.value * itemsPerPage, filteredByStatus.value.length));
-
-const nextPage = () => {
-    if (currentPage.value < totalPages.value) currentPage.value++;
-};
-
-const prevPage = () => {
-    if (currentPage.value > 1) currentPage.value--;
-};
-
-// Reset to page 1 when filters change
-watch([selectedDepartment, searchQuery], () => {
-    currentPage.value = 1;
-});
-
-// Action Menu Logic
-const toggleActionMenu = (id) => {
-    if (openActionMenuId.value === id) {
-        openActionMenuId.value = null;
-    } else {
-        openActionMenuId.value = id;
-    }
-};
-
-const handleViewLeaves = (employee) => {
-    openActionMenuId.value = null;
-    router.push({ path: '/manage-leaves', query: { user_id: employee.id } });
-};
-
-const handleChangePassword = (employee) => {
-    selectedEmployee.value = employee;
-    showPasswordModal.value = true;
-};
-
-const handlePasswordChanged = () => {
-    alert('Password updated successfully!');
-    // Optionally refresh employee list or show toast notification
-};
-
-const handleViewReport = (employee) => {
-    selectedEmployee.value = employee;
-    showReportModal.value = true;
-};
-
-const updateStatus = (id, newStatus) => {
-    // Optimistic update
-    const employee = employees.value.find(e => e.id === id);
-    if (employee) {
-        employee.status = newStatus;
-        openActionMenuId.value = null; // Close menu after selection
-    }
-    // In real app, call API here to persist status
-};
-
-const openLeaveModal = (id, type) => {
-    openActionMenuId.value = null;
-    leaveForm.value = {
-        employeeId: id,
-        type: type
-    };
-    showLeaveModal.value = true;
-};
-
-const handleLeaveSubmit = (formData) => {
-    // Update employee status
-    updateStatus(leaveForm.value.employeeId, leaveForm.value.type);
-    // In a real app, send formData to backend
-    console.log('Leave request submitted:', formData);
-};
-
-const getEmployeeName = (id) => {
-    const emp = employees.value.find(e => e.id === id);
-    return emp ? emp.name : 'Employee';
-};
-
-const closeActionMenu = () => {
-    openActionMenuId.value = null;
-};
-
-const openEditModal = (employee) => {
-    selectedEmployee.value = employee;
+// Edit
+const openEditModal = (emp) => {
+    selectedEmployee.value = emp;
     showEditModal.value = true;
 };
 
-const handleUpdateEmployee = async (formData) => {
+const handleUpdate = async (payload) => {
     isEditing.value = true;
     try {
-        const payload = {
-            name: formData.name,
-            department: formData.department,
-            role: formData.role,
-            position: formData.position,
-            id_number: formData.id_number,
-            employment_status: formData.employment_status,
-            leave_credits: formData.leave_credits
-        };
-
-        const response = await axios.put(`/api/users/${formData.id}`, payload);
-        
-        // Update local list
-        const idx = employees.value.findIndex(e => e.id === formData.id);
-        if (idx !== -1) {
-            // Merge response data (updated user) into existing employee object
-            // Ensure avatar_url and other computed props are kept or updated
-            employees.value[idx] = { ...employees.value[idx], ...response.data };
-        }
-        
+        // payload contains { id, ...data, details: {...} }
+        await axios.put(`/api/employees/${payload.id}`, payload);
         showEditModal.value = false;
-        alert('Employee updated successfully');
-    } catch (error) {
-        console.error('Update failed:', error);
-        alert(error.response?.data?.message || 'Failed to update employee');
+        fetchEmployees(currentPage.value);
+        alert('Employee updated successfully!');
+    } catch (e) {
+        console.error(e);
+        alert('Failed to update employee: ' + (e.response?.data?.message || 'Unknown error'));
     } finally {
         isEditing.value = false;
     }
 };
 
-onMounted(() => {
-    fetchEmployees();
-    document.addEventListener('click', closeActionMenu);
+// Delete
+const deleteEmployee = async (id) => {
+    if (!confirm('Are you sure you want to delete this record?')) return;
+    try {
+        await axios.delete(`/api/employees/${id}`);
+        fetchEmployees(currentPage.value);
+    } catch (e) {
+        alert('Failed to delete');
+    }
+};
+
+// Import Logic
+const triggerImport = () => {
+    fileInput.value.click();
+};
+
+const handleImport = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Reset input so same file can be selected again if needed
+    event.target.value = '';
+
+    if (!confirm(`Import ${file.name}? This might take a moment.`)) return;
+
+    isImporting.value = true;
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        await axios.post('/api/employees/import', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        alert('Masterlist imported successfully!');
+        fetchEmployees(1);
+    } catch (e) {
+        console.error(e);
+        alert('Import failed: ' + (e.response?.data?.message || 'Unknown error'));
+    } finally {
+        isImporting.value = false;
+    }
+};
+
+// Watchers for filtering
+watch([
+    searchQuery, 
+    selectedDepartment, 
+    filterStatus, 
+    filterGender, 
+    filterCivilStatus, 
+    filterMissingId, 
+    filterHiredYear
+], () => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        fetchEmployees(1);
+    }, 300);
 });
 
-onUnmounted(() => {
-    document.removeEventListener('click', closeActionMenu);
+onMounted(() => {
+    fetchDepartments();
+    fetchEmployees();
 });
 </script>
-
-<style scoped>
-/* From Uiverse.io by kyle1dev */ 
-.custom-radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 280px; 
-  border-radius: 12px;
-  background: rgba(30, 41, 59, 0.95); 
-  padding: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(8px);
-}
-
-.custom-radio-container {
-  position: relative;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  padding: 12px 20px;
-  border-radius: 8px;
-  background-color: rgba(255, 255, 255, 0.1);
-  transition:
-    background-color 0.3s ease,
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
-  font-size: 14px;
-  font-weight: 500;
-  color: #f1f5f9; 
-  user-select: none;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.custom-radio-container:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-  transform: scale(1.02);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.custom-radio-container input[type="radio"] {
-  opacity: 0;
-  position: absolute;
-}
-
-.custom-radio-checkmark {
-  position: relative;
-  height: 20px;
-  width: 20px;
-  border: 2px solid #cbd5e1; 
-  border-radius: 50%;
-  background-color: transparent;
-  transition:
-    background-color 0.4s ease,
-    transform 0.4s ease,
-    border-color 0.4s ease;
-  margin-right: 12px;
-  display: inline-block;
-  vertical-align: middle;
-}
-
-.custom-radio-container input[type="radio"]:checked + .custom-radio-checkmark {
-  background-color: #14b8a6; 
-  border-color: #14b8a6;
-  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.2);
-  transform: scale(1.1);
-  animation: pulse 0.6s forwards;
-}
-
-.custom-radio-checkmark::after {
-  content: "";
-  position: absolute;
-  display: none;
-}
-
-.custom-radio-container input[type="radio"]:checked + .custom-radio-checkmark::after {
-  display: block;
-  left: 50%;
-  top: 50%;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #ffffff;
-  transform: translate(-50%, -50%);
-}
-
-@keyframes pulse {
-  0% { transform: scale(1.1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1.1); }
-}
-</style>

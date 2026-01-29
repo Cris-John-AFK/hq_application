@@ -33,20 +33,20 @@
                 <!-- Legend -->
                 <div class="flex flex-wrap gap-4 mb-6">
                     <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-purple-100 border border-purple-300"></span>
-                        <span class="text-xs font-medium text-gray-600">Leave</span>
+                        <span class="w-3 h-3 rounded-full bg-violet-100 border border-violet-400"></span>
+                        <span class="text-xs font-semibold text-gray-700">Leave</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-rose-100 border border-rose-300"></span>
-                        <span class="text-xs font-medium text-gray-600">Holiday</span>
+                        <span class="w-3 h-3 rounded-full bg-rose-100 border border-rose-400"></span>
+                        <span class="text-xs font-semibold text-gray-700">Holiday</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-blue-100 border border-blue-300"></span>
-                        <span class="text-xs font-medium text-gray-600">Event</span>
+                        <span class="w-3 h-3 rounded-full bg-sky-100 border border-sky-400"></span>
+                        <span class="text-xs font-semibold text-gray-700">Event</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-orange-100 border border-orange-300"></span>
-                        <span class="text-xs font-medium text-gray-600">Special Non-Working</span>
+                        <span class="w-3 h-3 rounded-full bg-amber-100 border border-amber-400"></span>
+                        <span class="text-xs font-semibold text-gray-700">Special Non-Working</span>
                     </div>
                 </div>
 
@@ -94,7 +94,7 @@
 
                                 <!-- Leaves -->
                                 <div v-for="event in date.events" :key="event.id" 
-                                    class="px-2 py-1 rounded text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-100 truncate hover:bg-purple-100 transition-colors"
+                                    class="px-2 py-1 rounded text-[10px] font-bold bg-violet-100 text-violet-900 border border-violet-200 truncate hover:bg-violet-200 transition-colors"
                                     :title="`${event.user_name} - ${event.leave_type}`"
                                 >
                                     👤 {{ event.user_name }}
@@ -158,10 +158,10 @@
     const getEventClass = (evt) => {
         // Handle both PH holidays (static) and Custom Events (dynamic)
         const type = evt.type;
-        if (type === 'Regular Holiday' || type === 'holiday') return 'bg-rose-50 text-rose-700 border-rose-100';
-        if (type === 'Special Non-Working') return 'bg-orange-50 text-orange-700 border-orange-100';
-        if (type === 'meeting') return 'bg-indigo-50 text-indigo-700 border-indigo-100';
-        return 'bg-blue-50 text-blue-700 border-blue-100'; // Default event
+        if (type === 'Regular Holiday' || type === 'holiday') return 'bg-rose-100 text-rose-900 border-rose-200';
+        if (type === 'Special Non-Working') return 'bg-amber-100 text-amber-900 border-amber-200';
+        if (type === 'meeting') return 'bg-indigo-100 text-indigo-900 border-indigo-200';
+        return 'bg-sky-100 text-sky-900 border-sky-200'; // Default event
     };
 
     const calendarDays = computed(() => {

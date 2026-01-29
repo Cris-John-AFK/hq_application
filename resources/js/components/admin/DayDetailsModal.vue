@@ -43,7 +43,7 @@
                                 <button 
                                     v-if="evt.id" 
                                     @click="deleteEvent(evt.id)"
-                                    class="text-gray-300 hover:text-red-500 transition-colors p-1"
+                                    class="cursor-pointer text-gray-300 hover:text-red-500 transition-colors p-1"
                                     title="Delete Event"
                                 >
                                     <i class="pi pi-trash"></i>
@@ -59,17 +59,17 @@
                         <i class="pi pi-users"></i> Staff On Leave
                     </h4>
                     <div class="space-y-3">
-                        <div v-for="leave in date.events" :key="leave.id" class="flex items-center gap-3 bg-purple-50/50 border border-purple-100 rounded-xl p-3">
-                            <div class="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center shrink-0 overflow-hidden">
+                        <div v-for="leave in date.events" :key="leave.id" class="flex items-center gap-3 bg-violet-50/50 border border-violet-100 rounded-xl p-3">
+                            <div class="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center shrink-0 overflow-hidden">
                                 <img v-if="leave.avatar" :src="leave.avatar" class="w-full h-full object-cover">
-                                <span v-else class="font-bold text-purple-700 text-sm">{{ (leave.user_name || leave.title || 'U').charAt(0) }}</span>
+                                <span v-else class="font-bold text-violet-700 text-sm">{{ (leave.user_name || leave.title || 'U').charAt(0) }}</span>
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="font-bold text-gray-800 text-sm truncate">{{ leave.user_name || leave.title }}</p>
                                 <p class="text-xs text-gray-500">{{ leave.leave_type }}</p>
                             </div>
                             <div class="text-right">
-                                <span class="px-2 py-1 bg-white text-purple-700 text-[10px] font-bold rounded border border-purple-100 shadow-sm uppercase tracking-wider">
+                                <span class="px-2 py-1 bg-white text-violet-700 text-[10px] font-bold rounded border border-violet-100 shadow-sm uppercase tracking-wider">
                                     {{ leave.request_type }}
                                 </span>
                             </div>
@@ -103,16 +103,18 @@ const formatDate = (dateStr) => {
 
 const getEventBorderClass = (evt) => {
     const type = evt.type;
-    if (type === 'Regular Holiday' || type === 'holiday') return 'border-rose-200 border-l-4 border-l-rose-500';
-    if (type === 'Special Non-Working') return 'border-orange-200 border-l-4 border-l-orange-500';
-    if (type === 'meeting') return 'border-indigo-200 border-l-4 border-l-indigo-500';
-    return 'border-blue-200 border-l-4 border-l-blue-500';
+    if (type === 'Regular Holiday' || type === 'holiday') return 'border-rose-200 border-l-4 border-l-rose-600 bg-rose-50/30';
+    if (type === 'Special Non-Working') return 'border-amber-200 border-l-4 border-l-amber-600 bg-amber-50/30';
+    if (type === 'meeting') return 'border-indigo-200 border-l-4 border-l-indigo-600 bg-indigo-50/30';
+    return 'border-sky-200 border-l-4 border-l-sky-600 bg-sky-50/30';
 };
 
 const deleteEvent = async (id) => {
     if (!confirm('Are you sure you want to delete this event?')) return;
     try {
-        await axios.delete(`/api/custom-events/${id}`);
+        // Strip the 'evt_' prefix if it exists to get the numeric ID
+        const numericId = id.toString().replace('evt_', '');
+        await axios.delete(`/api/custom-events/${numericId}`);
         emit('delete');
         close();
     } catch (e) {

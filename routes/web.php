@@ -30,6 +30,14 @@ Route::middleware('auth')->group(function () {
     Route::put('/api/users/{id}', [\App\Http\Controllers\UserController::class, 'updateEmployee']);
     Route::put('/api/users/{id}/password', [\App\Http\Controllers\UserController::class, 'changeUserPassword']);
     
+    // Employee Masterlist (No User Account)
+    Route::get('/api/employees', [\App\Http\Controllers\EmployeeController::class, 'index']);
+    Route::post('/api/employees/import', [\App\Http\Controllers\EmployeeController::class, 'import']);
+    Route::post('/api/employees', [\App\Http\Controllers\EmployeeController::class, 'store']);
+    Route::get('/api/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'show']);
+    Route::put('/api/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'update']);
+    Route::delete('/api/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'destroy']);
+    
     // Departments
     Route::get('/api/departments', [\App\Http\Controllers\DepartmentController::class, 'index']);
     Route::post('/api/departments', [\App\Http\Controllers\DepartmentController::class, 'store']);
