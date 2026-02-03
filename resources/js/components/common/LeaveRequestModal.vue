@@ -24,24 +24,52 @@
                     </div>
                     
                     <hr class="my-4 border-gray-200"/>
+
+                    <!-- Admin Search Row -->
+                    <div v-if="isAdminMode" class="mb-6 p-4 bg-purple-50 rounded-xl border border-purple-100">
+                        <label class="block text-[10px] font-black text-purple-700 uppercase tracking-widest mb-2">Admin Action: File Leave for Employee</label>
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-purple-400"></i>
+                                <input 
+                                    v-model="adminSearchId" 
+                                    type="text" 
+                                    placeholder="Enter Employee ID Number..." 
+                                    class="w-full pl-10 pr-4 py-2.5 bg-white border-2 border-purple-200 rounded-lg focus:border-purple-600 outline-none font-bold text-purple-900 transition-all shadow-sm"
+                                    @keyup.enter="searchEmployee"
+                                >
+                            </div>
+                            <button 
+                                @click="searchEmployee" 
+                                :disabled="searchingEmployee || !adminSearchId"
+                                class="cursor-pointer px-6 py-2.5 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 disabled:opacity-50 transition-all flex items-center gap-2 shadow-md uppercase text-xs"
+                            >
+                                <i class="pi pi-spin pi-spinner" v-if="searchingEmployee"></i>
+                                <span>{{ searchingEmployee ? 'Searching...' : 'Search' }}</span>
+                            </button>
+                        </div>
+                        <p v-if="searchError" class="text-[10px] text-red-500 font-bold mt-2 uppercase flex items-center gap-1">
+                            <i class="pi pi-exclamation-circle"></i> {{ searchError }}
+                        </p>
+                    </div>
                     
-                    <!-- Employee Info Preview (Read Only) -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-2" v-if="user">
+                    <!-- Employee Info Preview -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-2" v-if="displayUser">
                         <div>
                             <span class="block text-xs text-gray-500 uppercase">Name</span>
-                            <span class="font-bold text-gray-800">{{ user.name }}</span>
+                            <span class="font-bold text-gray-800">{{ displayUser.name || (displayUser.first_name + ' ' + displayUser.last_name) }}</span>
                         </div>
                         <div>
                             <span class="block text-xs text-gray-500 uppercase">Employee No.</span>
-                            <span class="font-bold text-gray-800">HQI-{{ String(user.id).padStart(4, '0') }}</span>
+                            <span class="font-bold text-gray-800">{{ displayUser.id_number || displayUser.employee_id }}</span>
                         </div>
                         <div>
                             <span class="block text-xs text-gray-500 uppercase">Position</span>
-                            <span class="font-bold text-gray-800">{{ user.position || 'N/A' }}</span>
+                            <span class="font-bold text-gray-800">{{ displayUser.position || 'N/A' }}</span>
                         </div>
                          <div>
                             <span class="block text-xs text-gray-500 uppercase">Status</span>
-                            <span class="inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">{{ user.employment_status || 'Probationary' }}</span>
+                            <span class="inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">{{ displayUser.employment_status || 'Regular' }}</span>
                         </div>
                     </div>
 
@@ -49,7 +77,32 @@
                     <div class="text-xs text-gray-500" v-else>* Indicates required fields</div>
                 </div>
 
-                <!-- 1. Request For -->
+                <!-- 1. Attendance Category (ADMIN ONLY) -->
+                <div v-if="isAdminMode" class="bg-white p-6 rounded-lg border-2 border-purple-100 shadow-sm relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-purple-100 text-purple-700 text-[10px] font-black px-3 py-1 rounded-bl-lg uppercase tracking-wider">Disciplinary Metadata</div>
+                    <div class="mb-4">
+                        <span class="text-base font-bold text-gray-800">Attendance Category</span>
+                        <p class="text-xs text-gray-500">Classification for disciplinary action tracking.</p>
+                    </div>
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        <label v-for="cat in categories" :key="cat.code" 
+                            :class="[
+                                'flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all cursor-pointer text-center',
+                                form.category === cat.code ? 'bg-purple-600 border-purple-600 text-white shadow-md' : 'bg-white border-gray-100 text-gray-600 hover:border-purple-200'
+                            ]"
+                        >
+                            <input type="radio" v-model="form.category" :value="cat.code" class="hidden">
+                            <span class="text-xs font-black uppercase tracking-widest">{{ cat.code }}</span>
+                            <span class="text-[9px] mt-1 font-medium opacity-80">{{ cat.label }}</span>
+                        </label>
+                    </div>
+                    <div class="mt-4 p-3 bg-blue-50 rounded-lg text-[10px] text-blue-700 flex items-start gap-2">
+                         <i class="pi pi-info-circle mt-0.5"></i>
+                         <p>Note: Admin-filed requests are <b>automatically approved</b>. Categories are used to filter "Excessive Absence" reports later.</p>
+                    </div>
+                </div>
+
+                <!-- 2. Request For -->
                 <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm">
                     <div class="mb-3">
                         <span class="text-base font-medium text-gray-800">Leave Request For</span>
@@ -65,7 +118,7 @@
                     </div>
                 </div>
 
-                <!-- 2. Leave Type -->
+                <!-- 3. Leave Type -->
                 <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm">
                     <div class="mb-3">
                         <span class="text-base font-medium text-gray-800">Leave Type</span>
@@ -209,12 +262,25 @@ import { storeToRefs } from 'pinia';
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
     initialData: { type: Object, default: null },
-    isEdit: { type: Boolean, default: false }
+    isEdit: { type: Boolean, default: false },
+    isAdminMode: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['update:modelValue', 'submit', 'update']);
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
+
+// Admin Mode State
+import axios from 'axios';
+const adminSearchId = ref('');
+const searchedEmployee = ref(null);
+const searchingEmployee = ref(false);
+const searchError = ref('');
+
+const displayUser = computed(() => {
+    if (props.isAdminMode && searchedEmployee.value) return searchedEmployee.value;
+    return user.value;
+});
 
 const formError = ref('');
 const loading = ref(false);
@@ -223,6 +289,7 @@ const form = ref({
     dateFiled: new Date().toISOString().split('T')[0],
     requestType: 'Leave',
     leaveType: '',
+    category: '',
     otherLeaveType: '',
     fromDate: '',
     toDate: '',
@@ -239,6 +306,12 @@ const fileInput = ref(null);
 
 const requestTypes = ['Leave', 'Halfday', 'Undertime', 'Official Business'];
 const leaveTypes = ['SIL', 'Solo Parent', 'Maternity', 'VAWS', 'Paternity', 'Magna Carta', 'Emergency'];
+const categories = [
+    { code: 'UA', label: 'Unauthorized Absence' },
+    { code: 'WMC', label: 'With Medical Certificate' },
+    { code: 'WD', label: 'With Documents' },
+    { code: 'UH', label: 'Unauthorized Halfday' }
+];
 
 // Get today's date in YYYY-MM-DD format for min attribute
 const today = computed(() => {
@@ -259,6 +332,7 @@ const resetForm = () => {
         dateFiled: new Date().toISOString().split('T')[0],
         requestType: 'Leave',
         leaveType: '',
+        category: '',
         otherLeaveType: '',
         fromDate: '',
         toDate: '',
@@ -271,6 +345,9 @@ const resetForm = () => {
     };
     attachmentName.value = '';
     formError.value = '';
+    adminSearchId.value = '';
+    searchedEmployee.value = null;
+    searchError.value = '';
 };
 
 const closeModal = () => {
@@ -299,9 +376,37 @@ watch(() => props.modelValue, (isOpen) => {
             };
         } else {
             resetForm();
+            if (props.isAdminMode) {
+                // If we were passed an employee ID via admin link, auto-populate if possible
+                const urlParams = new URLSearchParams(window.location.search);
+                const preppedId = urlParams.get('admin_file_target');
+                if (preppedId) {
+                    adminSearchId.value = preppedId;
+                    searchEmployee();
+                }
+            }
         }
     }
 });
+
+const searchEmployee = async () => {
+    if (!adminSearchId.value) return;
+    searchingEmployee.value = true;
+    searchError.value = '';
+    searchedEmployee.value = null;
+
+    // Clean search ID: remove leading zeros to match numeric-string format in DB (003 -> 3)
+    const cleanId = adminSearchId.value.replace(/^0+/, '') || adminSearchId.value;
+
+    try {
+        const response = await axios.get(`/api/employees/find-by-code/${cleanId}`);
+        searchedEmployee.value = response.data;
+    } catch (e) {
+        searchError.value = "Employee not found. Please check the ID number.";
+    } finally {
+        searchingEmployee.value = false;
+    }
+};
 
 const submitForm = () => {
     formError.value = '';
@@ -314,12 +419,25 @@ const submitForm = () => {
 
     loading.value = true;
 
-    // Consolidate 'Others' input
+    // Map payload to snake_case for backend validation
     const payload = {
-        ...form.value,
-        leaveType: form.value.leaveType === 'Others' ? form.value.otherLeaveType : form.value.leaveType,
-        date_filed: form.value.dateFiled
+        leave_type: form.value.leaveType === 'Others' ? form.value.otherLeaveType : form.value.leaveType,
+        category: form.value.category,
+        request_type: form.value.requestType,
+        from_date: form.value.fromDate,
+        to_date: form.value.toDate || form.value.fromDate,
+        days_taken: form.value.numberOfDays,
+        start_time: form.value.startTime,
+        end_time: form.value.endTime,
+        reason: form.value.reason,
+        date_filed: form.value.dateFiled,
+        employee_id: props.isAdminMode ? searchedEmployee.value?.id : null,
+        attachment: form.value.attachment
     };
+
+    if (props.isAdminMode && !searchedEmployee.value) {
+        return setError('Please search and select an employee first.');
+    }
 
     if (props.isEdit) {
         emit('update', payload);

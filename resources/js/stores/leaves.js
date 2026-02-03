@@ -12,7 +12,8 @@ export const useLeaveStore = defineStore('leaves', {
             recent: [],
             approved_this_month: 0,
             scheduled: 0,
-            total_all_time: 0
+            total_all_time: 0,
+            total_employees: 0
         },
         lastFetched: null,
         loading: false,

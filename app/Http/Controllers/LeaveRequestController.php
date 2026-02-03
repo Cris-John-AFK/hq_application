@@ -35,13 +35,22 @@ class LeaveRequestController extends Controller
     {
         session_write_close();
         $user = Auth::user();
-        $query = LeaveRequest::with('user:id,name,department,avatar,employment_status,leave_credits');
+        $query = LeaveRequest::with([
+            'user:id,name,department,avatar,employment_status,leave_credits',
+            'employee.department'
+        ]);
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('id_number', 'like', "%{$search}%");
+            $query->where(function($q) use ($search) {
+                $q->whereHas('user', function ($uq) use ($search) {
+                    $uq->where('name', 'ilike', "%{$search}%")
+                        ->orWhere('id_number', 'ilike', "%{$search}%");
+                })->orWhereHas('employee', function ($eq) use ($search) {
+                    $eq->where('first_name', 'ilike', "%{$search}%")
+                        ->orWhere('last_name', 'ilike', "%{$search}%")
+                        ->orWhere('employee_id', 'ilike', "%{$search}%");
+                });
             });
         }
 
@@ -96,8 +105,10 @@ class LeaveRequestController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'employee_id' => 'nullable|exists:employees,id',
             'date_filed' => 'nullable|date',
             'leave_type' => 'required|string',
+            'category' => 'nullable|string',
             'request_type' => 'required|string',
             'from_date' => 'required|date',
             'to_date' => 'nullable|date|after_or_equal:from_date',
@@ -105,13 +116,32 @@ class LeaveRequestController extends Controller
             'start_time' => 'nullable',
             'end_time' => 'nullable',
             'reason' => 'required|string',
-            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // Max 2MB
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // Max 5MB
         ]);
 
-        $user = Auth::user();
+        $currentUser = Auth::user();
+        $targetUserId = $currentUser->id;
+        $targetEmployeeId = $request->employee_id;
+        $targetObject = $currentUser; // For compliance check
+        $status = 'Pending';
 
-        // Compliance Check (Before Saving)
-        $compliance = $this->complianceService->validateRule($user, $validated['leave_type'], $validated['days_taken']);
+        // If admin is filing for someone else
+        if ($request->filled('employee_id') && $currentUser->role === 'admin') {
+            $employee = \App\Models\Employee::find($request->employee_id);
+            // Try to link to a regular user if they exist
+            $userMatched = \App\Models\User::where('id_number', $employee->employee_id)->first();
+            if ($userMatched) {
+                $targetUserId = $userMatched->id;
+                $targetObject = $userMatched;
+            } else {
+                $targetUserId = null;
+                $targetObject = $employee;
+            }
+            $status = 'Approved'; // Admins don't need to approve their own manual filings
+        }
+
+        // Compliance Check
+        $compliance = $this->complianceService->validateRule($targetObject, $validated['leave_type'], $validated['days_taken']);
         if (! $compliance['passed']) {
             return response()->json(['message' => 'Compliance Warning: '.$compliance['message']], 422);
         }
@@ -119,10 +149,16 @@ class LeaveRequestController extends Controller
         $fromDate = $validated['from_date'];
         $toDate = $validated['to_date'] ?? $validated['from_date'];
 
-        // Check for overlaps
-        $overlap = LeaveRequest::where('user_id', $user->id)
-            ->whereIn('status', ['Pending', 'Approved'])
-            ->where(function ($query) use ($fromDate, $toDate) {
+        // Check for overlaps (using either user_id or employee_id)
+        $overlapQuery = LeaveRequest::whereIn('status', ['Pending', 'Approved']);
+        
+        if ($targetUserId) {
+            $overlapQuery->where('user_id', $targetUserId);
+        } else {
+            $overlapQuery->where('employee_id', $targetEmployeeId);
+        }
+
+        $overlap = $overlapQuery->where(function ($query) use ($fromDate, $toDate) {
                 $query->where(function ($q) use ($fromDate, $toDate) {
                     $q->whereBetween('from_date', [$fromDate, $toDate])
                         ->orWhereBetween('to_date', [$fromDate, $toDate]);
@@ -135,9 +171,10 @@ class LeaveRequestController extends Controller
         if ($overlap) {
             $existingFrom = $overlap->from_date->format('M d, Y');
             $existingTo = $overlap->to_date ? $overlap->to_date->format('M d, Y') : $existingFrom;
+            $msgPart = $targetUserId ? "You already have" : "This employee already has";
 
             return response()->json([
-                'message' => "Overlap detected: You already have a {$overlap->status} request for {$existingFrom}".($overlap->to_date ? " to {$existingTo}" : '').'.',
+                'message' => "Overlap detected: {$msgPart} a {$overlap->status} request for {$existingFrom}".($overlap->to_date ? " to {$existingTo}" : '').'.',
             ], 422);
         }
 
@@ -146,25 +183,41 @@ class LeaveRequestController extends Controller
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
             $filename = time().'_'.$file->getClientOriginalName();
-            // Store in 'public/attachments' so it's accessible via storage link
             $path = $file->storeAs('attachments', $filename, 'public');
             $attachmentPath = '/storage/'.$path;
         }
 
-        $leaveRequest = $user->leaveRequests()->create(array_merge(
+        $leaveRequest = LeaveRequest::create(array_merge(
             $validated,
-            ['attachment_path' => $attachmentPath]
+            [
+                'user_id' => $targetUserId,
+                'employee_id' => $targetEmployeeId,
+                'status' => $status,
+                'attachment_path' => $attachmentPath
+            ]
         ));
 
-        // Trigger Notification for Admin
+        // Trigger Notification for Admin (Notify other admins if needed, or notify the targeted user)
+        $targetName = $targetObject->name ?? ($targetObject->first_name . ' ' . $targetObject->last_name);
         $admins = \App\Models\User::where('role', 'admin')->get();
         foreach ($admins as $admin) {
+             if ($admin->id === $currentUser->id && $targetUserId !== $currentUser->id) continue;
             \App\Models\Notification::create([
                 'user_id' => $admin->id,
                 'title' => 'New Leave Request Filed',
-                'message' => "{$user->name} has submitted a new {$leaveRequest->leave_type} request for {$leaveRequest->days_taken} day(s).",
+                'message' => "{$targetName} has a new ".($leaveRequest->category ?? '')." {$leaveRequest->leave_type} request for {$leaveRequest->days_taken} day(s).",
                 'type' => 'info',
-                'link' => "/manage-leaves?user_id={$user->id}",
+                'link' => "/manage-leaves?search={$targetEmployeeId}",
+            ]);
+        }
+
+        if ($targetUserId && $targetUserId !== $currentUser->id) {
+            \App\Models\Notification::create([
+                'user_id' => $targetUserId,
+                'title' => 'Leave Request Filed for You',
+                'message' => "An administrator has filed a {$leaveRequest->leave_type} request on your behalf.",
+                'type' => 'info',
+                'link' => "/leave-management",
             ]);
         }
 
@@ -218,6 +271,9 @@ class LeaveRequestController extends Controller
         }
 
         return \Illuminate\Support\Facades\DB::transaction(function () use ($leaveRequest, $validated, $oldStatus, $oldIsPaid, $isAdmin) {
+            $subject = $leaveRequest->user ?? $leaveRequest->employee;
+            $subjectName = $leaveRequest->user->name ?? ($leaveRequest->employee->first_name . ' ' . $leaveRequest->employee->last_name);
+
             // Log the action if status is changing
             if (isset($validated['status']) && $validated['status'] !== $oldStatus) {
                 \App\Models\LeaveActionLog::create([
@@ -227,8 +283,8 @@ class LeaveRequestController extends Controller
                     'justification' => $validated['justification'] ?? $validated['admin_remarks'] ?? ($isAdmin ? 'Status updated by Admin' : 'Cancelled by Employee'),
                     'snapshot_data' => [
                         'old_status' => $oldStatus,
-                        'credits_before' => $leaveRequest->user->leave_credits,
-                        'impact' => $this->impactService->checkImpact($leaveRequest->user, $leaveRequest->from_date, $leaveRequest->to_date),
+                        'credits_before' => $subject->leave_credits ?? $subject->sil_credits ?? 0,
+                        'impact' => $this->impactService->checkImpact($subject, $leaveRequest->from_date, $leaveRequest->to_date),
                     ],
                 ]);
             }
@@ -239,14 +295,16 @@ class LeaveRequestController extends Controller
             // Notifications
             if (isset($validated['status']) && $validated['status'] !== $oldStatus) {
                 if ($isAdmin) {
-                    // Notify Employee
-                    \App\Models\Notification::create([
-                        'user_id' => $leaveRequest->user_id,
-                        'title' => 'Leave Request Update',
-                        'message' => "Your {$leaveRequest->leave_type} request for ".$leaveRequest->from_date->format('M d')." has been marked as **{$validated['status']}**.",
-                        'type' => $validated['status'] === 'Approved' ? 'success' : ($validated['status'] === 'Rejected' ? 'urgent' : 'warning'),
-                        'link' => '/leave-requests',
-                    ]);
+                    // Notify Employee IF they are a real user
+                    if ($leaveRequest->user_id) {
+                        \App\Models\Notification::create([
+                            'user_id' => $leaveRequest->user_id,
+                            'title' => 'Leave Request Update',
+                            'message' => "Your {$leaveRequest->leave_type} request for ".$leaveRequest->from_date->format('M d')." has been marked as **{$validated['status']}**.",
+                            'type' => $validated['status'] === 'Approved' ? 'success' : ($validated['status'] === 'Rejected' ? 'urgent' : 'warning'),
+                            'link' => '/leave-requests',
+                        ]);
+                    }
                 } elseif ($validated['status'] === 'Cancelled') {
                     // Notify Admins
                     $admins = \App\Models\User::where('role', 'admin')->get();
@@ -254,7 +312,7 @@ class LeaveRequestController extends Controller
                         \App\Models\Notification::create([
                             'user_id' => $admin->id,
                             'title' => 'Leave Request Cancelled',
-                            'message' => "{$leaveRequest->user->name} has cancelled their {$leaveRequest->leave_type} request.",
+                            'message' => "{$subjectName} has cancelled their {$leaveRequest->leave_type} request.",
                             'type' => 'warning',
                             'link' => '/manage-leaves',
                         ]);
@@ -265,29 +323,30 @@ class LeaveRequestController extends Controller
             // CREDIT ADJUSTMENT LOGIC
             $newStatus = $leaveRequest->status;
             $newIsPaid = $leaveRequest->is_paid;
-            $user = $leaveRequest->user;
             $days = $leaveRequest->days_taken;
 
-            // Scenario A: Transitioning to Approved
-            if ($newStatus === 'Approved' && $oldStatus !== 'Approved') {
-                if ($newIsPaid) {
-                    $user->decrement('leave_credits', $days);
+            if ($subject) {
+                 $creditField = ($subject instanceof \App\Models\User) ? 'leave_credits' : 'leave_credits'; // Both use leave_credits now after our migrations
+
+                // Scenario A: Transitioning to Approved
+                if ($newStatus === 'Approved' && $oldStatus !== 'Approved') {
+                    if ($newIsPaid) {
+                        $subject->decrement($creditField, $days);
+                    }
                 }
-            }
-            // Scenario B: Transitioning out of Approved
-            elseif ($newStatus !== 'Approved' && $oldStatus === 'Approved') {
-                if ($oldIsPaid) {
-                    $user->increment('leave_credits', $days);
+                // Scenario B: Transitioning out of Approved
+                elseif ($newStatus !== 'Approved' && $oldStatus === 'Approved') {
+                    if ($oldIsPaid) {
+                        $subject->increment($creditField, $days);
+                    }
                 }
-            }
-            // Scenario C: Already Approved, but toggling Pay Status
-            elseif ($newStatus === 'Approved' && $oldStatus === 'Approved') {
-                if (! $oldIsPaid && $newIsPaid) {
-                    // Changed from Unpaid to Paid -> Deduct credits
-                    $user->decrement('leave_credits', $days);
-                } elseif ($oldIsPaid && ! $newIsPaid) {
-                    // Changed from Paid to Unpaid -> Restore credits
-                    $user->increment('leave_credits', $days);
+                // Scenario C: Already Approved, but toggling Pay Status
+                elseif ($newStatus === 'Approved' && $oldStatus === 'Approved') {
+                    if (! $oldIsPaid && $newIsPaid) {
+                        $subject->decrement($creditField, $days);
+                    } elseif ($oldIsPaid && ! $newIsPaid) {
+                        $subject->increment($creditField, $days);
+                    }
                 }
             }
 
@@ -305,7 +364,7 @@ class LeaveRequestController extends Controller
                 $changeDesc .= ' Changed '.implode(', ', $changes).'.';
             }
 
-            $finalRemarks = $validated['justification'] ?? $validated['admin_remarks'] ?? '';
+            $finalRemarks = $validated['justification'] ?? '';
             if ($finalRemarks) {
                 $changeDesc .= " Remarks: \"{$finalRemarks}\"";
             }
@@ -331,13 +390,17 @@ class LeaveRequestController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $leaveRequest = LeaveRequest::with('user')->findOrFail($id);
-        $user = $leaveRequest->user;
+        $leaveRequest = LeaveRequest::with(['user', 'employee.department', 'employee.details'])->findOrFail($id);
+        $subject = $leaveRequest->user ?? $leaveRequest->employee;
 
-        $patterns = $this->leavePatternService->detectPatterns($user);
-        $impact = $this->impactService->checkImpact($user, $leaveRequest->from_date, $leaveRequest->to_date);
-        $compliance = $this->complianceService->validateRule($user, $leaveRequest->leave_type, $leaveRequest->days_taken);
-        $forecast = $this->creditForecastingService->forecast($user);
+        if (!$subject) {
+            return response()->json(['message' => 'No subject found for this request'], 404);
+        }
+
+        $patterns = $this->leavePatternService->detectPatterns($subject);
+        $impact = $this->impactService->checkImpact($subject, $leaveRequest->from_date, $leaveRequest->to_date);
+        $compliance = $this->complianceService->validateRule($subject, $leaveRequest->leave_type, $leaveRequest->days_taken);
+        $forecast = $this->creditForecastingService->forecast($subject);
 
         return response()->json([
             'patterns' => $patterns,
@@ -396,7 +459,7 @@ class LeaveRequestController extends Controller
             ->count();
 
         // For Dashboard "Recent"
-        $recent = LeaveRequest::with('user:id,name,id_number,avatar')->latest()->take(20)->get();
+        $recent = LeaveRequest::with(['user:id,name,id_number,avatar', 'employee:id,first_name,last_name,avatar,employee_id'])->latest()->take(20)->get();
 
         // On Leave Today
         $onLeaveToday = LeaveRequest::where('status', 'Approved')
@@ -412,6 +475,7 @@ class LeaveRequestController extends Controller
             'approved_this_month' => $approvedThisMonth,
             'scheduled' => $scheduled,
             'total_all_time' => LeaveRequest::count(),
+            'total_employees' => \App\Models\Employee::count(),
             'recent' => $recent,
             'on_leave_today' => $onLeaveToday,
         ]);
@@ -423,7 +487,7 @@ class LeaveRequestController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $query = LeaveRequest::with('user:id,name,id_number,leave_credits,department,position');
+        $query = LeaveRequest::with(['user', 'employee.department']);
 
         // Apply filters if provided
         if ($request->filled('status')) {
@@ -434,9 +498,15 @@ class LeaveRequestController extends Controller
         }
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('id_number', 'like', "%{$search}%");
+            $query->where(function($q) use ($search) {
+                $q->whereHas('user', function ($uq) use ($search) {
+                    $uq->where('name', 'ilike', "%{$search}%")
+                        ->orWhere('id_number', 'ilike', "%{$search}%");
+                })->orWhereHas('employee', function ($eq) use ($search) {
+                    $eq->where('first_name', 'ilike', "%{$search}%")
+                        ->orWhere('last_name', 'ilike', "%{$search}%")
+                        ->orWhere('employee_id', 'ilike', "%{$search}%");
+                });
             });
         }
 
@@ -453,7 +523,7 @@ class LeaveRequestController extends Controller
         $columns = [
             'Request ID', 'Employee ID', 'Employee Name', 'Department', 'Position',
             'Leave Type', 'Request Type', 'From Date', 'To Date', 'Days Taken',
-            'Status', 'Is Paid', 'No. of Days Paid', 'Reason', 'Admin Remarks', 'Latest SIL Balance',
+            'Status', 'Is Paid', 'No. of Days Paid', 'Reason', 'Latest SIL Balance',
         ];
 
         $callback = function () use ($requests, $columns) {
@@ -461,12 +531,19 @@ class LeaveRequestController extends Controller
             fputcsv($file, $columns);
 
             foreach ($requests as $req) {
+                $subject = $req->user ?? $req->employee;
+                $name = $req->user->name ?? ($req->employee ? $req->employee->name : 'Unknown');
+                $idNumber = $req->user->id_number ?? ($req->employee->employee_id ?? 'N/A');
+                $dept = $req->user->department ?? ($req->employee->department->name ?? 'N/A');
+                $position = $req->user->position ?? ($req->employee->position ?? 'N/A');
+                $credits = $subject->leave_credits ?? $subject->sil_credits ?? 0;
+
                 fputcsv($file, [
                     $req->id,
-                    $req->user->id_number ?? 'N/A',
-                    $req->user->name,
-                    $req->user->department ?? 'N/A',
-                    $req->user->position ?? 'N/A',
+                    $idNumber,
+                    $name,
+                    $dept,
+                    $position,
                     $req->leave_type,
                     $req->request_type,
                     $req->from_date ? $req->from_date->format('Y-m-d') : '',
@@ -476,13 +553,15 @@ class LeaveRequestController extends Controller
                     $req->is_paid ? 'YES' : 'NO',
                     $req->days_paid,
                     $req->reason,
-                    $req->admin_remarks,
-                    $req->user->leave_credits,
+                    $credits,
                 ]);
             }
 
             fclose($file);
         };
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('Leaves', 'Exported', "Exported leave report CSV file.");
 
         return response()->stream($callback, 200, $headers);
     }

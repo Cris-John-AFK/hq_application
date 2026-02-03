@@ -38,6 +38,7 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     Route::post('/api/employees', [\App\Http\Controllers\EmployeeController::class, 'store']);
     Route::get('/api/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'show']);
     Route::put('/api/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'update']);
+    Route::get('/api/employees/find-by-code/{id}', [\App\Http\Controllers\EmployeeController::class, 'findByEmployeeId']);
     Route::delete('/api/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'destroy']);
     
     // Departments

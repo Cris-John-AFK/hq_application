@@ -130,6 +130,7 @@ class EmployeesImport implements ToCollection, WithStartRow
                     'position' => $position,
                     'employment_status' => $status,
                     'date_hired' => $dateHired,
+                    'leave_credits' => 5,
                 ]
             );
 

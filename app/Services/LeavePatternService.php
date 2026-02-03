@@ -12,13 +12,19 @@ class LeavePatternService
      * Detect patterns in leave usage.
      * Returns an array of flags with details.
      */
-    public function detectPatterns(User $user)
+    public function detectPatterns($user)
     {
         $flags = [];
-        $leaves = LeaveRequest::where('user_id', $user->id)
-            ->where('status', 'Approved')
-            ->orderBy('from_date', 'desc')
-            ->get();
+        $query = LeaveRequest::where('status', 'Approved')
+            ->orderBy('from_date', 'desc');
+
+        if (isset($user->id) && $user instanceof \App\Models\User) {
+            $query->where('user_id', $user->id);
+        } else {
+            $query->where('employee_id', $user->id);
+        }
+
+        $leaves = $query->get();
 
         if ($leaves->isEmpty()) {
             return [];

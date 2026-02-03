@@ -51,7 +51,7 @@ const checkScroll = () => {
 
     // Use main content for scroll calculation instead of window if scrolling happens there
     // But mostly we used overflow-y-auto on main, so we check that element
-    const isScrollable = mainContent.scrollHeight > mainContent.clientHeight + 50; // 50px buffer
+    const isScrollable = mainContent.scrollHeight > mainContent.clientHeight + 100; // 50px buffer
     const isScrolledToTop = mainContent.scrollTop < 100;
 
     // Show if scrollable AND currently near top

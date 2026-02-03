@@ -39,6 +39,8 @@ class CalendarEventController extends Controller
 
         $event = CalendarEvent::create($validated);
 
+        \App\Utils\AuditLogger::log('Schedule', 'Created', "Added new calendar event/meeting: {$event->title}.");
+
         return response()->json($event, 201);
     }
 
@@ -51,7 +53,11 @@ class CalendarEventController extends Controller
     public function destroy($id)
     {
         $event = CalendarEvent::findOrFail($id);
+        $title = $event->title;
         $event->delete();
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('Schedule', 'Deleted', "Deleted calendar event/meeting: {$title}.");
 
         return response()->json(['message' => 'Event deleted']);
     }

@@ -43,6 +43,9 @@ class AnnouncementController extends Controller
             'created_by' => \Illuminate\Support\Facades\Auth::id()
         ]));
 
+        // Audit Log
+        \App\Utils\AuditLogger::log('Bulletins', 'Created', "Published a new bulletin: {$announcement->title}.");
+
         return response()->json($announcement, 201);
     }
 
@@ -63,6 +66,9 @@ class AnnouncementController extends Controller
 
         $announcement->update($validated);
 
+        // Audit Log
+        \App\Utils\AuditLogger::log('Bulletins', 'Updated', "Updated bulletin: {$announcement->title}.");
+
         return response()->json($announcement);
     }
 
@@ -70,7 +76,12 @@ class AnnouncementController extends Controller
     {
         if (\Illuminate\Support\Facades\Auth::user()->role !== 'admin') return response()->json(['message' => 'Unauthorized'], 403);
         
-        \App\Models\Announcement::findOrFail($id)->delete();
+        $announcement = \App\Models\Announcement::findOrFail($id);
+        $title = $announcement->title;
+        $announcement->delete();
+        
+        // Audit Log
+        \App\Utils\AuditLogger::log('Bulletins', 'Deleted', "Deleted bulletin: {$title}.");
         
         return response()->json(['message' => 'Announcement deleted']);
     }
@@ -81,6 +92,11 @@ class AnnouncementController extends Controller
         
         $announcement = \App\Models\Announcement::findOrFail($id);
         $announcement->update(['is_active' => !$announcement->is_active]);
+        
+        $status = $announcement->is_active ? 'Activated' : 'Deactivated';
+        
+        // Audit Log
+        \App\Utils\AuditLogger::log('Bulletins', 'Updated', "{$status} bulletin: {$announcement->title}.");
         
         return response()->json($announcement);
     }

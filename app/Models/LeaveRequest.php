@@ -8,8 +8,10 @@ class LeaveRequest extends Model
 {
     protected $fillable = [
         'user_id',
+        'employee_id',
         'date_filed',
         'leave_type',
+        'category',
         'request_type',
         'from_date',
         'to_date',
@@ -21,6 +23,7 @@ class LeaveRequest extends Model
         'is_paid',
         'days_paid',
         'admin_remarks',
+        'justification',
         'attachment_path'
     ];
 
@@ -36,5 +39,10 @@ class LeaveRequest extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class);
     }
 }

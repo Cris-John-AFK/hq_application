@@ -8,11 +8,12 @@ use App\Models\LeaveRequest;
 class ComplianceService
 {
     /**
-     * validateCompliance
+     * validateRule
      * Returns 'passed' => true/false, 'message' => ...
      */
-    public function validateRule(User $user, string $leaveType, float $days)
+    public function validateRule($user, string $leaveType, float $days)
     {
+        // $user can be \App\Models\User or \App\Models\Employee
         switch (strtoupper($leaveType)) {
             case 'SIL':
                 return $this->checkSIL($user, $days);
@@ -31,20 +32,28 @@ class ComplianceService
 
     private function checkSoloParent($user, $days)
     {
-        if (!$user->is_solo_parent) {
+        // Employee model might have these in details
+        $details = $user->details ?? $user; 
+        $isSoloParent = $user->is_solo_parent ?? false; 
+
+        if (!$isSoloParent) {
             return [
                 'passed' => false,
                 'message' => 'User is not tagged as a Solo Parent.'
             ];
         }
         
-        // Legal limit usually 7 days per year, renewable
-        // We need to check usage this year
-        $used = LeaveRequest::where('user_id', $user->id)
-            ->where('leave_type', 'Solo Parent')
+        $query = LeaveRequest::where('leave_type', 'Solo Parent')
             ->where('status', 'Approved')
-            ->whereYear('from_date', now()->year)
-            ->sum('days_taken');
+            ->whereYear('from_date', now()->year);
+
+        if (isset($user->id) && $user instanceof \App\Models\User) {
+            $query->where('user_id', $user->id);
+        } else {
+            $query->where('employee_id', $user->id);
+        }
+
+        $used = $query->sum('days_taken');
             
         if (($used + $days) > 7) {
             return [
@@ -58,19 +67,26 @@ class ComplianceService
 
     private function checkVAWS($user, $days)
     {
-        if ($user->gender !== 'Female') {
+        $gender = $user->gender ?? $user->details?->gender;
+
+        if ($gender !== 'Female') {
              return [
                 'passed' => false,
                 'message' => 'VAWS Leave is applicable only for female employees.'
             ];
         }
 
-        // Limit 10 days
-        $used = LeaveRequest::where('user_id', $user->id)
-            ->where('leave_type', 'VAWS')
+        $query = LeaveRequest::where('leave_type', 'VAWS')
             ->where('status', 'Approved')
-            ->whereYear('from_date', now()->year)
-            ->sum('days_taken');
+            ->whereYear('from_date', now()->year);
+
+        if (isset($user->id) && $user instanceof \App\Models\User) {
+            $query->where('user_id', $user->id);
+        } else {
+            $query->where('employee_id', $user->id);
+        }
+
+        $used = $query->sum('days_taken');
 
         if (($used + $days) > 10) {
              return [
@@ -84,7 +100,8 @@ class ComplianceService
     
     private function checkMaternity($user)
     {
-        if ($user->gender !== 'Female') {
+        $gender = $user->gender ?? $user->details?->gender;
+        if ($gender !== 'Female') {
              return [
                 'passed' => false,
                 'message' => 'Maternity Leave is applicable only for female employees.'
@@ -95,14 +112,16 @@ class ComplianceService
 
     private function checkPaternity($user)
     {
-        if ($user->gender !== 'Male') {
+        $gender = $user->gender ?? $user->details?->gender;
+        $civilStatus = $user->civil_status ?? $user->details?->civil_status;
+
+        if ($gender !== 'Male') {
              return [
                 'passed' => false,
                 'message' => 'Paternity Leave is applicable only for male employees.'
             ];
         }
-        if ($user->civil_status !== 'Married') {
-             // Technically Paternity is for married, but some companies allow common-law. Strict adherence for now.
+        if ($civilStatus !== 'Married') {
              return [
                 'passed' => false,
                 'message' => 'Paternity Leave usually requires being married (Labor Code).'
@@ -113,10 +132,11 @@ class ComplianceService
 
     private function checkSIL($user, $days)
     {
-        if (($user->leave_credits - $days) < 0) {
+        $credits = $user->leave_credits ?? $user->sil_credits ?? 0;
+        if (($credits - $days) < 0) {
             return [
                 'passed' => false,
-                'message' => "Insufficient SIL credits. Available: {$user->leave_credits}, Requested: {$days}."
+                'message' => "Insufficient SIL credits. Available: {$credits}, Requested: {$days}."
             ];
         }
         return ['passed' => true];

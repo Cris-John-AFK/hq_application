@@ -73,19 +73,16 @@ class EmployeeController extends Controller
             'employment_status' => 'required|string',
             'date_hired' => 'required|date',
             'email' => 'nullable|email',
-            'contact_number' => 'nullable|string',
+            'leave_credits' => 'nullable|numeric',
             
             // Details
             'birthdate' => 'required|date',
             'gender' => 'required|string',
-            'address' => 'required|string',
             'civil_status' => 'nullable|string',
             'sss_number' => 'nullable|string',
             'philhealth_number' => 'nullable|string',
             'pagibig_number' => 'nullable|string',
             'tin_number' => 'nullable|string',
-            'emergency_contact_name' => 'nullable|string',
-            'emergency_contact_number' => 'nullable|string',
         ]);
 
         return DB::transaction(function () use ($request, $validated) {
@@ -105,22 +102,22 @@ class EmployeeController extends Controller
                 'employment_status' => $validated['employment_status'],
                 'date_hired' => $validated['date_hired'],
                 'email' => $validated['email'] ?? null,
-                'contact_number' => $validated['contact_number'] ?? null,
+                'leave_credits' => $validated['leave_credits'] ?? 0,
                 'avatar' => $avatarPath ? '/storage/' . $avatarPath : null,
             ]);
 
             $employee->details()->create([
                 'birthdate' => $validated['birthdate'],
                 'gender' => $validated['gender'],
-                'address' => $validated['address'],
                 'civil_status' => $validated['civil_status'] ?? null,
                 'sss_number' => $validated['sss_number'] ?? null,
                 'philhealth_number' => $validated['philhealth_number'] ?? null,
                 'pagibig_number' => $validated['pagibig_number'] ?? null,
                 'tin_number' => $validated['tin_number'] ?? null,
-                'emergency_contact_name' => $validated['emergency_contact_name'] ?? null,
-                'emergency_contact_number' => $validated['emergency_contact_number'] ?? null,
             ]);
+
+            // Audit Log
+            \App\Utils\AuditLogger::log('Masterlist', 'Created', "Manually added a new employee: {$employee->name} ({$employee->employee_id}).", null, $employee->toArray());
 
             return response()->json($employee->load('details', 'department'), 201);
         });
@@ -134,19 +131,19 @@ class EmployeeController extends Controller
     public function update(Request $request, $id)
     {
         $employee = Employee::findOrFail($id);
-        
+        $oldData = $employee->load('details', 'department')->toArray();
+
         $validated = $request->validate([
             'first_name' => 'sometimes|string',
             'last_name' => 'sometimes|string',
             'department_id' => 'sometimes|exists:departments,id',
             'position' => 'sometimes|string',
-            // Add other validations as needed...
         ]);
 
-        return DB::transaction(function () use ($request, $employee) {
+        return DB::transaction(function () use ($request, $employee, $oldData) {
             $employee->update($request->only([
-                'first_name', 'last_name', 'middle_name', 'department_id', 
-                'position', 'employment_status', 'date_hired', 'email', 'contact_number'
+                'first_name', 'last_name', 'middle_name', 'department_id',
+                'position', 'employment_status', 'date_hired', 'email', 'leave_credits'
             ]));
 
             if ($request->has('details')) {
@@ -155,16 +152,34 @@ class EmployeeController extends Controller
                     $request->input('details')
                 );
             }
-            
-            return response()->json($employee->load('details', 'department'));
+
+            $employee->refresh();
+            $newData = $employee->load('details', 'department')->toArray();
+
+            // Audit Log
+            \App\Utils\AuditLogger::log('Masterlist', 'Updated', "Updated profile/details of employee: {$employee->name} ({$employee->employee_id}).", $oldData, $newData);
+
+            return response()->json($employee);
         });
     }
 
     public function destroy($id)
     {
         $employee = Employee::findOrFail($id);
+        $empName = $employee->name;
+        $empId = $employee->employee_id;
         $employee->delete();
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('Masterlist', 'Deleted', "Removed employee from masterlist: {$empName} ({$empId}).");
+
         return response()->json(['message' => 'Employee deleted']);
+    }
+
+    public function findByEmployeeId($id)
+    {
+        $employee = Employee::with(['details', 'department'])->where('employee_id', $id)->firstOrFail();
+        return response()->json($employee);
     }
 
     public function import(Request $request)
@@ -175,6 +190,10 @@ class EmployeeController extends Controller
 
         try {
             \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\EmployeesImport, $request->file('file'));
+            
+            // Audit Log
+            \App\Utils\AuditLogger::log('Masterlist', 'Imported', "Imported employees via Excel file.");
+
             return response()->json(['message' => 'Import successful']);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Import failed: ' . $e->getMessage()], 422);

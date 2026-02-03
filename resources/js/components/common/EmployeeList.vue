@@ -194,6 +194,20 @@
                                     <i class="pi pi-pencil text-xs"></i>
                                 </button>
                                 <button 
+                                    @click="goToLeaveManagement(employee.employee_id)" 
+                                    class="w-8 h-8 rounded-full bg-teal-50 text-teal-600 hover:bg-teal-100 flex items-center justify-center transition-colors cursor-pointer"
+                                    title="View Leave History"
+                                >
+                                    <i class="pi pi-calendar-plus text-xs"></i>
+                                </button>
+                                <button 
+                                    @click="adminFileLeave(employee.employee_id)" 
+                                    class="w-8 h-8 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 flex items-center justify-center transition-colors cursor-pointer"
+                                    title="File Leave for Employee"
+                                >
+                                    <i class="pi pi-plus text-xs"></i>
+                                </button>
+                                <button 
                                     @click="deleteEmployee(employee.id)" 
                                     class="w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center transition-colors cursor-pointer"
                                     title="Delete Record"
@@ -388,6 +402,16 @@ const handleUpdate = async (payload) => {
 };
 
 // Delete
+const goToLeaveManagement = (employeeId) => {
+    // Redirect to manage-leaves with the specific employee search
+    window.location.href = `/manage-leaves?search=${employeeId}`;
+};
+
+const adminFileLeave = (employeeId) => {
+    // Redirect to manage-leaves and trigger the filing modal
+    window.location.href = `/manage-leaves?admin_file_target=${employeeId}`;
+};
+
 const deleteEmployee = async (id) => {
     if (!confirm('Are you sure you want to delete this record?')) return;
     try {

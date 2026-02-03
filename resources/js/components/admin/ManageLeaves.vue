@@ -8,14 +8,30 @@
                         <h1 class="text-2xl font-bold text-gray-800">Leave Management</h1>
                         <p class="text-gray-500 text-sm mt-1">Track, manage, and report employee leave requests.</p>
                     </div>
-                    <button 
-                        @click="exportReport" 
-                        class="cursor-pointer flex items-center gap-2 px-4 py-2 bg-teal-600 border border-teal-500 text-white rounded-lg hover:bg-teal-700 transition-colors shadow-sm font-semibold"
-                    >
-                        <i class="pi pi-download"></i>
-                        <span>{{ filters.user_id ? 'Export Employee Record' : 'Export General Report' }}</span>
-                    </button>
+                    <div class="flex gap-3">
+                        <button 
+                            @click="showAdminApplyModal = true" 
+                            class="cursor-pointer flex items-center gap-2 px-4 py-2 bg-purple-600 border border-purple-500 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm font-semibold"
+                        >
+                            <i class="pi pi-plus-circle"></i>
+                            <span>File Employee Leave</span>
+                        </button>
+                        <button 
+                            @click="exportReport" 
+                            class="cursor-pointer flex items-center gap-2 px-4 py-2 bg-teal-600 border border-teal-500 text-white rounded-lg hover:bg-teal-700 transition-colors shadow-sm font-semibold"
+                        >
+                            <i class="pi pi-download"></i>
+                            <span>{{ filters.user_id ? 'Export Employee Record' : 'Export General Report' }}</span>
+                        </button>
+                    </div>
                 </div>
+
+                <!-- Admin Action Modal -->
+                <LeaveRequestModal 
+                    v-model="showAdminApplyModal"
+                    :isAdminMode="true"
+                    @submit="handleAdminSubmit"
+                />
 
                 <!-- Employee Insight Hero (Visible when filtered) -->
                 <div v-if="filters.user_id && filteredEmployeeData" class="mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -233,21 +249,34 @@
                                             <div class="w-10 h-10 rounded-full bg-gray-100 overflow-hidden ring-2 ring-transparent group-hover:ring-teal-500/20 transition-all">
                                                 <img v-if="request.user?.avatar_url" :src="request.user.avatar_url" class="w-full h-full object-cover">
                                                 <div v-else class="w-full h-full flex items-center justify-center bg-teal-100 text-teal-600 font-bold text-sm">
-                                                    {{ getInitials(request.user?.name) }}
+                                                    {{ getInitials(request.user?.name || (request.employee?.first_name + ' ' + request.employee?.last_name)) }}
                                                 </div>
                                             </div>
                                             <div>
                                                 <div class="flex items-center gap-2">
-                                                    <p class="font-bold text-gray-800 text-sm">{{ request.user?.name }}</p>
-                                                    <span class="text-[9px] font-mono px-1 bg-gray-100 text-gray-500 rounded border border-gray-200">{{ request.user?.id_number }}</span>
+                                                    <p class="font-bold text-gray-800 text-sm">
+                                                        {{ request.user?.name || (request.employee?.last_name + ', ' + request.employee?.first_name) }}
+                                                    </p>
+                                                    <span class="text-[9px] font-mono px-1 bg-gray-100 text-gray-500 rounded border border-gray-200">
+                                                        {{ request.user?.id_number || request.employee?.employee_id }}
+                                                    </span>
                                                 </div>
-                                                <p class="text-xs text-gray-400 font-medium">{{ request.user?.department }}</p>
+                                                <p class="text-xs text-gray-400 font-medium">
+                                                    {{ request.user?.department || request.employee?.department?.name }}
+                                                </p>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="p-4">
-                                        <span class="font-medium text-gray-700 text-sm block">{{ request.leave_type }}</span>
-                                        <span class="text-xs text-gray-400">{{ request.request_type }}</span>
+                                        <div class="flex flex-col gap-1">
+                                            <span class="font-bold text-gray-800 text-sm block leading-none">{{ request.leave_type }}</span>
+                                            <div class="flex items-center gap-1">
+                                                <span class="text-[10px] text-gray-400 font-medium uppercase tracking-tight">{{ request.request_type }}</span>
+                                                <span v-if="request.category" class="px-1.5 py-0.5 rounded text-[9px] font-black bg-indigo-50 text-indigo-600 border border-indigo-100 italic">
+                                                    {{ request.category }}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td class="p-4">
                                         <div class="text-sm text-gray-600">
@@ -573,6 +602,7 @@ import { useLeaveStore } from '../../stores/leaves';
 import { useEmployeeStore } from '../../stores/employees';
 import { storeToRefs } from 'pinia';
 import MainLayout from '../../layouts/MainLayout.vue';
+import LeaveRequestModal from '../common/LeaveRequestModal.vue';
 
 const authStore = useAuthStore();
 const leaveStore = useLeaveStore();
@@ -580,6 +610,8 @@ const employeeStore = useEmployeeStore();
 const { user } = storeToRefs(authStore);
 const { stats } = storeToRefs(leaveStore);
 const { departments } = storeToRefs(employeeStore);
+
+const showAdminApplyModal = ref(false);
 
 const requests = ref([]);
 const loading = ref(false);
@@ -652,7 +684,17 @@ onMounted(async () => {
     employeeStore.fetchDepartments();
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('user_id');
+    const search = urlParams.get('search');
+    const adminFileTarget = urlParams.get('admin_file_target');
+
     if (userId) filters.value.user_id = userId;
+    if (search) {
+        searchQuery.value = search;
+        filters.value.search = search;
+    }
+    if (adminFileTarget) {
+        showAdminApplyModal.value = true;
+    }
     await fetchRequests();
     leaveStore.fetchStats();
 });
@@ -702,7 +744,7 @@ const viewDetails = async (req) => {
         ...req,
         days_paid: req.days_paid || req.days_taken || 0
     };
-    justification.value = req.admin_remarks || ''; // Pre-fill if exists
+    justification.value = req.justification || req.admin_remarks || ''; // Pre-fill if exists
     adminRemarks.value = req.admin_remarks || '';
     
     // Fetch Analysis
@@ -738,7 +780,7 @@ const handleAction = async (newStatus) => {
             status: newStatus,
             is_paid: selectedRequest.value.is_paid,
             days_paid: selectedRequest.value.days_paid || 0,
-            admin_remarks: justification.value, // Mapping justification to admin_remarks logic
+            admin_remarks: justification.value,
             justification: justification.value
         };
         
@@ -757,6 +799,23 @@ const handleAction = async (newStatus) => {
         alert('Action failed: ' + (e.response?.data?.message || 'Server error'));
     } finally {
         processing.value = false;
+    }
+};
+
+const handleAdminSubmit = async (payload) => {
+    try {
+        const formData = new FormData();
+        Object.keys(payload).forEach(key => {
+            if (payload[key] !== null) formData.append(key, payload[key]);
+        });
+        
+        await axios.post('/api/leave-requests', formData);
+        alert('Leave request filed successfully on behalf of employee.');
+        fetchRequests();
+        leaveStore.fetchStats(true);
+    } catch (e) {
+        console.error("Admin file failed", e);
+        alert('Failed to file request: ' + (e.response?.data?.message || 'Server error'));
     }
 };
 

@@ -19,6 +19,10 @@ class DepartmentController extends Controller
         ]);
 
         $department = Department::create($validated);
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('Settings', 'Created', "Added new department: {$department->name}.");
+
         return response()->json($department, 201);
     }
 

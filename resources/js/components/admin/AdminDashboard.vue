@@ -7,7 +7,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             <StatCard 
                 icon="pi-users" 
-                :value="totalUsers" 
+                :value="leaveStats.total_employees" 
                 label="Total Employees" 
                 iconBgClass="bg-orange-50"
                 iconTextClass="text-orange-500"
@@ -287,7 +287,6 @@
     const { employees, loading: isLoadingEmployees } = storeToRefs(employeeStore);
     
     const loading = ref(true);
-    const totalUsers = computed(() => employees.value.length);
     const getInitials = (name) => employeeStore.getInitials(name);
 
     // Pagination & Tab state
@@ -328,16 +327,21 @@
 
     // Recent Leaves Data (From API)
     const recentLeaves = computed(() => {
-        return leaveStats.value.recent.map(leave => ({
-            id: leave.id,
-            name: leave.user?.name || 'Unknown',
-            initials: getInitials(leave.user?.name),
-            avatar: leave.user?.avatar_url,
-            type: leave.leave_type,
-            duration: leave.days_taken + ' days',
-            status: leave.status,
-            timeAgo: timeAgo(leave.created_at || leave.date_filed)
-        }));
+        return leaveStats.value.recent.map(leave => {
+            const name = leave.user?.name || leave.employee?.name || 'Unknown';
+            const avatar = leave.user?.avatar_url || (leave.employee?.avatar ? `/storage/${leave.employee.avatar}` : null);
+            
+            return {
+                id: leave.id,
+                name: name,
+                initials: leave.employee?.initials || getInitials(name),
+                avatar: avatar,
+                type: leave.leave_type,
+                duration: leave.days_taken + ' days',
+                status: leave.status,
+                timeAgo: timeAgo(leave.created_at || leave.date_filed)
+            };
+        });
     });
 
     const paginatedLeaves = computed(() => {

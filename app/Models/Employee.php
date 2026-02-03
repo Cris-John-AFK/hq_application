@@ -20,8 +20,11 @@ class Employee extends Model
         'employment_status',
         'date_hired',
         'email',
-        'avatar'
+        'avatar',
+        'leave_credits'
     ];
+
+    protected $appends = ['name', 'initials'];
 
     // Relationships
     public function details()
@@ -38,5 +41,12 @@ class Employee extends Model
     public function getNameAttribute()
     {
         return "{$this->first_name} {$this->last_name}";
+    }
+
+    public function getInitialsAttribute()
+    {
+        $first = $this->first_name ? strtoupper(substr($this->first_name, 0, 1)) : '';
+        $last = $this->last_name ? strtoupper(substr($this->last_name, 0, 1)) : '';
+        return $first . $last;
     }
 }

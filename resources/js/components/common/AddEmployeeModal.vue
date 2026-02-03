@@ -25,7 +25,13 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-1">Employee ID <span class="text-red-500">*</span></label>
-                                <input v-model="form.employee_id" type="text" placeholder="EMP-000" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" required>
+                                <input 
+                                    v-model.number="form.employee_id" 
+                                    type="number" 
+                                    placeholder="Enter digits only" 
+                                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" 
+                                    required
+                                >
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-1">Department <span class="text-red-500">*</span></label>
@@ -53,6 +59,18 @@
                              <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-1">Company Email</label>
                                 <input v-model="form.email" type="email" placeholder="email@company.com" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Initial SIL Balance</label>
+                                <div class="relative">
+                                    <input 
+                                        v-model.number="form.leave_credits" 
+                                        type="number" 
+                                        step="0.5" 
+                                        class="w-full pl-3 pr-10 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none font-bold text-teal-700"
+                                    >
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold">DAYS</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -167,6 +185,7 @@ const form = reactive({
     employment_status: 'Probationary',
     date_hired: '',
     email: '',
+    leave_credits: 5,
     
     // Personal
     last_name: '',
@@ -190,6 +209,7 @@ watch(() => props.modelValue, (newVal) => {
         form.employment_status = 'Probationary';
         form.gender = 'Male';
         form.civil_status = 'Single';
+        form.leave_credits = 5;
     }
 });
 
