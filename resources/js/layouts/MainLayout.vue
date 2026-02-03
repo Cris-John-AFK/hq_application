@@ -21,7 +21,7 @@
             </router-link>
 
             <!-- Navigation -->
-            <nav class="flex-1 overflow-y-auto py-8">
+            <nav class="flex-1 py-8 overflow-hidden">
                 <div class="px-6 mb-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Main Menu</div>
                 <ul class="space-y-2 px-4">
                     <li v-for="item in menuItems" :key="item.label">
@@ -51,11 +51,11 @@
             <!-- Bottom Actions -->
             <div class="p-4 mt-auto border-t border-slate-800">
                 <button 
-                    @click="router.push('/leave-requests')" 
+                    @click="showLeaveModal = true" 
                     class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-all duration-200 font-bold text-sm shadow-lg shadow-teal-900/20 cursor-pointer mb-4 group"
                 >
                     <i class="pi pi-calendar-plus group-hover:scale-110 transition-transform"></i>
-                    <span>Request Leave</span>
+                    <span>{{ user?.role === 'admin' ? 'File Employee Leave' : 'Request Leave' }}</span>
                 </button>
 
                 <!-- User Profile -->
@@ -246,6 +246,13 @@
         <!-- Global Scroll Indicator -->
         <ScrollIndicator />
 
+        <!-- Leave Request Modal -->
+        <LeaveRequestModal 
+            v-model="showLeaveModal"
+            :isAdminMode="user?.role === 'admin'"
+            @submit="handleLeaveSubmit"
+        />
+
     </div>
 </template>
 
@@ -258,6 +265,8 @@ import { storeToRefs } from 'pinia';
 import EventCalendar from '../components/common/EventCalendar.vue';
 import ScrollIndicator from '../components/common/ScrollIndicator.vue';
 import NotificationDropdown from '../components/common/NotificationDropdown.vue';
+import LeaveRequestModal from '../components/common/LeaveRequestModal.vue';
+import { useLeaveStore } from '../stores/leaves';
 import axios from 'axios';
 
 const props = defineProps({
@@ -268,12 +277,14 @@ const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const calendarStore = useCalendarStore();
+const leaveStore = useLeaveStore();
 
 const { events: allEvents } = storeToRefs(calendarStore);
 const title = computed(() => route.meta.title?.split(' - ').pop() || '');
 
 const isSidebarOpen = ref(false);
 const isCalendarOpen = ref(false);
+const showLeaveModal = ref(false);
 const unreadEventsCount = ref(0);
 const currentTime = ref('');
 
@@ -316,6 +327,30 @@ const toggleCalendar = async () => {
 
 const handleLogout = () => {
     authStore.logout();
+};
+
+const handleLeaveSubmit = async (payload) => {
+    try {
+        const formData = new FormData();
+        Object.keys(payload).forEach(key => {
+            if (payload[key] !== null && payload[key] !== undefined) {
+                formData.append(key, payload[key]);
+            }
+        });
+        
+        await axios.post('/api/leave-requests', formData);
+        alert(props.user?.role === 'admin' ? 'Leave request filed successfully on behalf of employee.' : 'Leave request submitted successfully.');
+        showLeaveModal.value = false;
+        
+        // Refresh relevant data
+        calendarStore.fetchEvents();
+        if (typeof leaveStore.fetchStats === 'function') {
+            leaveStore.fetchStats(true);
+        }
+    } catch (e) {
+        console.error("Leave submission failed", e);
+        alert('Failed to submit request: ' + (e.response?.data?.message || 'Server error'));
+    }
 };
 
 onMounted(() => {
@@ -382,13 +417,12 @@ const menuItems = computed(() => {
         { label: 'Calendar', icon: 'pi-calendar', href: '/schedules' },
         { label: 'Reports', icon: 'pi-chart-bar', href: '/reports' },
         { label: 'Manage Leaves', icon: 'pi-calendar-times', href: '/manage-leaves' },
-        { label: 'My Leaves', icon: 'pi-calendar-plus', href: '/leave-requests' },
+        { label: 'Assets', icon: 'pi-box', href: '/inventory' },
         { label: 'Activity Logs', icon: 'pi-list', href: '/activity-logs' },
     ] : [
         { label: 'Dashboard', icon: 'pi-home', href: '/dashboard' },
         { label: 'My Profile', icon: 'pi-user', href: '/profile' },
         { label: 'My Attendance', icon: 'pi-clock', href: '/my-attendance' },
-        { label: 'Leave Requests', icon: 'pi-calendar-plus', href: '/leave-requests' },
     ];
 });
 </script>

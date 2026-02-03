@@ -73,6 +73,13 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     // System Logs
     Route::get('/api/system-logs', [\App\Http\Controllers\SystemLogsController::class, 'index']);
 
+    // Inventory
+    Route::get('/api/inventory', [\App\Http\Controllers\InventoryController::class, 'index']);
+    Route::post('/api/inventory', [\App\Http\Controllers\InventoryController::class, 'store']);
+    Route::get('/api/inventory/{id}', [\App\Http\Controllers\InventoryController::class, 'show']);
+    Route::put('/api/inventory/{id}', [\App\Http\Controllers\InventoryController::class, 'update']);
+    Route::delete('/api/inventory/{id}', [\App\Http\Controllers\InventoryController::class, 'destroy']);
+
     // Notifications
     Route::get('/api/notifications', [\App\Http\Controllers\NotificationController::class, 'index']);
     Route::post('/api/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead']);

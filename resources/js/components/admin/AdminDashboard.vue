@@ -97,18 +97,6 @@
                     <!-- Tab Headers -->
                     <div class="flex border-b border-gray-200 bg-gray-50">
                         <button 
-                            @click="activeTab = 'attendance'"
-                            :class="[
-                                'cursor-pointer flex-1 px-6 py-3 text-sm font-semibold transition-all relative flex flex-col items-center justify-center h-16',
-                                activeTab === 'attendance' 
-                                    ? 'text-teal-600 border-b-2 border-teal-600 bg-white' 
-                                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                            ]"
-                        >
-                            <span><i class="pi pi-clock mr-2"></i>Recent Attendance</span>
-                            <span class="text-[9px] font-medium opacity-60">Imported on Jan 23, 2026</span>
-                        </button>
-                        <button 
                             @click="activeTab = 'leaves'"
                             :class="[
                                 'cursor-pointer flex-1 px-6 py-3 text-sm font-semibold transition-all relative h-16',
@@ -122,6 +110,18 @@
                             <span v-if="leaveStats.pending > 0" class="ml-2 px-1.5 py-0.5 bg-rose-500 text-white text-[10px] rounded-full animate-pulse shadow-sm">
                                 {{ leaveStats.pending }}
                             </span>
+                        </button>
+                        <button 
+                            @click="activeTab = 'attendance'"
+                            :class="[
+                                'cursor-pointer flex-1 px-6 py-3 text-sm font-semibold transition-all relative flex flex-col items-center justify-center h-16',
+                                activeTab === 'attendance' 
+                                    ? 'text-teal-600 border-b-2 border-teal-600 bg-white' 
+                                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                            ]"
+                        >
+                            <span><i class="pi pi-clock mr-2"></i>Recent Attendance</span>
+                            <span class="text-[9px] font-medium opacity-60">Imported on Jan 23, 2026</span>
                         </button>
                     </div>
 
@@ -253,12 +253,6 @@
             <AttendanceChart />
             <AttendanceLeaderboard />
         </div>
-
-        <!-- 4. Department Indicators -->
-        <div class="w-full">
-            <DepartmentStats />
-        </div>
-
         <!-- 5. Employee Management -->
         <div class="w-full pt-4">
             <EmployeeList />
@@ -276,7 +270,6 @@
     import BulletinBoard from '../common/BulletinBoard.vue';
     import AttendanceChart from '../common/AttendanceChart.vue';
     import EmployeeList from '../common/EmployeeList.vue';
-    import DepartmentStats from './DepartmentStats.vue';
     import AttendanceLeaderboard from './AttendanceLeaderboard.vue';
 
     const authStore = useAuthStore();
@@ -290,7 +283,7 @@
     const getInitials = (name) => employeeStore.getInitials(name);
 
     // Pagination & Tab state
-    const activeTab = ref('attendance');
+    const activeTab = ref('leaves');
     const attendancePage = ref(1);
     const leavesPage = ref(1);
     const pageSize = ref(5);

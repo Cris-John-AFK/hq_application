@@ -6,6 +6,7 @@ import AdminAttendance from '../components/admin/Attendance.vue';
 import Schedules from '../components/admin/Schedules.vue';
 import Reports from '../components/admin/Reports.vue';
 import ManageLeaves from '../components/admin/ManageLeaves.vue';
+import Inventory from '../components/admin/Inventory.vue';
 import Settings from '../components/admin/Settings.vue';
 import LoginForm from '../components/login/loginForm.vue';
 import SystemLogs from '../pages/SystemLogs.vue';
@@ -61,6 +62,12 @@ const routes = [
         meta: { title: 'HQ Inc. - Manage Leaves', requiresAuth: true, requiresAdmin: true }
     },
     {
+        path: '/inventory',
+        name: 'Inventory',
+        component: Inventory,
+        meta: { title: 'HQ Inc. - Audit Inventory', requiresAuth: true, requiresAdmin: true }
+    },
+    {
         path: '/activity-logs',
         name: 'SystemLogs',
         component: SystemLogs,
@@ -78,12 +85,6 @@ const routes = [
         name: 'MyAttendance',
         component: UserAttendance,
         meta: { title: 'HQ Inc. - My Attendance', requiresAuth: true }
-    },
-    {
-        path: '/leave-requests',
-        name: 'LeaveRequests',
-        component: UserLeaveRequests,
-        meta: { title: 'HQ Inc. - Leave Requests', requiresAuth: true }
     }
 ];
 

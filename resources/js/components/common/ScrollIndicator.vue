@@ -9,7 +9,7 @@
     >
         <div 
             v-if="isVisible" 
-            class="fixed bottom-12 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none filter drop-shadow-2xl"
+            class="fixed bottom-12 left-1/2 -translate-x-1/2 z-40 pointer-events-none filter drop-shadow-2xl"
         >
             <div class="flex flex-col items-center gap-3">
                 <!-- Text Label with Strong Contrast -->

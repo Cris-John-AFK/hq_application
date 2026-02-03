@@ -13,7 +13,6 @@ A professional, enterprise-grade human capital management application built with
 ### 📊 Enterprise Analytics Dashboard
 - **Executive Stats Grid**: Real-time monitoring of **Total Employees**, **Daily Presence**, **Absences**, **Lateness**, and **On-Leave** staff.
 - **Corporate Performance Ranking**: A data-driven leaderboard ranking departments by attendance excellence, fostering healthy motivation.
-- **Historical Department Insights**: Weekly aggregate views showing daily attendance rates and headcount per department.
 - **Live Activity Feeds**: Paginated "Recent Attendance" and "Recent Leaves" streams with real-time status notifications.
 - **Rich Data Vis**: Interactive grouped bar charts for multi-dimensional attendance analysis.
 
@@ -23,16 +22,26 @@ A professional, enterprise-grade human capital management application built with
 - **Philippine Compliance**: Pre-loaded with Philippine Public Holidays integrated into the dynamic organizational calendar.
 - **One-Click Planning**: Full-screen schedule management module for organizational planning.
 
-### 📁 Streamlined Leave Management
+### � Advanced Resource Auditing (Inventory)
+- **High-Fidelity Product Showcase**: Assets are presented in a premium, 3D interactive gallery featuring curated studio-quality imagery and "Apple-style" product presentation.
+- **Dynamic Resource Registry**: Comprehensive lifecycle management for IT hardware (Laptops, Desktops, Network), Furniture, and specialized equipment.
+- **Integrated Audit Trail**: Every asset modification (Create, Update, Delete) is automatically captured in the global security journal for financial transparency.
+- **Advanced Audit Toolbar**: Instant real-time searching by **Serial Number**, **Asset Nomenclature**, or **Technical Description** with multi-criteria category filters.
+- **Robust Fail-Safe Architecture**: Integrated image loading system with premium fallback icons ensures a consistently polished UI during external network latency.
+
+### �📁 Advanced Leave & Masterlist Management
+- **Unified Masterlist Support**: Seamlessly manage leave for both system users and "Masterlist Employees" (staff without digital accounts) with 100% data parity.
+- **Admin-Filing with Auto-Approval**: Administrators can bypass approval workflows by filing leaves directly on behalf of employees, triggering instant credit deductions.
+- **Disciplinary Metadata Tracking**: New **Attendance Category** system allows administrators to classify leaves (UA, WMC, WD, UH) for advanced absenteeism reporting.
 - **Digital Form Fidelity**: Pixel-perfect digital authorization forms that match physical compliance standards.
 - **Conflict Prevention**: Intelligent overlap validation prevents filing duplicate requests for the same date.
 - **Precision SIL Tracking**: Consolidated Service Incentive Leave (SIL) system with 100% accurate numeric deductions and restorations.
-- **Employee Insight Hero**: Instant access to an employee's avatar, status, and live balance through smart filters.
 
-### 🛡️ Security & Data Integrity
+### 🛡️ Security & Action Audit Trail
+- **Comprehensive Action Logging**: Every administrative move—including **Excel Exports**, **Bulk Imports**, **Setting Changes**, and **Bulletin Updates**—is recorded in the Audit Trail.
+- **Granular Change Tracking**: Profile updates log "Old vs New" data snapshots for technical review and security monitoring.
 - **Native Automated Backups**: Integrated `php artisan backup:daily` system with 7-day automated rotation.
 - **Granular Authorization**: Strict Laravel **Policies** control every action, ensuring users only see what they own.
-- **Enterprise Audit Trails**: Tamper-proof logging of all administrative actions with mandatory justifications.
 - **Global API Protection**: Built-in **Rate Limiting** (`throttle:120,1`) to prevent brute-force attacks and abuse.
 - **Safe Transactions**: Multi-table updates (Credits + Status) are wrapped in atomic database transactions.
 
