@@ -13,9 +13,8 @@ class UserController extends Controller
 {
     public function index()
     {
-        // Return all users/employees (maybe filter out admins if needed, but "Total Employees" usually includes everyone or just role=user)
-        // Let's return all for now to populate the list.
-        $users = User::orderBy('id')->get();
+        // Return paginated users/employees for scalability
+        $users = User::orderBy('id')->paginate(20);
         return response()->json($users);
     }
 
@@ -33,7 +32,7 @@ class UserController extends Controller
         // Generate Email: firstname@hq.app
         $firstName = explode(' ', trim($validated['name']))[0];
         $email = Str::lower($firstName) . '@hq.app';
-        
+
         // Ensure email is unique (simple append if exists)
         $count = 0;
         $originalEmail = $email;
@@ -68,27 +67,27 @@ class UserController extends Controller
     public function updateEmployee(Request $request, $id)
     {
         if (Auth::user()->role !== 'admin') {
-             return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $user = User::findOrFail($id);
-        
+
         $validated = $request->validate([
-             'name' => 'sometimes|string|max:255',
-             'department' => 'sometimes|string',
-             'position' => 'sometimes|string',
-             'employment_status' => 'sometimes|string|in:Probationary,Regular',
-             'role' => 'sometimes|string|in:admin,user',
-             'id_number' => 'sometimes|string|max:20|unique:users,id_number,' . $id,
-             'leave_credits' => 'sometimes|numeric|min:0',
+            'name' => 'sometimes|string|max:255',
+            'department' => 'sometimes|string',
+            'position' => 'sometimes|string',
+            'employment_status' => 'sometimes|string|in:Probationary,Regular',
+            'role' => 'sometimes|string|in:admin,user',
+            'id_number' => 'sometimes|string|max:20|unique:users,id_number,' . $id,
+            'leave_credits' => 'sometimes|numeric|min:0',
         ]);
 
         $oldData = $user->toArray();
         $user->update($validated);
-        
+
         // Audit Log
         \App\Utils\AuditLogger::log('Employees', 'Updated', "Updated profile of employee: {$user->name} (#{$user->id}).", $oldData, $user->toArray());
-        
+
         return response()->json($user);
     }
     public function uploadAvatar(Request $request)
@@ -169,7 +168,7 @@ class UserController extends Controller
     public function bulkAddCredits(Request $request)
     {
         if (Auth::user()->role !== 'admin') {
-             return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $validated = $request->validate([
@@ -193,7 +192,7 @@ class UserController extends Controller
     public function resetAllCredits(Request $request)
     {
         if (Auth::user()->role !== 'admin') {
-             return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $count = User::query()->update(['leave_credits' => 0]);

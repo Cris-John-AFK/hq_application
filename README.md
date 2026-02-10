@@ -22,14 +22,14 @@ A professional, enterprise-grade human capital management application built with
 - **Philippine Compliance**: Pre-loaded with Philippine Public Holidays integrated into the dynamic organizational calendar.
 - **One-Click Planning**: Full-screen schedule management module for organizational planning.
 
-### � Advanced Resource Auditing (Inventory)
+### 📦 Advanced Resource Auditing (Inventory)
 - **High-Fidelity Product Showcase**: Assets are presented in a premium, 3D interactive gallery featuring curated studio-quality imagery and "Apple-style" product presentation.
 - **Dynamic Resource Registry**: Comprehensive lifecycle management for IT hardware (Laptops, Desktops, Network), Furniture, and specialized equipment.
 - **Integrated Audit Trail**: Every asset modification (Create, Update, Delete) is automatically captured in the global security journal for financial transparency.
 - **Advanced Audit Toolbar**: Instant real-time searching by **Serial Number**, **Asset Nomenclature**, or **Technical Description** with multi-criteria category filters.
 - **Robust Fail-Safe Architecture**: Integrated image loading system with premium fallback icons ensures a consistently polished UI during external network latency.
 
-### �📁 Advanced Leave & Masterlist Management
+### 📁 Advanced Leave & Masterlist Management
 - **Unified Masterlist Support**: Seamlessly manage leave for both system users and "Masterlist Employees" (staff without digital accounts) with 100% data parity.
 - **Admin-Filing with Auto-Approval**: Administrators can bypass approval workflows by filing leaves directly on behalf of employees, triggering instant credit deductions.
 - **Disciplinary Metadata Tracking**: New **Attendance Category** system allows administrators to classify leaves (UA, WMC, WD, UH) for advanced absenteeism reporting.
@@ -37,7 +37,24 @@ A professional, enterprise-grade human capital management application built with
 - **Conflict Prevention**: Intelligent overlap validation prevents filing duplicate requests for the same date.
 - **Precision SIL Tracking**: Consolidated Service Incentive Leave (SIL) system with 100% accurate numeric deductions and restorations.
 
-### 🛡️ Security & Action Audit Trail
+---
+
+## 🏎️ Performance & Development Speed
+
+The development environment is optimized for maximum "snappiness" by leveraging a hybrid server architecture:
+
+### **Why is `localhost:5173` faster?**
+- **Vite Engine**: Port 5173 is powered by **Vite**, which uses native ES modules and a high-performance Go-based pre-bundler. It is designed for near-instant asset delivery and **Hot Module Replacement (HMR)**.
+- **Zero Overhead**: Unlike the backend which must boot the entire Laravel framework for every request, 5173 only serves exactly what the browser needs at that millisecond.
+
+### **The Hybrid Workflow**
+We have implemented a **Development Proxy** in `vite.config.js`. You can now use `localhost:5173` as your main entry point for a faster UI experience:
+- **UI & Assets**: Served directly by Vite at lightspeed on 5173.
+- **API & Data**: Automatically proxied to Laravel on 8000 in the background.
+
+---
+
+## 🛡️ Security & Action Audit Trail
 - **Comprehensive Action Logging**: Every administrative move—including **Excel Exports**, **Bulk Imports**, **Setting Changes**, and **Bulletin Updates**—is recorded in the Audit Trail.
 - **Granular Change Tracking**: Profile updates log "Old vs New" data snapshots for technical review and security monitoring.
 - **Native Automated Backups**: Integrated `php artisan backup:daily` system with 7-day automated rotation.
@@ -45,18 +62,7 @@ A professional, enterprise-grade human capital management application built with
 - **Global API Protection**: Built-in **Rate Limiting** (`throttle:120,1`) to prevent brute-force attacks and abuse.
 - **Safe Transactions**: Multi-table updates (Credits + Status) are wrapped in atomic database transactions.
 
-### 🧠 Enterprise Decision Support
-- **AI-Driven Pattern Detection**: Automatically flags "Frequent Friday Leavers" or "Long Weekend Seekers" to alert HR of potential leave abuse.
-- **Compliance Rules Engine**: Validates every request against **Solo Parent Act**, **VAWS**, and **Maternity/Paternity** laws.
-- **Department Impact Analysis**: Visualizes absenteeism impact (Critical/High/Low) before approval, showing who else is away.
-- **Credit Forecasting**: Projects year-end balances based on current burn rates and scheduled future leaves.
-- **Attachment Support**: Seamlessly attach Medical Certificates or justification documents to any request.
-
-## ⚡ Performance Architecture
-- **Optimized Data Layer**: Refactored frontend using centralized **Pinia Stores** with **Request Deduplication**, reducing server load by ~60%.
-- **Request Merging**: Intelligent `fetchingPromise` logic prevents parallel redundant API calls.
-- **Enterprise Indexing**: Advanced **Compound Database Indexes** on `[status, from_date]` and `[user_id, status]` for instant reports.
-- **Production Caching**: Pre-configured for **Redis** and **Laravel Config Caching**.
+---
 
 ## 🛠️ Tech Stack
 - **Languages**: PHP 8.2 (Laravel 12), JavaScript (Vue.js 3)
@@ -99,7 +105,7 @@ php artisan migrate --seed
 php artisan serve
 ```
 
-### 4. Production (NEED TO DO DAILY / WEEKLY FOR BACKUP!)
+### 4. Production (BACKUP FREQUENTLY!)
 ```bash
 # Build Optimized Assets
 npm run build

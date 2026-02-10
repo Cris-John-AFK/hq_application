@@ -24,4 +24,12 @@ export default defineConfig({
             vue: 'vue/dist/vue.esm-bundler.js',
         },
     },
+    server: {
+        proxy: {
+            '/api': 'http://localhost:8000',
+            '/login': 'http://localhost:8000',
+            '/logout': 'http://localhost:8000',
+            '/sanctum': 'http://localhost:8000',
+        }
+    }
 });

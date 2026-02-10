@@ -333,7 +333,8 @@ const fetchItems = async () => {
     loading.value = true;
     try {
         const response = await axios.get('/api/inventory');
-        items.value = response.data;
+        // Handle Laravel Pagination object
+        items.value = response.data.data || response.data;
     } catch (e) {
         console.error("Failed to fetch inventory", e);
     } finally {

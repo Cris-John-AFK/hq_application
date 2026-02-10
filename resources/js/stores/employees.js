@@ -25,7 +25,20 @@ export const useEmployeeStore = defineStore('employees', {
 
             this.loading = true;
             this.fetchingEmployeesPromise = axios.get('/api/users').then(response => {
-                this.employees = response.data.map(user => ({
+                console.log('[DEBUG] /api/users response:', response.data);
+
+                // Laravel pagination wraps data in 'data' field. 
+                // We use response.data.data if it exists and is an array, otherwise fall back to response.data
+                const rawData = response.data;
+                const userData = (rawData && Array.isArray(rawData.data)) ? rawData.data : (Array.isArray(rawData) ? rawData : null);
+
+                if (!userData) {
+                    console.error('[ERROR] Unexpected data structure from /api/users. Expected array, got:', rawData);
+                    this.employees = [];
+                    return [];
+                }
+
+                this.employees = userData.map(user => ({
                     id: user.id,
                     name: user.name,
                     email: user.email,
@@ -41,7 +54,7 @@ export const useEmployeeStore = defineStore('employees', {
                 this.lastFetchedEmployees = Date.now();
                 return this.employees;
             }).catch(error => {
-                console.error('Failed to fetch employees:', error);
+                console.error('[CRITICAL] Failed to fetch employees:', error);
                 throw error;
             }).finally(() => {
                 this.loading = false;
@@ -76,7 +89,13 @@ export const useEmployeeStore = defineStore('employees', {
             if (this.departments.length > 0) return this.departments;
             try {
                 const response = await axios.get('/api/departments');
-                this.departments = response.data.map(d => d.name);
+                const deptData = response.data.data || response.data;
+                if (Array.isArray(deptData)) {
+                    this.departments = deptData.map(d => d.name);
+                } else {
+                    console.error('Expected array for departments, got:', response.data);
+                    this.departments = [];
+                }
                 return this.departments;
             } catch (error) {
                 console.error('Failed to fetch departments:', error);
