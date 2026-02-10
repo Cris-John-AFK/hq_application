@@ -21,32 +21,53 @@
             </router-link>
 
             <!-- Navigation -->
-            <nav class="flex-1 py-8 overflow-hidden">
-                <div class="px-6 mb-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Main Menu</div>
-                <ul class="space-y-2 px-4">
-                    <li v-for="item in menuItems" :key="item.label">
-                        <router-link 
-                            :to="item.href" 
-                            class="relative flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 group font-medium text-sm" 
-                            active-class="bg-gradient-to-r from-teal-600/10 to-transparent text-teal-400"
-                            :class="[
-                                $route.path === item.href 
-                                    ? '' 
-                                    : 'hover:bg-slate-800/50 hover:text-white'
-                            ]"
-                        >
-                            <!-- Active Indicator Border -->
-                            <span 
-                                v-if="$route.path === item.href" 
-                                class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-teal-500 rounded-r-full shadow-[0_0_10px_rgba(20,184,166,0.5)]"
-                            ></span>
-                            
-                            <i :class="[`pi ${item.icon} text-lg transition-colors`, $route.path === item.href ? 'text-teal-400' : 'text-slate-500 group-hover:text-teal-400']"></i>
-                            <span class="relative z-10">{{ item.label }}</span>
-                        </router-link>
-                    </li>
-                </ul>
-            </nav>
+            <div class="flex-1 relative overflow-hidden flex flex-col min-h-0">
+                <nav 
+                    ref="navContainer"
+                    class="flex-1 py-8 overflow-y-auto scrollbar-hide scroll-smooth"
+                    @scroll="handleNavScroll"
+                >
+                    <div class="px-6 mb-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Main Menu</div>
+                    <ul class="space-y-2 px-4 pb-12">
+                        <li v-for="item in menuItems" :key="item.label">
+                            <router-link 
+                                :to="item.href" 
+                                class="relative flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 group font-medium text-sm" 
+                                active-class="bg-gradient-to-r from-teal-600/10 to-transparent text-teal-400"
+                                :class="[
+                                    $route.path === item.href 
+                                        ? '' 
+                                        : 'hover:bg-slate-800/50 hover:text-white'
+                                ]"
+                            >
+                                <!-- Active Indicator Border -->
+                                <span 
+                                    v-if="$route.path === item.href" 
+                                    class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-teal-500 rounded-r-full shadow-[0_0_10px_rgba(20,184,166,0.5)]"
+                                ></span>
+                                
+                                <i :class="[`pi ${item.icon} text-lg transition-colors`, $route.path === item.href ? 'text-teal-400' : 'text-slate-500 group-hover:text-teal-400']"></i>
+                                <span class="relative z-10">{{ item.label }}</span>
+                            </router-link>
+                        </li>
+                    </ul>
+                </nav>
+
+                <!-- More Content Portal Indicator -->
+                <div 
+                    v-if="hasMoreNav"
+                    class="absolute bottom-0 left-0 right-0 h-20 pointer-events-none bg-gradient-to-t from-[#0f172a] via-[#0f172a]/80 to-transparent z-10 flex flex-col items-center justify-end pb-2 overflow-hidden"
+                >
+                    <!-- Portal Ring Effect -->
+                    <div class="absolute bottom-[-20px] w-32 h-32 bg-teal-500/20 rounded-full blur-2xl animate-pulse"></div>
+                    <div class="absolute bottom-[-10px] w-16 h-4 bg-teal-400/30 rounded-[100%] blur-md animate-bounce"></div>
+                    
+                    <div class="relative flex flex-col items-center gap-1 opacity-80 mt-auto">
+                        <span class="text-[9px] font-bold text-teal-400/80 uppercase tracking-[0.2em] animate-pulse">More Options</span>
+                        <i class="pi pi-angle-double-down text-teal-400/60 text-xs animate-bounce"></i>
+                    </div>
+                </div>
+            </div>
 
             <!-- Bottom Actions -->
             <div class="p-4 mt-auto border-t border-slate-800">
@@ -288,6 +309,24 @@ const showLeaveModal = ref(false);
 const unreadEventsCount = ref(0);
 const currentTime = ref('');
 
+// Portal indicator logic
+const navContainer = ref(null);
+const hasMoreNav = ref(false);
+
+const handleNavScroll = () => {
+    if (!navContainer.value) return;
+    const { scrollTop, scrollHeight, clientHeight } = navContainer.value;
+    // Show portal if there's more than 20px of content left to scroll
+    hasMoreNav.value = scrollHeight > clientHeight && (scrollTop + clientHeight < scrollHeight - 20);
+};
+
+const checkNavOverflow = () => {
+    // Check after a small delay to ensure DOM is ready
+    setTimeout(() => {
+        handleNavScroll();
+    }, 500);
+};
+
 let timeInterval;
 let unreadInterval;
 
@@ -358,6 +397,9 @@ onMounted(() => {
     timeInterval = setInterval(updateTime, 1000);
     calendarStore.fetchEvents();
     
+    checkNavOverflow();
+    window.addEventListener('resize', handleNavScroll);
+    
     if (props.user?.role === 'admin') {
         fetchUnreadEventsCount();
         unreadInterval = setInterval(fetchUnreadEventsCount, 30000);
@@ -367,6 +409,7 @@ onMounted(() => {
 onUnmounted(() => {
     if (timeInterval) clearInterval(timeInterval);
     if (unreadInterval) clearInterval(unreadInterval);
+    window.removeEventListener('resize', handleNavScroll);
 });
 
 const todayFormatted = computed(() => {
@@ -426,3 +469,34 @@ const menuItems = computed(() => {
     ];
 });
 </script>
+
+<style scoped>
+/* Custom subtle scrollbar for the dark sidebar */
+nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(20, 184, 166, 0.3); /* Teal hover state */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+</style>
