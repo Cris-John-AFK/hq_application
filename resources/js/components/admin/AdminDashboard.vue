@@ -20,6 +20,7 @@
                 iconBgClass="bg-green-50"
                 iconTextClass="text-green-500"
                 :loading="loading"
+                placeholder
             />
             <StatCard 
                 icon="pi-times-circle" 
@@ -28,6 +29,7 @@
                 iconBgClass="bg-red-50"
                 iconTextClass="text-red-500"
                 :loading="loading"
+                placeholder
             />
             <StatCard 
                 icon="pi-clock" 
@@ -36,6 +38,7 @@
                 iconBgClass="bg-amber-50"
                 iconTextClass="text-amber-500"
                 :loading="loading"
+                placeholder
             />
             <StatCard 
                 icon="pi-calendar" 
@@ -123,6 +126,11 @@
                             <span><i class="pi pi-clock mr-2"></i>Recent Attendance</span>
                             <span class="text-[9px] font-medium opacity-60">Imported on Jan 23, 2026</span>
                         </button>
+                    </div>
+                    <!-- WIP notice: only on attendance tab -->
+                    <div v-if="activeTab === 'attendance'" class="px-4 py-2 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
+                        <i class="pi pi-wrench text-amber-500 text-xs"></i>
+                        <span class="text-[10px] font-black text-amber-600 uppercase tracking-widest">Placeholder data — not connected to live time-keeping</span>
                     </div>
 
                     <!-- Tab Content -->
@@ -250,8 +258,30 @@
 
         <!-- 3. Performance & Data Section -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AttendanceChart />
-            <AttendanceLeaderboard />
+            <!-- Attendance Chart with WIP overlay -->
+            <div class="relative">
+                <div class="absolute inset-0 z-10 rounded-2xl backdrop-blur-[2px] bg-white/70 flex items-center justify-center border border-dashed border-amber-300">
+                    <div class="bg-white rounded-xl shadow-lg border border-amber-100 px-6 py-5 flex flex-col items-center gap-2 text-center max-w-[240px]">
+                        <i class="pi pi-chart-bar text-2xl text-amber-500"></i>
+                        <p class="text-sm font-black text-gray-800">Placeholder Chart</p>
+                        <p class="text-[10px] text-gray-400 font-medium">Requires live attendance data integration</p>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-amber-500 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">🔧 Coming Soon</span>
+                    </div>
+                </div>
+                <AttendanceChart />
+            </div>
+            <!-- Leaderboard with WIP overlay -->
+            <div class="relative">
+                <div class="absolute inset-0 z-10 rounded-2xl backdrop-blur-[2px] bg-white/70 flex items-center justify-center border border-dashed border-amber-300">
+                    <div class="bg-white rounded-xl shadow-lg border border-amber-100 px-6 py-5 flex flex-col items-center gap-2 text-center max-w-[240px]">
+                        <i class="pi pi-trophy text-2xl text-amber-500"></i>
+                        <p class="text-sm font-black text-gray-800">Placeholder Rankings</p>
+                        <p class="text-[10px] text-gray-400 font-medium">Rankings will reflect real attendance once connected</p>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-amber-500 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">🔧 Coming Soon</span>
+                    </div>
+                </div>
+                <AttendanceLeaderboard />
+            </div>
         </div>
         <!-- 5. Employee Management -->
         <div class="w-full pt-4">

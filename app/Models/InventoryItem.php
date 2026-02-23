@@ -7,13 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 class InventoryItem extends Model
 {
     protected $fillable = [
+        'department',
+        'location',
         'name',
         'type',
-        'quantity',
+        'brand',
+        'model_name',
+        'color',
         'serial_number',
+        'asset_tag',
+        'quantity',
         'status',
         'last_audit_date',
-        'description',
-        'location'
     ];
 }

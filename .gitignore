@@ -21,3 +21,16 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Excel temporary lock files (created when file is open in Excel)
+~$*.xlsx
+~$*.xls
+public/~$*
+
+# Local debug/test scripts
+test.php
+test_read.php
+test_db_dump.json
+check_counts.php
+fix_status_import.php
+inventory_headers.json

@@ -1,5 +1,9 @@
 <template>
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center hover:shadow-md transition-shadow">
+    <div class="relative bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center hover:shadow-md transition-shadow" :class="placeholder ? 'border-amber-200' : ''">
+        <!-- Placeholder badge -->
+        <div v-if="placeholder" class="absolute top-2 right-2">
+            <span class="text-[8px] font-black uppercase tracking-widest text-amber-500 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">Placeholder</span>
+        </div>
         <template v-if="loading">
             <div class="w-12 h-12 rounded-full bg-gray-100 animate-pulse mr-4"></div>
             <div class="space-y-2 flex-1">
@@ -25,6 +29,10 @@
         value: [String, Number],
         label: String,
         loading: Boolean,
+        placeholder: {
+            type: Boolean,
+            default: false
+        },
         iconBgClass: {
             type: String,
             default: 'bg-teal-50'
@@ -35,3 +43,4 @@
         }
     });
 </script>
+

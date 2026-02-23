@@ -20,6 +20,22 @@ class AuditLogger
      */
     public static function log($module, $action, $description, $oldData = null, $newData = null)
     {
+        $userAgent = Request::header('User-Agent');
+        $device = 'Unknown Device';
+
+        if ($userAgent) {
+            if (stripos($userAgent, 'mobi') !== false)
+                $device = 'Mobile Device';
+            elseif (stripos($userAgent, 'tablet') !== false)
+                $device = 'Tablet';
+            elseif (stripos($userAgent, 'windows') !== false)
+                $device = 'Windows PC';
+            elseif (stripos($userAgent, 'macintosh') !== false)
+                $device = 'Mac';
+            elseif (stripos($userAgent, 'linux') !== false)
+                $device = 'Linux PC';
+        }
+
         SystemLog::create([
             'user_id' => Auth::id(),
             'module' => $module,
@@ -28,7 +44,9 @@ class AuditLogger
             'old_data' => $oldData,
             'new_data' => $newData,
             'ip_address' => Request::ip(),
-            'user_agent' => Request::header('User-Agent')
+            'user_agent' => $userAgent,
+            'device' => $device,
+            'location' => 'PH (Local Network)' // Placeholder for location since we are in local dev
         ]);
     }
 }

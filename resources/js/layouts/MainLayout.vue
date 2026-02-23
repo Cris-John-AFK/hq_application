@@ -395,15 +395,19 @@ const handleLeaveSubmit = async (payload) => {
 onMounted(() => {
     updateTime();
     timeInterval = setInterval(updateTime, 1000);
-    calendarStore.fetchEvents();
     
-    checkNavOverflow();
+    // DELAY non-critical background data to free up the network for the main page content
+    setTimeout(() => {
+        calendarStore.fetchEvents();
+        checkNavOverflow();
+        
+        if (props.user?.role === 'admin') {
+            fetchUnreadEventsCount();
+            unreadInterval = setInterval(fetchUnreadEventsCount, 30000);
+        }
+    }, 1500); // 1.5s delay gives priority to the actual page data (like Inventory)
+
     window.addEventListener('resize', handleNavScroll);
-    
-    if (props.user?.role === 'admin') {
-        fetchUnreadEventsCount();
-        unreadInterval = setInterval(fetchUnreadEventsCount, 30000);
-    }
 });
 
 onUnmounted(() => {

@@ -17,7 +17,9 @@ class SystemLog extends Model
         'old_data',
         'new_data',
         'ip_address',
-        'user_agent'
+        'user_agent',
+        'location',
+        'device'
     ];
 
     protected $casts = [

@@ -27,6 +27,20 @@
                     </div>
                 </div>
 
+                <!-- WIP Banner -->
+                <div class="flex items-center gap-4 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <i class="pi pi-wrench text-amber-600 text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-black text-amber-800">This page is a Work in Progress — All data shown is a placeholder.</p>
+                        <p class="text-xs text-amber-600 mt-0.5 font-medium">Attendance Management requires a biometric or time-keeping system integration before real records can be tracked. Import and filter features are non-functional at this time.</p>
+                    </div>
+                    <div class="ml-auto flex-shrink-0">
+                        <span class="text-[10px] font-black uppercase tracking-widest text-amber-500 bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-full">Coming Soon</span>
+                    </div>
+                </div>
+
                 <!-- Filters -->
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
                     <div class="flex items-center gap-2">
@@ -75,6 +89,18 @@
                 </div>
 
                 <!-- Attendance Table -->
+                <div class="relative">
+                    <!-- Frosted Glass WIP Overlay -->
+                    <div class="absolute inset-0 z-10 rounded-2xl backdrop-blur-[3px] bg-white/60 flex flex-col items-center justify-center gap-4 border border-dashed border-amber-300" style="min-height: 200px;">
+                        <div class="bg-white rounded-2xl shadow-xl border border-amber-100 px-10 py-8 flex flex-col items-center gap-3 max-w-md text-center">
+                            <div class="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center">
+                                <i class="pi pi-clock text-3xl text-amber-500"></i>
+                            </div>
+                            <h3 class="text-lg font-black text-gray-900">Attendance Tracking Not Yet Available</h3>
+                            <p class="text-sm text-gray-500 font-medium leading-relaxed">This section will show real-time attendance records once a biometric or time-keeping integration is in place. All data below is <strong class="text-amber-600">sample/placeholder only</strong>.</p>
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 bg-amber-50 border border-amber-200 px-4 py-2 rounded-full mt-1">🔧 Under Construction</span>
+                        </div>
+                    </div>
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse text-sm">
@@ -165,6 +191,7 @@
                             </button>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
         </MainLayout>

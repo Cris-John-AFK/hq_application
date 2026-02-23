@@ -23,11 +23,11 @@ A professional, enterprise-grade human capital management application built with
 - **One-Click Planning**: Full-screen schedule management module for organizational planning.
 
 ### 📦 Advanced Resource Auditing (Inventory)
-- **High-Fidelity Product Showcase**: Assets are presented in a premium, 3D interactive gallery featuring curated studio-quality imagery and "Apple-style" product presentation.
+- **High-Density Data Grid**: Resources are presented in a clean, professional spreadsheet-like data table structure to maximize visibility of critical organization assets at a glance.
+- **Bulk Excel Importer**: Seamlessly migrate hundreds of historical assets from legacy `<inventory_details.xlsx>` files directly into the modernized HatQ SQL registry with a single click.
 - **Dynamic Resource Registry**: Comprehensive lifecycle management for IT hardware (Laptops, Desktops, Network), Furniture, and specialized equipment.
-- **Integrated Audit Trail**: Every asset modification (Create, Update, Delete) is automatically captured in the global security journal for financial transparency.
+- **Integrated Audit Trail**: Every asset modification (Create, Update, Delete, Import) is automatically captured in the global security journal for financial transparency.
 - **Advanced Audit Toolbar**: Instant real-time searching by **Serial Number**, **Asset Nomenclature**, or **Technical Description** with multi-criteria category filters.
-- **Robust Fail-Safe Architecture**: Integrated image loading system with premium fallback icons ensures a consistently polished UI during external network latency.
 
 ### 📁 Advanced Leave & Masterlist Management
 - **Unified Masterlist Support**: Seamlessly manage leave for both system users and "Masterlist Employees" (staff without digital accounts) with 100% data parity.

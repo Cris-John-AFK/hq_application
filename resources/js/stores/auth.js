@@ -21,6 +21,15 @@ export const useAuthStore = defineStore('auth', {
                 this.isAuthenticated = true;
                 return this.user;
             }).catch(error => {
+                // If it was previously authenticated but now fails with 401, it's an expiry
+                if (this.isAuthenticated && error.response?.status === 411 || error.response?.status === 401) {
+                    if (this.user) {
+                        axios.post('/api/log-expiry', {
+                            email: this.user.email,
+                            name: this.user.name
+                        }).catch(() => { }); // Fire and forget
+                    }
+                }
                 this.user = null;
                 this.isAuthenticated = false;
                 throw error;

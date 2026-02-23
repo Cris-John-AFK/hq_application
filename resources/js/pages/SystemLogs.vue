@@ -23,6 +23,7 @@
                                     <th class="px-6 py-4">User</th>
                                     <th class="px-6 py-4">Module</th>
                                     <th class="px-6 py-4">Action</th>
+                                    <th class="px-6 py-4">Access Origin</th>
                                     <th class="px-6 py-4">Description</th>
                                 </tr>
                             </thead>
@@ -40,7 +41,10 @@
                                             <div class="w-7 h-7 rounded-full bg-teal-50 flex items-center justify-center text-[10px] font-black text-teal-600 border border-teal-100 uppercase">
                                                 {{ getInitials(log.user?.name) }}
                                             </div>
-                                            <span class="font-bold text-gray-800">{{ log.user?.name || 'System' }}</span>
+                                            <div class="flex flex-col">
+                                                <span class="font-bold text-gray-800">{{ log.user?.name || 'System' }}</span>
+                                                <span v-if="log.user?.role === 'admin'" class="text-[8px] font-black text-rose-500 uppercase tracking-widest mt-0.5">Administrator</span>
+                                            </div>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
@@ -53,9 +57,21 @@
                                              {{ log.action }}
                                          </span>
                                      </td>
+                                    <td class="px-6 py-4">
+                                         <div class="flex flex-col gap-1">
+                                             <div class="flex items-center gap-1.5">
+                                                 <i :class="['pi', getDeviceIcon(log.device)]" class="text-gray-400 text-[10px]"></i>
+                                                 <span class="text-[10px] font-black text-gray-500 uppercase tracking-tighter">{{ log.device || 'Unknown PC' }}</span>
+                                             </div>
+                                             <div class="flex items-center gap-1.5">
+                                                 <i class="pi pi-map-marker text-emerald-500 text-[10px]"></i>
+                                                 <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">{{ log.location || 'PH (Local)' }}</span>
+                                             </div>
+                                         </div>
+                                     </td>
                                      <td class="px-6 py-4 max-w-md">
                                          <div class="flex flex-col gap-1">
-                                             <p class="text-gray-700 font-bold leading-tight">
+                                             <p class="text-gray-700 font-bold leading-tight line-clamp-2">
                                                  {{ log.description }}
                                              </p>
                                             <button 
@@ -153,7 +169,7 @@
 
                         <div class="mt-8 p-6 bg-white border border-gray-200 rounded-2xl shadow-sm">
                             <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Action Context</h4>
-                            <div class="flex flex-wrap gap-6">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                                 <div>
                                     <p class="text-[10px] font-bold text-gray-400 uppercase">Performer</p>
                                     <p class="text-sm font-black text-gray-800">{{ selectedLogForDiff.user?.name || 'System' }}</p>
@@ -162,7 +178,15 @@
                                     <p class="text-[10px] font-bold text-gray-400 uppercase">IP Address</p>
                                     <p class="text-sm font-mono text-gray-600">{{ selectedLogForDiff.ip_address || 'N/A' }}</p>
                                 </div>
-                                <div class="flex-1">
+                                <div>
+                                    <p class="text-[10px] font-bold text-gray-400 uppercase">Device</p>
+                                    <p class="text-sm font-bold text-teal-600">{{ selectedLogForDiff.device || 'Unknown PC' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-gray-400 uppercase">Location</p>
+                                    <p class="text-sm font-bold text-emerald-600">{{ selectedLogForDiff.location || 'PH (Local)' }}</p>
+                                </div>
+                                <div class="col-span-2 md:col-span-4 border-t border-gray-50 pt-4 mt-2">
                                     <p class="text-[10px] font-bold text-gray-400 uppercase">Description</p>
                                     <p class="text-sm text-gray-600 font-medium">{{ selectedLogForDiff.description }}</p>
                                 </div>
@@ -227,12 +251,26 @@ const getInitials = (name) => {
 
 const getActionClass = (action) => {
     if (!action) return 'bg-gray-50 text-gray-700 border-gray-100';
-    switch (action.toLowerCase()) {
-        case 'approved': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-        case 'rejected': return 'bg-rose-50 text-rose-700 border-rose-100';
-        case 'cancelled': return 'bg-slate-50 text-slate-700 border-slate-100';
-        default: return 'bg-amber-50 text-amber-700 border-amber-100';
-    }
+    const a = action.toLowerCase();
+    
+    if (a.includes('approved')) return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+    if (a.includes('rejected')) return 'bg-rose-50 text-rose-700 border-rose-100';
+    if (a.includes('failed')) return 'bg-rose-50 text-rose-700 border-rose-100';
+    if (a.includes('cancelled')) return 'bg-slate-50 text-slate-700 border-slate-100';
+    if (a.includes('logout')) return 'bg-slate-50 text-slate-700 border-slate-100 text-[9px] px-1';
+    if (a.includes('login')) return 'bg-teal-50 text-teal-700 border-teal-100';
+    if (a.includes('expired')) return 'bg-orange-50 text-orange-700 border-orange-100';
+    
+    return 'bg-amber-50 text-amber-700 border-amber-100';
+};
+
+const getDeviceIcon = (device) => {
+    if (!device) return 'pi-desktop';
+    const d = device.toLowerCase();
+    if (d.includes('phone') || d.includes('mobile')) return 'pi-mobile';
+    if (d.includes('tablet')) return 'pi-tablet';
+    if (d.includes('mac') || d.includes('apple')) return 'pi-apple';
+    return 'pi-desktop';
 };
 
 onMounted(() => {
