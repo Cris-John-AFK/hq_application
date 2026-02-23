@@ -302,7 +302,8 @@ const fetchEmployees = async () => {
     isLoadingEmployees.value = true;
     try {
         const response = await axios.get('/api/users');
-        employees.value = response.data.map(user => ({
+        const usersArray = response.data.data || response.data;
+        employees.value = usersArray.map(user => ({
             id: user.id,
             name: user.name,
             employee_id: user.id_number || `HQI-${String(user.id).padStart(4, '0')}`,

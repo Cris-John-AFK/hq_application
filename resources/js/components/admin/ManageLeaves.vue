@@ -367,8 +367,10 @@
                                             <span v-else>{{ getInitials(selectedRequest.user?.name) }}</span>
                                         </div>
                                         <div>
-                                            <h3 class="font-bold text-gray-800 text-sm">{{ selectedRequest.user?.name }}</h3>
-                                            <p class="text-xs text-gray-500">{{ selectedRequest.user?.position }} • {{ selectedRequest.user?.department }}</p>
+                                            <h3 class="font-bold text-gray-800 text-sm">{{ selectedRequest.user?.name || selectedRequest.employee?.name || 'Unknown Employee' }}</h3>
+                                            <p v-if="selectedRequest.user?.position || selectedRequest.user?.department" class="text-xs text-gray-500">
+                                                {{ [selectedRequest.user?.position, selectedRequest.user?.department].filter(Boolean).join(' • ') }}
+                                            </p>
                                         </div>
                                     </div>
 
@@ -780,8 +782,7 @@ const handleAction = async (newStatus) => {
             status: newStatus,
             is_paid: selectedRequest.value.is_paid,
             days_paid: selectedRequest.value.days_paid || 0,
-            admin_remarks: justification.value,
-            justification: justification.value
+            admin_remarks: justification.value
         };
         
         await axios.put(`/api/leave-requests/${selectedRequest.value.id}`, payload);

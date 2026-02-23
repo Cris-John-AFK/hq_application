@@ -251,11 +251,26 @@ const months = [
 const annualData = ref([]);
 const departmentData = ref([]);
 
-// Computed property for annual totals
+
+// Computed property for yearly summary / totals
 const annualTotals = computed(() => {
-    if (!annualData.value || annualData.value.length === 0) return null;
+    if (!annualData.value || annualData.value.length === 0) {
+        return {
+            headcount: 0,
+            total_present_days: 0,
+            total_working_days: 0,
+            attendance_rate: '0%',
+            total_absent_days: 0,
+            absenteeism_rate: '0%',
+            employees_late: 0,
+            tardiness_frequency: '0%',
+            employees_undertime: 0,
+            total_undertime_mins: 0,
+            undertime_frequency: '0%'
+        };
+    }
     
-    const totals = {
+    let stats = {
         headcount: 0,
         total_present_days: 0,
         total_working_days: 0,
@@ -266,77 +281,27 @@ const annualTotals = computed(() => {
     };
     
     annualData.value.forEach(row => {
-        if (typeof row.headcount === 'number') totals.headcount += row.headcount;
-        if (typeof row.total_present_days === 'number') totals.total_present_days += row.total_present_days;
-        if (typeof row.total_working_days === 'number') totals.total_working_days += row.total_working_days;
-        if (typeof row.total_absent_days === 'number') totals.total_absent_days += row.total_absent_days;
-        if (typeof row.employees_late === 'number') totals.employees_late += row.employees_late;
-        if (typeof row.employees_undertime === 'number') totals.employees_undertime += row.employees_undertime;
-        if (typeof row.total_undertime_mins === 'number') totals.total_undertime_mins += row.total_undertime_mins;
+        stats.headcount = Math.max(stats.headcount, row.headcount || 0);
+        stats.total_present_days += row.total_present_days || 0;
+        stats.total_working_days += row.total_working_days || 0;
+        stats.total_absent_days += row.total_absent_days || 0;
+        stats.employees_late += row.employees_late || 0;
+        stats.employees_undertime += row.employees_undertime || 0;
+        stats.total_undertime_mins += row.total_undertime_mins || 0;
     });
     
-    // Calculate rates
-    const attendanceRate = totals.total_working_days > 0 
-        ? ((totals.total_present_days / totals.total_working_days) * 100).toFixed(2) + '%'
-        : '0%';
-    
-    const absenteeismRate = totals.total_working_days > 0 
-        ? ((totals.total_absent_days / totals.total_working_days) * 100).toFixed(2) + '%'
-        : '0%';
-    
-    const tardinessFreq = totals.total_working_days > 0 
-        ? ((totals.employees_late / totals.total_working_days) * 100).toFixed(2) + '%'
-        : '0%';
-    
-    const undertimeFreq = totals.total_working_days > 0 
-        ? ((totals.employees_undertime / totals.total_working_days) * 100).toFixed(2) + '%'
-        : '0%';
+    const attRate = stats.total_working_days > 0 ? (stats.total_present_days / stats.total_working_days * 100).toFixed(1) : 0;
+    const absRate = stats.total_working_days > 0 ? (stats.total_absent_days / stats.total_working_days * 100).toFixed(1) : 0;
+    const lateFreq = stats.total_working_days > 0 ? (stats.employees_late / stats.total_working_days * 100).toFixed(1) : 0;
+    const undFreq = stats.total_working_days > 0 ? (stats.employees_undertime / stats.total_working_days * 100).toFixed(1) : 0;
     
     return {
-        ...totals,
-        attendance_rate: attendanceRate,
-        absenteeism_rate: absenteeismRate,
-        tardiness_frequency: tardinessFreq,
-        undertime_frequency: undertimeFreq
+        ...stats,
+        attendance_rate: attRate + '%',
+        absenteeism_rate: absRate + '%',
+        tardiness_frequency: lateFreq + '%',
+        undertime_frequency: undFreq + '%'
     };
-});
-
-// Computed property for yearly summary
-const yearlySummary = computed(() => {
-    if (!annualData.value || annualData.value.length === 0) {
-        return {
-            total_working_days: 0,
-            total_employees: 0,
-            total_present_days: 0,
-            total_absent_days: 0,
-            total_tardiness_mins: 0,
-            total_undertime_mins: 0
-        };
-    }
-    
-    const summary = {
-        total_working_days: 0,
-        total_employees: 0,
-        total_present_days: 0,
-        total_absent_days: 0,
-        total_tardiness_mins: 0,
-        total_undertime_mins: 0,
-        employees_late_count: 0
-    };
-    
-    annualData.value.forEach(row => {
-        if (typeof row.total_working_days === 'number') summary.total_working_days += row.total_working_days;
-        if (typeof row.headcount === 'number') summary.total_employees = Math.max(summary.total_employees, row.headcount);
-        if (typeof row.total_present_days === 'number') summary.total_present_days += row.total_present_days;
-        if (typeof row.total_absent_days === 'number') summary.total_absent_days += row.total_absent_days;
-        if (typeof row.total_undertime_mins === 'number') summary.total_undertime_mins += row.total_undertime_mins;
-        if (typeof row.employees_late === 'number') summary.employees_late_count += row.employees_late;
-    });
-    
-    // Estimate tardiness (2 mins per late employee as per user's image)
-    summary.total_tardiness_mins = summary.employees_late_count * 2;
-    
-    return summary;
 });
 
 const fetchAnnualReport = async () => {
