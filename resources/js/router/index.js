@@ -6,6 +6,7 @@ import AdminAttendance from '../components/admin/Attendance.vue';
 import Schedules from '../components/admin/Schedules.vue';
 import Reports from '../components/admin/Reports.vue';
 import ManageLeaves from '../components/admin/ManageLeaves.vue';
+import ArchiveLeaves from '../components/admin/ArchiveLeaves.vue';
 import Inventory from '../components/admin/Inventory.vue';
 import Settings from '../components/admin/Settings.vue';
 import LoginForm from '../components/login/loginForm.vue';
@@ -60,6 +61,12 @@ const routes = [
         name: 'ManageLeaves',
         component: ManageLeaves,
         meta: { title: 'HQ Inc. - Manage Leaves', requiresAuth: true, requiresAdmin: true }
+    },
+    {
+        path: '/archive-leaves',
+        name: 'ArchiveLeaves',
+        component: ArchiveLeaves,
+        meta: { title: 'HQ Inc. - Archive Registry', requiresAuth: true, requiresAdmin: true }
     },
     {
         path: '/inventory',

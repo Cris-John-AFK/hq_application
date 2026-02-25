@@ -25,6 +25,10 @@ return new class extends Migration {
             $table->integer('quantity')->default(1);
             $table->date('last_audit_date')->nullable();
             $table->timestamps();
+
+            $table->index('created_at');
+            $table->index('type');
+            $table->index('status');
         });
     }
 

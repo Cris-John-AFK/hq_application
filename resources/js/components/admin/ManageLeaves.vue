@@ -23,6 +23,13 @@
                             <i class="pi pi-download"></i>
                             <span>{{ filters.user_id ? 'Export Employee Record' : 'Export General Report' }}</span>
                         </button>
+                        <router-link 
+                            to="/archive-leaves"
+                            class="cursor-pointer flex items-center gap-2 px-4 py-2 bg-gray-100 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors shadow-sm font-semibold"
+                        >
+                            <i class="pi pi-archive text-gray-500"></i>
+                            <span>Archive Registry</span>
+                        </router-link>
                     </div>
                 </div>
 
@@ -584,6 +591,17 @@
                                             >
                                                 Cancel Request
                                             </button>
+
+                                            <!-- Archive Button -->
+                                            <button 
+                                                @click="archiveRequest"
+                                                class="cursor-pointer flex-1 py-3 bg-slate-800 text-white hover:bg-slate-900 rounded-lg font-bold transition-all flex items-center justify-center gap-2"
+                                                v-if="['Approved', 'Rejected', 'Cancelled'].includes(selectedRequest.status)"
+                                                :disabled="processing"
+                                            >
+                                                <i class="pi pi-archive"></i>
+                                                Archive Record
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -798,6 +816,28 @@ const handleAction = async (newStatus) => {
     } catch (e) {
         console.error("Action failed", e);
         alert('Action failed: ' + (e.response?.data?.message || 'Server error'));
+    } finally {
+        processing.value = false;
+    }
+};
+
+const archiveRequest = async () => {
+    if (!confirm('Are you sure you want to archive this request? It will be moved to the Archive Registry for permanent storage.')) return;
+    
+    processing.value = true;
+    try {
+        await axios.post(`/api/leave-requests/${selectedRequest.value.id}/archive`);
+        alert('Request successfuly archived.');
+        
+        // Remove from current list
+        requests.value = requests.value.filter(r => r.id !== selectedRequest.value.id);
+        totalRecords.value--;
+        
+        closeModal();
+        leaveStore.fetchStats(true);
+    } catch (e) {
+        console.error("Archive failed", e);
+        alert('Archive failed: ' + (e.response?.data?.message || 'Server error'));
     } finally {
         processing.value = false;
     }

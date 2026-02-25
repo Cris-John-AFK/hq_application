@@ -10,12 +10,24 @@ class InventoryController extends Controller
 {
     public function index(Request $request)
     {
-        $page = $request->get('page', 1);
-        $cacheKey = "inventory_all_items";
+        $query = InventoryItem::orderBy('created_at', 'desc');
 
-        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () {
-            return InventoryItem::orderBy('created_at', 'desc')->get();
-        });
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                    ->orWhere('asset_tag', 'ilike', "%{$search}%")
+                    ->orWhere('serial_number', 'ilike', "%{$search}%")
+                    ->orWhere('department', 'ilike', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        $perPage = $request->get('limit', 15);
+        return $query->paginate($perPage);
     }
 
     public function store(Request $request)

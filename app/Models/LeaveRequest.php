@@ -24,7 +24,9 @@ class LeaveRequest extends Model
         'days_paid',
         'admin_remarks',
         'justification',
-        'attachment_path'
+        'attachment_path',
+        'is_archived',
+        'archived_at'
     ];
 
     protected $casts = [
@@ -34,6 +36,8 @@ class LeaveRequest extends Model
         'to_date' => 'date',
         'days_taken' => 'decimal:2',
         'days_paid' => 'decimal:2',
+        'is_archived' => 'boolean',
+        'archived_at' => 'datetime',
     ];
 
     public function user()

@@ -16,8 +16,9 @@
                 <i :class="`pi ${icon} text-xl`"></i>
             </div>
             <div>
-                <h3 class="text-2xl font-bold text-gray-800">{{ value }}</h3>
-                <p class="text-gray-500 text-sm font-medium">{{ label }}</p>
+                <h3 class="text-2xl font-bold text-gray-800 leading-none mb-1">{{ value }}</h3>
+                <p class="text-gray-500 text-[11px] font-black uppercase tracking-wider mb-0.5">{{ label }}</p>
+                <p v-if="subLabel" class="text-[9px] text-teal-600 font-bold uppercase tracking-tight opacity-70">{{ subLabel }}</p>
             </div>
         </template>
     </div>
@@ -28,6 +29,7 @@
         icon: String,
         value: [String, Number],
         label: String,
+        subLabel: String,
         loading: Boolean,
         placeholder: {
             type: Boolean,

@@ -4,46 +4,49 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        // Add fields to Users table
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('employment_status')->default('Probationary'); // Probationary, Regular
-            $table->decimal('sil_credits', 5, 2)->default(0); // Service Incentive Leave credits
-        });
-
         // Create Leave Requests table
         Schema::create('leave_requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            
+            $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();
+
             // Leave Details
-            $table->string('leave_type'); // SIL, Maternity, Paternity, Emergency, Solo Parent, VAWS, MAGNA CARTA, Others
-            $table->string('request_type'); // Leave, Halfday, Undertime, Official Business
-            
+            $table->string('leave_type');
+            $table->string('request_type');
+            $table->string('category')->nullable();
+
             // Dates & Duration
             $table->date('from_date');
             $table->date('to_date')->nullable();
-            $table->decimal('days_taken', 5, 2); // e.g., 0.5, 1.0, 2.5
-            
+            $table->date('date_filed')->nullable();
+            $table->decimal('days_taken', 5, 2);
+            $table->decimal('days_paid', 5, 2)->default(0);
+
             // For Undertime/Halfday
-            $table->time('start_time')->nullable(); 
+            $table->time('start_time')->nullable();
             $table->time('end_time')->nullable();
-            
+
             $table->text('reason')->nullable();
-            
+            $table->string('attachment_path')->nullable();
+
             // Status & Admin Fields
-            $table->string('status')->default('Pending'); // Pending, Approved, Rejected, Cancelled
-            $table->boolean('is_paid')->default(false); // Helper for Admin/HR logic
+            $table->string('status')->default('Pending');
+            $table->boolean('is_paid')->default(false);
             $table->text('admin_remarks')->nullable();
-            
+
+            // Archiving
+            $table->boolean('is_archived')->default(false)->index();
+            $table->timestamp('archived_at')->nullable();
+
+            $table->unsignedBigInteger('employee_id')->nullable()->index();
+
             $table->timestamps();
-            
+
             // Indexes for sorting/filtering
             $table->index('status');
             $table->index('leave_type');
@@ -57,9 +60,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('leave_requests');
-        
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['employment_status', 'sil_credits']);
-        });
     }
 };

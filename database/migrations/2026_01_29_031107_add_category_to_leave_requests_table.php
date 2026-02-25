@@ -4,25 +4,11 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
-        Schema::table('leave_requests', function (Blueprint $table) {
-            $table->string('category')->nullable()->after('leave_type'); // UA, WMC, WD, UH
-        });
+return new class extends Migration {
+    public function up(): void {
+        // Redundant Migration - Consolidated into Create block
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('leave_requests', function (Blueprint $table) {
-            $table->dropColumn('category');
-        });
+    public function down(): void {
+        // Redundant Migration - Consolidated into Create block
     }
 };

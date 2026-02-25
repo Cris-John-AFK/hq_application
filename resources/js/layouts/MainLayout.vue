@@ -464,6 +464,7 @@ const menuItems = computed(() => {
         { label: 'Calendar', icon: 'pi-calendar', href: '/schedules' },
         { label: 'Reports', icon: 'pi-chart-bar', href: '/reports' },
         { label: 'Manage Leaves', icon: 'pi-calendar-times', href: '/manage-leaves' },
+        { label: 'Archive Registry', icon: 'pi-archive', href: '/archive-leaves' },
         { label: 'Assets', icon: 'pi-box', href: '/inventory' },
         { label: 'Activity Logs', icon: 'pi-list', href: '/activity-logs' },
     ] : [

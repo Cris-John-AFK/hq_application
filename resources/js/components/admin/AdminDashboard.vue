@@ -15,35 +15,34 @@
             />
             <StatCard 
                 icon="pi-check-circle" 
-                value="16" 
-                label="Present" 
+                :value="leaveStats.approved_this_month" 
+                label="Monthly Approved" 
+        
                 iconBgClass="bg-green-50"
                 iconTextClass="text-green-500"
                 :loading="loading"
-                placeholder
             />
             <StatCard 
-                icon="pi-times-circle" 
-                value="0" 
-                label="Absent" 
-                iconBgClass="bg-red-50"
-                iconTextClass="text-red-500"
+                icon="pi-calendar-plus" 
+                :value="leaveStats.scheduled" 
+                label="Upcoming Leaves" 
+    
+                iconBgClass="bg-blue-50"
+                iconTextClass="text-blue-500"
                 :loading="loading"
-                placeholder
             />
             <StatCard 
-                icon="pi-clock" 
-                value="2" 
-                label="Late" 
-                iconBgClass="bg-amber-50"
-                iconTextClass="text-amber-500"
+                icon="pi-money-bill" 
+                :value="leaveStats.approved_paid" 
+                label="Leaves with Pay" 
+                iconBgClass="bg-teal-50"
+                iconTextClass="text-teal-600"
                 :loading="loading"
-                placeholder
             />
             <StatCard 
                 icon="pi-calendar" 
                 :value="leaveStats.on_leave_today" 
-                label="On Leave" 
+                label="On Leave Today" 
                 iconBgClass="bg-purple-50"
                 iconTextClass="text-purple-500"
                 :loading="loading"
@@ -256,31 +255,73 @@
             </div>
         </div>
 
-        <!-- 3. Performance & Data Section -->
+        <!-- 3. Leave Analytics Section -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Attendance Chart with WIP overlay -->
-            <div class="relative">
-                <div class="absolute inset-0 z-10 rounded-2xl backdrop-blur-[2px] bg-white/70 flex items-center justify-center border border-dashed border-amber-300">
-                    <div class="bg-white rounded-xl shadow-lg border border-amber-100 px-6 py-5 flex flex-col items-center gap-2 text-center max-w-[240px]">
-                        <i class="pi pi-chart-bar text-2xl text-amber-500"></i>
-                        <p class="text-sm font-black text-gray-800">Placeholder Chart</p>
-                        <p class="text-[10px] text-gray-400 font-medium">Requires live attendance data integration</p>
-                        <span class="text-[9px] font-black uppercase tracking-widest text-amber-500 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">🔧 Coming Soon</span>
+            <!-- Top Leave Reasons -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                            Top Leave Reasons
+                        </h3>
+                        <p class="text-[9px] font-bold text-indigo-500/60 uppercase tracking-widest pl-3.5 italic">As of {{ new Date().getFullYear() }}</p>
                     </div>
+                    <i class="pi pi-chart-pie text-gray-300"></i>
                 </div>
-                <AttendanceChart />
+                <div v-if="loading" class="space-y-4">
+                    <div v-for="i in 3" :key="i" class="h-12 bg-gray-50 animate-pulse rounded-xl"></div>
+                </div>
+                <div v-else class="space-y-4">
+                    <div v-for="(item, idx) in leaveStats.by_type" :key="idx" class="relative">
+                        <div class="flex justify-between items-center mb-1 text-xs">
+                            <span class="font-bold text-gray-700">{{ item.name }}</span>
+                            <span class="font-black text-indigo-600 px-2 py-0.5 bg-indigo-50 rounded">{{ item.count }}</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden border border-gray-50">
+                            <div 
+                                class="h-full bg-indigo-500 rounded-full transition-all duration-1000 shadow-sm"
+                                :style="{ width: (leaveStats.total_all_time > 0 ? (item.count / leaveStats.total_all_time * 100) : 0) + '%' }"
+                            ></div>
+                        </div>
+                    </div>
+                    <p v-if="!leaveStats.by_type?.length" class="text-center text-xs text-gray-400 py-10 italic">No leave data captured yet</p>
+                </div>
             </div>
-            <!-- Leaderboard with WIP overlay -->
-            <div class="relative">
-                <div class="absolute inset-0 z-10 rounded-2xl backdrop-blur-[2px] bg-white/70 flex items-center justify-center border border-dashed border-amber-300">
-                    <div class="bg-white rounded-xl shadow-lg border border-amber-100 px-6 py-5 flex flex-col items-center gap-2 text-center max-w-[240px]">
-                        <i class="pi pi-trophy text-2xl text-amber-500"></i>
-                        <p class="text-sm font-black text-gray-800">Placeholder Rankings</p>
-                        <p class="text-[10px] text-gray-400 font-medium">Rankings will reflect real attendance once connected</p>
-                        <span class="text-[9px] font-black uppercase tracking-widest text-amber-500 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">🔧 Coming Soon</span>
+
+            <!-- Most Leave by Department -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            Department Volume
+                        </h3>
+                        <p class="text-[9px] font-bold text-emerald-500/60 uppercase tracking-widest pl-3.5 italic">As of {{ new Date().getFullYear() }}</p>
                     </div>
+                    <i class="pi pi-building text-gray-300"></i>
                 </div>
-                <AttendanceLeaderboard />
+                <div v-if="loading" class="space-y-4">
+                    <div v-for="i in 3" :key="i" class="h-12 bg-gray-50 animate-pulse rounded-xl"></div>
+                </div>
+                <div v-else class="space-y-3">
+                    <div v-for="(dept, idx) in leaveStats.by_department" :key="idx" class="flex items-center justify-between p-3.5 bg-gray-50/50 rounded-xl border border-gray-100 hover:border-emerald-200 transition-all hover:bg-white hover:shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <div :class="[
+                                'w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black border transition-all',
+                                idx === 0 ? 'bg-emerald-500 text-white border-emerald-400 shadow-sm' : 'bg-white text-gray-400 border-gray-200'
+                            ]">
+                                {{ idx + 1 }}
+                            </div>
+                            <span class="text-xs font-bold text-gray-700">{{ dept.name }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">{{ dept.count }}</span>
+                            <span class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">Filings</span>
+                        </div>
+                    </div>
+                    <p v-if="!leaveStats.by_department?.length" class="text-center text-xs text-gray-400 py-10 italic text-[10px] uppercase">No department data available</p>
+                </div>
             </div>
         </div>
         <!-- 5. Employee Management -->
@@ -298,9 +339,7 @@
     import { storeToRefs } from 'pinia';
     import StatCard from '../common/StatCard.vue';
     import BulletinBoard from '../common/BulletinBoard.vue';
-    import AttendanceChart from '../common/AttendanceChart.vue';
     import EmployeeList from '../common/EmployeeList.vue';
-    import AttendanceLeaderboard from './AttendanceLeaderboard.vue';
 
     const authStore = useAuthStore();
     const leaveStore = useLeaveStore();

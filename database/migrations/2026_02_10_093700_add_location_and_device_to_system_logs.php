@@ -5,24 +5,10 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
-        Schema::table('system_logs', function (Blueprint $table) {
-            $table->string('location')->nullable()->after('user_agent');
-            $table->string('device')->nullable()->after('location');
-        });
+    public function up(): void {
+        // Redundant Migration - Consolidated into Create block
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('system_logs', function (Blueprint $table) {
-            $table->dropColumn(['location', 'device']);
-        });
+    public function down(): void {
+        // Redundant Migration - Consolidated into Create block
     }
 };

@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -21,6 +20,8 @@ return new class extends Migration
             $blueprint->json('new_data')->nullable();
             $blueprint->string('ip_address')->nullable();
             $blueprint->string('user_agent')->nullable();
+            $blueprint->string('location')->nullable();
+            $blueprint->string('device')->nullable();
             $blueprint->timestamps();
 
             // Index for faster searching

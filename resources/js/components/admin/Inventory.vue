@@ -18,7 +18,7 @@
                     <div class="flex items-center gap-3 relative z-10">
                         <div class="flex flex-col items-end mr-4 hidden lg:flex">
                             <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Assets</span>
-                            <span class="text-2xl font-black text-gray-900">{{ items.length }}</span>
+                            <span class="text-2xl font-black text-gray-900">{{ totalItems }}</span>
                         </div>
                         <label class="px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-2xl transition-all duration-300 font-bold text-sm shadow-sm flex items-center gap-2 group/btn cursor-pointer">
                             <i class="pi pi-upload text-gray-400 group-hover/btn:text-teal-600 transition-colors"></i>
@@ -63,18 +63,18 @@
 
                         <button 
                             @click="resetFilters"
-                            class="p-4 text-gray-400 hover:text-rose-500 transition-colors cursor-pointer"
+                            class="p-4 text-gray-400 hover:text-rose-500 transition-colors cursor-pointer flex items-center justify-center gap-2"
                             v-if="searchQuery || typeFilter"
-                            title="Reset Filters"
                         >
                             <i class="pi pi-refresh"></i>
+                            <span class="text-[10px] font-bold uppercase tracking-tight">Reset</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Data Table Showcase -->
-                <div v-if="filteredItems.length > 0" class="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
-                    <div class="overflow-x-auto custom-scrollbar">
+                <div v-if="items.length > 0" class="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+                    <div class="flex-1 overflow-x-auto custom-scrollbar">
                         <table class="w-full text-left border-collapse whitespace-nowrap">
                             <thead>
                                 <tr class="bg-gray-50/50">
@@ -139,10 +139,46 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Pagination Controls -->
+                    <div v-if="lastPage > 1" class="px-8 py-5 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Page {{ currentPage }} of {{ lastPage }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button 
+                                @click="fetchItems(currentPage - 1)" 
+                                :disabled="currentPage === 1"
+                                class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-gray-600 disabled:hover:border-gray-200 transition-all cursor-pointer shadow-sm"
+                            >
+                                <i class="pi pi-chevron-left text-xs"></i>
+                            </button>
+                            <div class="flex items-center gap-1">
+                                <button 
+                                    v-for="p in paginatedPages" 
+                                    :key="p"
+                                    @click="p !== '...' ? fetchItems(p) : null"
+                                    :class="[
+                                        'w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black transition-all cursor-pointer border',
+                                        currentPage === p ? 'bg-teal-600 text-white border-teal-500 shadow-lg shadow-teal-500/20' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                                    ]"
+                                >
+                                    {{ p }}
+                                </button>
+                            </div>
+                            <button 
+                                @click="fetchItems(currentPage + 1)" 
+                                :disabled="currentPage === lastPage"
+                                class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-gray-600 disabled:hover:border-gray-200 transition-all cursor-pointer shadow-sm"
+                            >
+                                <i class="pi pi-chevron-right text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Empty State -->
-                <div v-else class="flex flex-col items-center justify-center py-20 bg-white rounded-[32px] border border-dashed border-gray-200">
+                <div v-else-if="!loading" class="flex flex-col items-center justify-center py-20 bg-white rounded-[32px] border border-dashed border-gray-200">
                     <div class="w-20 h-20 rounded-3xl bg-gray-50 flex items-center justify-center text-gray-300 mb-6 shadow-inner">
                         <i class="pi pi-search text-4xl"></i>
                     </div>
@@ -276,24 +312,30 @@ const importing = ref(false);
 const showModal = ref(false);
 const editingItem = ref(null);
 
+// Pagination State
+const currentPage = ref(1);
+const lastPage = ref(1);
+const totalItems = ref(0);
+const pageSize = ref(15);
+
 // Search & Filter State
 const searchQuery = ref('');
 const typeFilter = ref('');
+let debounceTimer = null;
 
 const assetTypes = ['Laptop', 'Desktop', 'Monitor', 'Mouse', 'Keyboard', 'Printer', 'Webcam', 'Router', 'Furniture', 'Others'];
 
-const filteredItems = computed(() => {
-    return items.value.filter(item => {
-        const matchesSearch = !searchQuery.value || 
-            item.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-            (item.serial_number && item.serial_number.toLowerCase().includes(searchQuery.value.toLowerCase())) || 
-            (item.department && item.department.toLowerCase().includes(searchQuery.value.toLowerCase())) ||
-            (item.asset_tag && item.asset_tag.toLowerCase().includes(searchQuery.value.toLowerCase()));
-        
-        const matchesType = !typeFilter.value || item.type === typeFilter.value;
-
-        return matchesSearch && matchesType;
-    });
+const paginatedPages = computed(() => {
+    const range = [];
+    const delta = 2;
+    for (let i = Math.max(2, currentPage.value - delta); i <= Math.min(lastPage.value - 1, currentPage.value + delta); i++) {
+        range.push(i);
+    }
+    if (currentPage.value - delta > 2) range.unshift('...');
+    range.unshift(1);
+    if (currentPage.value + delta < lastPage.value - 1) range.push('...');
+    if (lastPage.value > 1) range.push(lastPage.value);
+    return range;
 });
 
 const resetFilters = () => {
@@ -331,18 +373,41 @@ const getIconForType = (type) => {
     return map[type] || 'pi-box';
 };
 
-const fetchItems = async () => {
+const fetchItems = async (page = 1) => {
     loading.value = true;
     try {
-        const response = await axios.get('/api/inventory');
-        // Handle Laravel Pagination object
-        items.value = response.data.data || response.data;
+        const response = await axios.get('/api/inventory', {
+            params: {
+                page,
+                search: searchQuery.value,
+                type: typeFilter.value,
+                limit: pageSize.value
+            }
+        });
+        
+        items.value = response.data.data;
+        currentPage.value = response.data.current_page;
+        lastPage.value = response.data.last_page;
+        totalItems.value = response.data.total;
     } catch (e) {
         console.error("Failed to fetch inventory", e);
     } finally {
         loading.value = false;
     }
 };
+
+// Lifecycle & Watches
+onMounted(() => {
+    authStore.fetchUser();
+    fetchItems();
+});
+
+watch([searchQuery, typeFilter], () => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        fetchItems(1);
+    }, 400);
+});
 
 const openAddModal = () => {
     editingItem.value = null;

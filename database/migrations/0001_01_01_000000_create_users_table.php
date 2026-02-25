@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -21,7 +20,24 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
+            $table->string('avatar')->nullable();
+            $table->string('department')->nullable();
+            $table->string('status')->default('Available');
+            $table->string('employment_status')->default('Probationary');
+            $table->decimal('leave_credits', 8, 2)->default(0);
+            $table->string('gender')->nullable();
+            $table->string('civil_status')->nullable();
+            $table->boolean('is_solo_parent')->default(false);
+            $table->integer('children_count')->default(0);
+            $table->unsignedBigInteger('department_id')->nullable();
             $table->timestamps();
+
+            $table->index('name');
+            $table->index('id_number');
+            $table->index('department');
+            $table->index('status');
+            $table->index('role');
+            $table->index('position');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

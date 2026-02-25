@@ -58,6 +58,9 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
         Route::put('/api/announcements/{id}', [\App\Http\Controllers\AnnouncementController::class, 'update']);
         Route::delete('/api/announcements/{id}', [\App\Http\Controllers\AnnouncementController::class, 'destroy']);
         Route::patch('/api/announcements/{id}/toggle', [\App\Http\Controllers\AnnouncementController::class, 'toggle']);
+
+        Route::post('/api/leave-requests/{id}/archive', [\App\Http\Controllers\LeaveRequestController::class, 'archive']);
+        Route::post('/api/leave-requests/{id}/unarchive', [\App\Http\Controllers\LeaveRequestController::class, 'unarchive']);
     });
 
     // Share/Employee Access Routes (Read-only for most)

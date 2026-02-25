@@ -40,6 +40,13 @@ class LeaveRequestController extends Controller
             'employee.department'
         ]);
 
+        // Default: only show non-archived
+        if ($request->boolean('archived', false)) {
+            $query->where('is_archived', true);
+        } else {
+            $query->where('is_archived', false);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -445,30 +452,60 @@ class LeaveRequestController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $pending = LeaveRequest::where('status', 'Pending')->count();
-        $approved = LeaveRequest::where('status', 'Approved')->count();
-        $rejected = LeaveRequest::where('status', 'Rejected')->count();
-        $cancelled = LeaveRequest::where('status', 'Cancelled')->count();
+        $pending = LeaveRequest::where('status', 'Pending')->where('is_archived', false)->count();
+        $approved = LeaveRequest::where('status', 'Approved')->where('is_archived', false)->count();
+        $rejected = LeaveRequest::where('status', 'Rejected')->where('is_archived', false)->count();
+        $cancelled = LeaveRequest::where('status', 'Cancelled')->where('is_archived', false)->count();
 
         // For Manage Leaves - "Approved This Month"
         $approvedThisMonth = LeaveRequest::where('status', 'Approved')
+            ->where('is_archived', false)
             ->whereMonth('from_date', now()->month)
             ->whereYear('from_date', now()->year)
             ->count();
 
         // For Manage Leaves - "Scheduled Upcoming"
         $scheduled = LeaveRequest::where('status', 'Approved')
+            ->where('is_archived', false)
             ->where('from_date', '>', now())
             ->count();
 
         // For Dashboard "Recent"
-        $recent = LeaveRequest::with(['user:id,name,id_number,avatar', 'employee:id,first_name,last_name,avatar,employee_id'])->latest()->take(20)->get();
+        $recent = LeaveRequest::with(['user:id,name,id_number,avatar', 'employee:id,first_name,last_name,avatar,employee_id'])
+            ->where('is_archived', false)
+            ->latest()
+            ->take(20)
+            ->get();
 
         // On Leave Today
         $onLeaveToday = LeaveRequest::where('status', 'Approved')
+            ->where('is_archived', false)
             ->whereDate('from_date', '<=', now())
             ->whereDate('to_date', '>=', now())
             ->count();
+
+        // Paid vs Unpaid (Approved)
+        $approvedPaid = LeaveRequest::where('status', 'Approved')->where('is_paid', true)->count();
+        $approvedUnpaid = LeaveRequest::where('status', 'Approved')->where('is_paid', false)->count();
+
+        // By Leave Type
+        $byType = LeaveRequest::select('leave_type as name', \DB::raw('count(*) as count'))
+            ->groupBy('leave_type')
+            ->orderBy(\DB::raw('count(*)'), 'desc')
+            ->take(5)
+            ->get();
+
+        // By Department (Approximate)
+        $byDept = \DB::table('leave_requests')
+            ->leftJoin('employees', 'leave_requests.employee_id', '=', 'employees.id')
+            ->leftJoin('departments as ed', 'employees.department_id', '=', 'ed.id')
+            ->leftJoin('users', 'leave_requests.user_id', '=', 'users.id')
+            ->leftJoin('departments as ud', 'users.department_id', '=', 'ud.id')
+            ->select(\DB::raw('COALESCE(ed.name, ud.name, users.department, \'General\') as name'), \DB::raw('count(*) as count'))
+            ->groupBy(\DB::raw('COALESCE(ed.name, ud.name, users.department, \'General\')'))
+            ->orderBy(\DB::raw('count(*)'), 'desc')
+            ->take(5)
+            ->get();
 
         return response()->json([
             'pending' => $pending,
@@ -481,6 +518,10 @@ class LeaveRequestController extends Controller
             'total_employees' => \App\Models\Employee::count(),
             'recent' => $recent,
             'on_leave_today' => $onLeaveToday,
+            'by_type' => $byType,
+            'by_department' => $byDept,
+            'approved_paid' => $approvedPaid,
+            'approved_unpaid' => $approvedUnpaid,
         ]);
     }
 
@@ -648,5 +689,35 @@ class LeaveRequestController extends Controller
 
         // 3. Merge and Return
         return response()->json($leaves->concat($customEvents));
+    }
+
+    public function archive(string $id)
+    {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $leave = LeaveRequest::findOrFail($id);
+        $leave->update([
+            'is_archived' => true,
+            'archived_at' => now(),
+        ]);
+
+        return response()->json(['message' => 'Leave request archived successfully']);
+    }
+
+    public function unarchive(string $id)
+    {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $leave = LeaveRequest::findOrFail($id);
+        $leave->update([
+            'is_archived' => false,
+            'archived_at' => null,
+        ]);
+
+        return response()->json(['message' => 'Leave request restored from archive']);
     }
 }
