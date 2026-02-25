@@ -3,7 +3,6 @@
         <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                 <h3 class="text-lg font-bold text-gray-800">Employee Masterlist</h3>
-                <p class="text-sm text-gray-500">Centralized database of all employees.</p>
             </div>
             
             <div class="flex flex-col md:flex-row gap-3 items-center">
@@ -35,14 +34,15 @@
                 
                 <!-- Department Filter -->
                 <div class="relative w-full md:w-auto">
-                    <i class="pi pi-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                    <i class="pi pi-filter absolute left-3 top-1/2 -translate-y-1/2 text-teal-600 text-xs pointer-events-none"></i>
                     <select 
                         v-model="selectedDepartment" 
-                        class="h-10 pl-10 pr-8 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white appearance-none cursor-pointer w-full"
+                        class="h-10 pl-9 pr-8 border border-gray-200 rounded-lg text-sm bg-white hover:bg-gray-50 transition-colors focus:ring-2 focus:ring-teal-500 outline-none appearance-none cursor-pointer w-full md:w-48"
                     >
                         <option value="All">All Departments</option>
                         <option v-for="dept in departments" :key="dept.id" :value="dept.id">{{ dept.name }}</option>
                     </select>
+                    <i class="pi pi-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 pointer-events-none"></i>
                 </div>
 
                 <!-- Search -->
@@ -52,19 +52,19 @@
                         v-model="searchQuery" 
                         type="text" 
                         placeholder="Search name or ID..." 
-                        class="h-10 pl-10 pr-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none w-full md:w-64"
+                        class="h-10 pl-10 pr-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none w-full md:w-48"
                     >
                 </div>
 
                 <!-- Filter Toggle -->
                 <button 
                     @click="showFilters = !showFilters"
-                    :class="showFilters ? 'bg-teal-50 text-teal-600 border-teal-200' : 'bg-white text-gray-600 border-gray-200'"
-                    class="cursor-pointer h-10 px-4 border rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
+                    :class="showFilters ? 'bg-teal-50 text-teal-600 border-teal-200' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'"
+                    class="cursor-pointer h-10 px-4 border rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
                 >
                     <i class="pi pi-filter"></i>
-                    <span>Smart Filters</span>
-                    <i :class="showFilters ? 'pi-chevron-up' : 'pi-chevron-down'" class="pi text-[10px] ml-1"></i>
+                    <span>Filters</span>
+                    <i :class="showFilters ? 'pi-chevron-up' : 'pi-chevron-down'" class="pi text-[10px]"></i>
                 </button>
             </div>
         </div>

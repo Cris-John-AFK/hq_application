@@ -42,7 +42,7 @@ class LeaveRequestController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->whereHas('user', function ($uq) use ($search) {
                     $uq->where('name', 'ilike', "%{$search}%")
                         ->orWhere('id_number', 'ilike', "%{$search}%");
@@ -116,6 +116,8 @@ class LeaveRequestController extends Controller
             'start_time' => 'nullable',
             'end_time' => 'nullable',
             'reason' => 'required|string',
+            'is_paid' => 'nullable|boolean',
+            'days_paid' => 'nullable|numeric',
             'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // Max 5MB
         ]);
 
@@ -142,8 +144,8 @@ class LeaveRequestController extends Controller
 
         // Compliance Check
         $compliance = $this->complianceService->validateRule($targetObject, $validated['leave_type'], $validated['days_taken']);
-        if (! $compliance['passed']) {
-            return response()->json(['message' => 'Compliance Warning: '.$compliance['message']], 422);
+        if (!$compliance['passed'] && $currentUser->role !== 'admin') {
+            return response()->json(['message' => 'Compliance Warning: ' . $compliance['message']], 422);
         }
 
         $fromDate = $validated['from_date'];
@@ -151,7 +153,7 @@ class LeaveRequestController extends Controller
 
         // Check for overlaps (using either user_id or employee_id)
         $overlapQuery = LeaveRequest::whereIn('status', ['Pending', 'Approved']);
-        
+
         if ($targetUserId) {
             $overlapQuery->where('user_id', $targetUserId);
         } else {
@@ -159,14 +161,14 @@ class LeaveRequestController extends Controller
         }
 
         $overlap = $overlapQuery->where(function ($query) use ($fromDate, $toDate) {
-                $query->where(function ($q) use ($fromDate, $toDate) {
-                    $q->whereBetween('from_date', [$fromDate, $toDate])
-                        ->orWhereBetween('to_date', [$fromDate, $toDate]);
-                })->orWhere(function ($q) use ($fromDate, $toDate) {
-                    $q->where('from_date', '<=', $fromDate)
-                        ->where('to_date', '>=', $toDate);
-                });
-            })->first();
+            $query->where(function ($q) use ($fromDate, $toDate) {
+                $q->whereBetween('from_date', [$fromDate, $toDate])
+                    ->orWhereBetween('to_date', [$fromDate, $toDate]);
+            })->orWhere(function ($q) use ($fromDate, $toDate) {
+                $q->where('from_date', '<=', $fromDate)
+                    ->where('to_date', '>=', $toDate);
+            });
+        })->first();
 
         if ($overlap) {
             $existingFrom = $overlap->from_date->format('M d, Y');
@@ -174,7 +176,7 @@ class LeaveRequestController extends Controller
             $msgPart = $targetUserId ? "You already have" : "This employee already has";
 
             return response()->json([
-                'message' => "Overlap detected: {$msgPart} a {$overlap->status} request for {$existingFrom}".($overlap->to_date ? " to {$existingTo}" : '').'.',
+                'message' => "Overlap detected: {$msgPart} a {$overlap->status} request for {$existingFrom}" . ($overlap->to_date ? " to {$existingTo}" : '') . '.',
             ], 422);
         }
 
@@ -182,9 +184,9 @@ class LeaveRequestController extends Controller
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
-            $filename = time().'_'.$file->getClientOriginalName();
+            $filename = time() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('attachments', $filename, 'public');
-            $attachmentPath = '/storage/'.$path;
+            $attachmentPath = '/storage/' . $path;
         }
 
         $leaveRequest = LeaveRequest::create(array_merge(
@@ -201,11 +203,12 @@ class LeaveRequestController extends Controller
         $targetName = $targetObject->name ?? ($targetObject->first_name . ' ' . $targetObject->last_name);
         $admins = \App\Models\User::where('role', 'admin')->get();
         foreach ($admins as $admin) {
-             if ($admin->id === $currentUser->id && $targetUserId !== $currentUser->id) continue;
+            if ($admin->id === $currentUser->id && $targetUserId !== $currentUser->id)
+                continue;
             \App\Models\Notification::create([
                 'user_id' => $admin->id,
                 'title' => 'New Leave Request Filed',
-                'message' => "{$targetName} has a new ".($leaveRequest->category ?? '')." {$leaveRequest->leave_type} request for {$leaveRequest->days_taken} day(s).",
+                'message' => "{$targetName} has a new " . ($leaveRequest->category ?? '') . " {$leaveRequest->leave_type} request for {$leaveRequest->days_taken} day(s).",
                 'type' => 'info',
                 'link' => "/manage-leaves?search={$targetEmployeeId}",
             ]);
@@ -234,7 +237,7 @@ class LeaveRequestController extends Controller
         $isAdmin = $user->role === 'admin';
         $isOwner = $leaveRequest->user_id === $user->id;
 
-        if (! $isAdmin && ! $isOwner) {
+        if (!$isAdmin && !$isOwner) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -300,7 +303,7 @@ class LeaveRequestController extends Controller
                         \App\Models\Notification::create([
                             'user_id' => $leaveRequest->user_id,
                             'title' => 'Leave Request Update',
-                            'message' => "Your {$leaveRequest->leave_type} request for ".$leaveRequest->from_date->format('M d')." has been marked as **{$validated['status']}**.",
+                            'message' => "Your {$leaveRequest->leave_type} request for " . $leaveRequest->from_date->format('M d') . " has been marked as **{$validated['status']}**.",
                             'type' => $validated['status'] === 'Approved' ? 'success' : ($validated['status'] === 'Rejected' ? 'urgent' : 'warning'),
                             'link' => '/leave-requests',
                         ]);
@@ -326,7 +329,7 @@ class LeaveRequestController extends Controller
             $days = $leaveRequest->days_taken;
 
             if ($subject) {
-                 $creditField = ($subject instanceof \App\Models\User) ? 'leave_credits' : 'leave_credits'; // Both use leave_credits now after our migrations
+                $creditField = ($subject instanceof \App\Models\User) ? 'leave_credits' : 'leave_credits'; // Both use leave_credits now after our migrations
 
                 // Scenario A: Transitioning to Approved
                 if ($newStatus === 'Approved' && $oldStatus !== 'Approved') {
@@ -342,9 +345,9 @@ class LeaveRequestController extends Controller
                 }
                 // Scenario C: Already Approved, but toggling Pay Status
                 elseif ($newStatus === 'Approved' && $oldStatus === 'Approved') {
-                    if (! $oldIsPaid && $newIsPaid) {
+                    if (!$oldIsPaid && $newIsPaid) {
                         $subject->decrement($creditField, $days);
-                    } elseif ($oldIsPaid && ! $newIsPaid) {
+                    } elseif ($oldIsPaid && !$newIsPaid) {
                         $subject->increment($creditField, $days);
                     }
                 }
@@ -357,11 +360,11 @@ class LeaveRequestController extends Controller
                 $changes[] = "Status: [{$oldStatus}] to [{$newStatus}]";
             }
             if ($oldIsPaid !== $newIsPaid) {
-                $changes[] = 'Pay Status: ['.($oldIsPaid ? 'Paid' : 'Unpaid').'] to ['.($newIsPaid ? 'Paid' : 'Unpaid').']';
+                $changes[] = 'Pay Status: [' . ($oldIsPaid ? 'Paid' : 'Unpaid') . '] to [' . ($newIsPaid ? 'Paid' : 'Unpaid') . ']';
             }
 
-            if (! empty($changes)) {
-                $changeDesc .= ' Changed '.implode(', ', $changes).'.';
+            if (!empty($changes)) {
+                $changeDesc .= ' Changed ' . implode(', ', $changes) . '.';
             }
 
             $finalRemarks = $validated['justification'] ?? '';
@@ -498,7 +501,7 @@ class LeaveRequestController extends Controller
         }
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->whereHas('user', function ($uq) use ($search) {
                     $uq->where('name', 'ilike', "%{$search}%")
                         ->orWhere('id_number', 'ilike', "%{$search}%");
@@ -514,16 +517,28 @@ class LeaveRequestController extends Controller
 
         $headers = [
             'Content-type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename=leave_report_'.now()->format('Y-m-d_His').'.csv',
+            'Content-Disposition' => 'attachment; filename=leave_report_' . now()->format('Y-m-d_His') . '.csv',
             'Pragma' => 'no-cache',
             'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
             'Expires' => '0',
         ];
 
         $columns = [
-            'Request ID', 'Employee ID', 'Employee Name', 'Department', 'Position',
-            'Leave Type', 'Request Type', 'From Date', 'To Date', 'Days Taken',
-            'Status', 'Is Paid', 'No. of Days Paid', 'Reason', 'Latest SIL Balance',
+            'Request ID',
+            'Employee ID',
+            'Employee Name',
+            'Department',
+            'Position',
+            'Leave Type',
+            'Request Type',
+            'From Date',
+            'To Date',
+            'Days Taken',
+            'Status',
+            'Is Paid',
+            'No. of Days Paid',
+            'Reason',
+            'Latest SIL Balance',
         ];
 
         $callback = function () use ($requests, $columns) {
@@ -569,7 +584,7 @@ class LeaveRequestController extends Controller
     public function calendarEvents(Request $request)
     {
         // 1. Fetch Approved Leaves
-        $leaveQuery = LeaveRequest::with('user:id,name,avatar,department,position,id_number')
+        $leaveQuery = LeaveRequest::with(['user:id,name,avatar,department,position,id_number', 'employee.department'])
             ->where('status', 'Approved');
 
         if ($request->filled('month')) {
@@ -581,22 +596,32 @@ class LeaveRequestController extends Controller
         }
 
         $leaves = $leaveQuery->get()->map(function ($leave) {
+            $subject = $leave->user ?? $leave->employee;
+            if (!$subject)
+                return null;
+
+            $name = $leave->user ? $leave->user->name : ($leave->employee ? $leave->employee->name : 'Unknown');
+            $idNumber = $leave->user ? $leave->user->id_number : ($leave->employee ? $leave->employee->employee_id : 'N/A');
+            $dept = $leave->user ? $leave->user->department : ($leave->employee && $leave->employee->department ? $leave->employee->department->name : 'N/A');
+            $pos = $leave->user ? $leave->user->position : ($leave->employee ? $leave->employee->position : 'N/A');
+            $avatar = $leave->user ? $leave->user->avatar_url : ($leave->employee && $leave->employee->avatar ? \Illuminate\Support\Facades\Storage::disk('public')->url($leave->employee->avatar) : null);
+
             return [
-                'id' => 'leave_'.$leave->id,
+                'id' => 'leave_' . $leave->id,
                 'type' => 'leave',
-                'user_name' => $leave->user->name,
-                'user_id_number' => $leave->user->id_number,
-                'user_department' => $leave->user->department,
-                'user_position' => $leave->user->position,
-                'avatar' => $leave->user->avatar_url,
+                'user_name' => $name,
+                'user_id_number' => $idNumber,
+                'user_department' => $dept,
+                'user_position' => $pos,
+                'avatar' => $avatar,
                 'leave_type' => $leave->leave_type,
                 'from_date' => $leave->from_date->format('Y-m-d'),
                 'to_date' => $leave->to_date ? $leave->to_date->format('Y-m-d') : $leave->from_date->format('Y-m-d'),
                 'request_type' => $leave->request_type,
                 'days_taken' => $leave->days_taken,
-                'title' => "{$leave->user->name} on {$leave->leave_type}",
+                'title' => "{$name} on {$leave->leave_type}",
             ];
-        });
+        })->filter();
 
         // 2. Fetch Custom Calendar Events
         $eventQuery = \App\Models\CalendarEvent::query();
@@ -611,7 +636,7 @@ class LeaveRequestController extends Controller
 
         $customEvents = $eventQuery->get()->map(function ($evt) {
             return [
-                'id' => 'evt_'.$evt->id,
+                'id' => 'evt_' . $evt->id,
                 'type' => $evt->type, // event, holiday, meeting
                 'title' => $evt->title,
                 'description' => $evt->description,

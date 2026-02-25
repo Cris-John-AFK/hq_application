@@ -102,8 +102,7 @@
                     </div>
                 </div>
 
-                <!-- 2. Request For -->
-                <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm">
+                <div :class="['bg-white p-6 rounded-lg border shadow-sm transition-all', showErrors && !form.requestType ? 'border-red-500 bg-red-50/10' : 'border-gray-300']">
                     <div class="mb-3">
                         <span class="text-base font-medium text-gray-800">Leave Request For</span>
                         <span class="text-[#d93025] ml-1">*</span>
@@ -118,8 +117,7 @@
                     </div>
                 </div>
 
-                <!-- 3. Leave Type -->
-                <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm">
+                <div :class="['bg-white p-6 rounded-lg border shadow-sm transition-all', showErrors && (!form.leaveType || (form.leaveType === 'Others' && !form.otherLeaveType)) ? 'border-red-500 bg-red-50/10' : 'border-gray-300']">
                     <div class="mb-3">
                         <span class="text-base font-medium text-gray-800">Leave Type</span>
                         <span class="text-[#d93025] ml-1">*</span>
@@ -141,7 +139,7 @@
                                     v-if="form.leaveType === 'Others'"
                                     type="text" 
                                     v-model="form.otherLeaveType" 
-                                    class="w-full border-b-2 border-gray-200 outline-none py-1.5 text-sm focus:border-[#673ab7] transition-colors bg-gray-50 px-2 rounded-t" 
+                                    :class="['w-full border-b-2 outline-none py-1.5 text-sm transition-colors bg-gray-50 px-2 rounded-t', showErrors && !form.otherLeaveType ? 'border-red-500 placeholder-red-300' : 'border-gray-200 focus:border-[#673ab7]']" 
                                     placeholder="Specify leave type..." 
                                     ref="otherInput"
                                 >
@@ -159,40 +157,43 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">From Date <span class="text-red-500">*</span></label>
-                                <input type="date" v-model="form.fromDate" :min="today" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all">
+                                <input type="date" v-model="form.fromDate" :min="today" :class="['w-full p-2 border rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all', showErrors && !form.fromDate ? 'border-red-500 bg-red-50' : 'border-gray-300']">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">To Date <span class="text-red-500">*</span></label>
-                                <input type="date" v-model="form.toDate" :min="form.fromDate || today" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all">
+                                <input type="date" v-model="form.toDate" :min="form.fromDate || today" :class="['w-full p-2 border rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all', showErrors && !form.toDate ? 'border-red-500 bg-red-50' : 'border-gray-300']">
                             </div>
                         </div>
 
                         <!-- Duration Metrics -->
-                        <div class="space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                             <div>
+                        <div class="space-y-4">
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">No. of Days</label>
                                 <div class="flex items-center gap-2">
                                     <input readonly type="number" step="0.5" v-model="form.numberOfDays" class="w-24 p-2 border border-gray-300 rounded font-bold text-gray-800 text-center focus:ring-purple-500 outline-none">
                                     <span class="text-sm text-gray-500">days</span>
                                 </div>
-                            </div>
-                            
-                            <!-- Hours input - Always visible -->
-                            <div>
+                                
                                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1 mt-3">No. of Hours</label>
                                 <div class="flex items-center gap-2">
                                     <input type="number" step="0.5" v-model="form.numberOfHours" class="w-24 p-2 border border-gray-300 rounded font-bold text-gray-800 text-center focus:ring-purple-500 outline-none">
                                     <span class="text-sm text-gray-500">hours</span>
                                 </div>
-                                
-                                <div class="mt-3 grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="text-[10px] uppercase text-gray-400 font-bold">Start Time</label>
-                                        <input type="time" v-model="form.startTime" class="w-full p-1.5 text-sm border rounded">
-                                    </div>
-                                     <div>
-                                        <label class="text-[10px] uppercase text-gray-400 font-bold">End Time</label>
-                                        <input type="time" v-model="form.endTime" class="w-full p-1.5 text-sm border rounded">
+                            </div>
+
+                            <!-- Pay Configuration (ADMIN ONLY) -->
+                            <div v-if="isAdminMode" class="bg-teal-50/50 p-4 rounded-lg border border-teal-100 animate-in fade-in transition-all">
+                                <label class="block text-[10px] font-black text-teal-700 uppercase tracking-widest mb-3">Pay Configuration</label>
+                                <div class="flex items-center gap-4">
+                                    <label class="flex items-center gap-2 cursor-pointer group">
+                                        <div class="relative flex items-center">
+                                            <input type="checkbox" v-model="form.isPaid" class="peer h-5 w-5 cursor-pointer rounded border-teal-300 text-teal-600 focus:ring-teal-500">
+                                        </div>
+                                        <span class="text-sm font-bold text-teal-800">With Pay</span>
+                                    </label>
+                                    <div v-if="form.isPaid" class="flex-1 flex items-center gap-2 animate-in slide-in-from-left-2">
+                                        <span class="text-[10px] font-bold text-teal-600 uppercase">Days:</span>
+                                        <input type="number" step="0.5" v-model="form.daysPaid" class="w-20 px-2 py-1 border border-teal-200 rounded text-sm font-black text-teal-900 outline-none focus:border-teal-500">
                                     </div>
                                 </div>
                             </div>
@@ -221,8 +222,7 @@
                     </div>
                 </div>
 
-                <!-- 5. Reason -->
-                <div class="bg-white p-6 rounded-lg border border-gray-300 shadow-sm">
+                <div :class="['bg-white p-6 rounded-lg border shadow-sm transition-all', showErrors && !form.reason ? 'border-red-500 bg-red-50/10' : 'border-gray-300']">
                     <div class="mb-3">
                         <span class="text-base font-medium text-gray-800">Reason for Leave / Halfday / Undertime</span>
                         <span class="text-[#d93025] ml-1">*</span>
@@ -230,7 +230,7 @@
                     <textarea 
                         v-model="form.reason" 
                         rows="4" 
-                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-shadow resize-none placeholder-gray-400 text-sm"
+                        :class="['w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-shadow resize-none placeholder-gray-400 text-sm', showErrors && !form.reason ? 'border-red-500 placeholder-red-300' : 'border-gray-300']"
                         placeholder="Please state the specific reason for your request..."
                     ></textarea>
                 </div>
@@ -272,6 +272,10 @@ const { user } = storeToRefs(authStore);
 
 // Admin Mode State
 import axios from 'axios';
+// State
+const showErrors = ref(false);
+const formError = ref('');
+const loading = ref(false);
 const adminSearchId = ref('');
 const searchedEmployee = ref(null);
 const searchingEmployee = ref(false);
@@ -281,9 +285,6 @@ const displayUser = computed(() => {
     if (props.isAdminMode && searchedEmployee.value) return searchedEmployee.value;
     return user.value;
 });
-
-const formError = ref('');
-const loading = ref(false);
 
 const form = ref({
     dateFiled: new Date().toISOString().split('T')[0],
@@ -298,6 +299,8 @@ const form = ref({
     startTime: '',
     endTime: '',
     reason: '',
+    isPaid: false,
+    daysPaid: 0,
     attachment: null
 });
 
@@ -341,10 +344,13 @@ const resetForm = () => {
         startTime: '',
         endTime: '',
         reason: '',
+        isPaid: false,
+        daysPaid: 0,
         attachment: null
     };
     attachmentName.value = '';
     formError.value = '';
+    showErrors.value = false;
     adminSearchId.value = '';
     searchedEmployee.value = null;
     searchError.value = '';
@@ -410,12 +416,13 @@ const searchEmployee = async () => {
 
 const submitForm = () => {
     formError.value = '';
+    showErrors.value = true;
     
     // Validation
-    if (!form.value.leaveType) return setError('Please select a leave type.');
+    if (!form.value.leaveType) return setError('Please select a leave type before submitting.');
     if (form.value.leaveType === 'Others' && !form.value.otherLeaveType) return setError('Please specify the "Others" leave type.');
-    if (!form.value.fromDate || !form.value.toDate) return setError('Please select the date range.');
-    if (!form.value.reason) return setError('Please provide a reason.');
+    if (!form.value.fromDate || !form.value.toDate) return setError('Please select both the "From" and "To" dates.');
+    if (!form.value.reason) return setError('Please state the specific reason for your request.');
 
     loading.value = true;
 
@@ -431,6 +438,8 @@ const submitForm = () => {
         end_time: form.value.endTime,
         reason: form.value.reason,
         date_filed: form.value.dateFiled,
+        is_paid: form.value.isPaid,
+        days_paid: form.value.isPaid ? form.value.daysPaid : 0,
         employee_id: props.isAdminMode ? searchedEmployee.value?.id : null,
         attachment: form.value.attachment
     };
@@ -483,6 +492,8 @@ watch([() => form.value.fromDate, () => form.value.toDate, () => form.value.requ
         if (type === 'Halfday') form.value.numberOfDays = 0.5;
         else if (type === 'Undertime') form.value.numberOfDays = 0;
         else form.value.numberOfDays = diffDays;
+
+        if (form.value.isPaid) form.value.daysPaid = form.value.numberOfDays;
     }
 });
 

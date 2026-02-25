@@ -399,8 +399,8 @@
                                             </div>
                                         </div>
 
-                                        <!-- Compliance Check -->
-                                        <div :class="['rounded-xl p-4 border', analysis.compliance?.passed ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200']">
+                                        <!-- Compliance Check (Hidden) -->
+                                        <div v-if="false" :class="['rounded-xl p-4 border', analysis.compliance?.passed ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200']">
                                             <h4 :class="['text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2', analysis.compliance?.passed ? 'text-green-800' : 'text-red-800']">
                                                 <i :class="['pi', analysis.compliance?.passed ? 'pi-verified' : 'pi-ban']"></i>
                                                 Compliance Check
@@ -439,8 +439,8 @@
                                             <p v-else class="text-xs text-gray-400">No department info available.</p>
                                         </div>
 
-                                        <!-- Credit Forecast -->
-                                        <div class="bg-blue-50/50 rounded-xl p-4 border border-blue-100">
+                                        <!-- Credit Forecast (Hidden) -->
+                                        <div v-if="false" class="bg-blue-50/50 rounded-xl p-4 border border-blue-100">
                                             <h4 class="text-xs font-bold text-blue-800 uppercase tracking-widest mb-3">Credit Forecast</h4>
                                             <div class="flex justify-between items-center mb-2">
                                                 <span class="text-xs text-gray-600">Current Balance</span>
