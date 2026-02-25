@@ -361,7 +361,7 @@
         loading.value = true;
         await Promise.all([
             employeeStore.fetchEmployees(),
-            leaveStore.fetchStats()
+            leaveStore.fetchStats(true)
         ]);
         loading.value = false;
     });

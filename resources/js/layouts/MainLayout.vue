@@ -16,7 +16,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold text-white tracking-tight">HatQ Inc.</h1>
-                    <p class="text-[10px] font-semibold text-teal-500 uppercase tracking-widest leading-none mt-0.5">Management</p>
+                    <p class="text-[10px] font-semibold text-teal-500 uppercase tracking-widest leading-none mt-0.5">Leave Management</p>
                 </div>
             </router-link>
 
@@ -464,9 +464,9 @@ const menuItems = computed(() => {
         { label: 'Calendar', icon: 'pi-calendar', href: '/schedules' },
         { label: 'Reports', icon: 'pi-chart-bar', href: '/reports' },
         { label: 'Manage Leaves', icon: 'pi-calendar-times', href: '/manage-leaves' },
-        { label: 'Archive Registry', icon: 'pi-archive', href: '/archive-leaves' },
         { label: 'Assets', icon: 'pi-box', href: '/inventory' },
         { label: 'Activity Logs', icon: 'pi-list', href: '/activity-logs' },
+        { label: 'Archive Registry', icon: 'pi-folder', href: '/archive-leaves' },
     ] : [
         { label: 'Dashboard', icon: 'pi-home', href: '/dashboard' },
         { label: 'My Profile', icon: 'pi-user', href: '/profile' },

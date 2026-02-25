@@ -89,7 +89,7 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-50">
-                                <tr v-for="item in filteredItems" :key="item.id" class="hover:bg-gray-50/50 transition-colors group">
+                                <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50/50 transition-colors group">
                                     <td class="py-3 px-4 pl-6">
                                         <div class="flex items-center gap-2">
                                             <div class="w-8 h-8 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center text-gray-400 group-hover:text-teal-600 transition-colors">
@@ -296,7 +296,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import { useAuthStore } from '../../stores/auth';
 import { storeToRefs } from 'pinia';

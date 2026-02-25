@@ -27,9 +27,16 @@
                             to="/archive-leaves"
                             class="cursor-pointer flex items-center gap-2 px-4 py-2 bg-gray-100 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors shadow-sm font-semibold"
                         >
-                            <i class="pi pi-archive text-gray-500"></i>
+                            <i class="pi pi-folder text-gray-500"></i>
                             <span>Archive Registry</span>
                         </router-link>
+                        <button 
+                            @click="showBulkArchiveModal = true" 
+                            class="cursor-pointer flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg hover:bg-slate-900 transition-colors shadow-sm font-semibold"
+                        >
+                            <i class="pi pi-history"></i>
+                            <span>Cleanup Archive</span>
+                        </button>
                     </div>
                 </div>
 
@@ -609,6 +616,74 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Bulk Archive Modal -->
+                <div v-if="showBulkArchiveModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <div class="bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden border border-white/20">
+                        <div class="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-white shadow-xl shadow-slate-500/20">
+                                    <i class="pi pi-history text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-black text-gray-900 leading-tight">Bulk Archiving</h3>
+                                    <p class="text-[10px] text-gray-400 font-extrabold uppercase tracking-widest">Database Maintenance</p>
+                                </div>
+                            </div>
+                            <button @click="showBulkArchiveModal = false" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 cursor-pointer transition-colors">
+                                <i class="pi pi-times"></i>
+                            </button>
+                        </div>
+
+                        <div class="p-8">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Select Archival Threshold</label>
+                            <div class="space-y-3">
+                                <label 
+                                    v-for="option in [
+                                        { label: '30 Days Ago', value: '30', desc: 'Archive records from last month' },
+                                        { label: '60 Days Ago', value: '60', desc: 'Archive records older than 2 months' },
+                                        { label: '90 Days Ago', value: '90', desc: 'Archive records from 3 months back' },
+                                        { label: 'Full History', value: 'all', desc: 'Archive ALL historical processed records' }
+                                    ]" 
+                                    :key="option.value"
+                                    class="flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98]"
+                                    :class="bulkArchiveThreshold === option.value ? 'border-slate-800 bg-slate-50' : 'border-gray-100 hover:border-gray-200'"
+                                    @click="bulkArchiveThreshold = option.value"
+                                >
+                                    <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center" :class="bulkArchiveThreshold === option.value ? 'border-slate-800 bg-slate-800' : 'border-gray-200'">
+                                        <div v-if="bulkArchiveThreshold === option.value" class="w-2 h-2 rounded-full bg-white"></div>
+                                    </div>
+                                    <div>
+                                        <p class="font-black text-sm text-gray-800">{{ option.label }}</p>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">{{ option.desc }}</p>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div class="mt-8 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex gap-3">
+                                <i class="pi pi-exclamation-triangle text-amber-500 mt-0.5"></i>
+                                <p class="text-[10px] text-amber-700 font-bold leading-relaxed">
+                                    ONLY processed requests (Approved, Rejected, or Cancelled) will be archived. Active pending requests will remain untouched.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="p-8 bg-gray-50 border-t border-gray-100 flex flex-col gap-3">
+                            <button 
+                                @click="handleBulkArchive" 
+                                :disabled="performingBulkArchive"
+                                class="w-full py-4 bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-900/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <i class="pi pi-spin pi-spinner" v-if="performingBulkArchive"></i>
+                                <i class="pi pi-archive" v-else></i>
+                                Run Archival Process
+                            </button>
+                            <button @click="showBulkArchiveModal = false" class="w-full py-4 bg-white border border-gray-200 text-gray-500 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-gray-100 transition-all cursor-pointer">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </MainLayout>
     </div>
@@ -840,6 +915,41 @@ const archiveRequest = async () => {
         alert('Archive failed: ' + (e.response?.data?.message || 'Server error'));
     } finally {
         processing.value = false;
+    }
+};
+
+// Bulk Archive Logic
+const showBulkArchiveModal = ref(false);
+const bulkArchiveThreshold = ref('30'); // Default 30 days
+const performingBulkArchive = ref(false);
+
+const handleBulkArchive = async () => {
+    let thresholdDate = 'all';
+    let confirmMsg = "Are you sure you want to archive ALL historical processed leave requests (Approved/Rejected/Cancelled)?";
+
+    if (bulkArchiveThreshold.value !== 'all') {
+        const date = new Date();
+        date.setDate(date.getDate() - parseInt(bulkArchiveThreshold.value));
+        thresholdDate = date.toISOString().split('T')[0];
+        confirmMsg = `Are you sure you want to archive ALL processed leave requests (Approved/Rejected/Cancelled) from before ${thresholdDate}?`;
+    }
+
+    if (!confirm(confirmMsg)) return;
+
+    performingBulkArchive.value = true;
+    try {
+        const response = await axios.post('/api/leave-requests/bulk-archive', {
+            before_date: thresholdDate
+        });
+        alert(response.data.message);
+        showBulkArchiveModal.value = false;
+        fetchRequests();
+        leaveStore.fetchStats(true);
+    } catch (e) {
+        console.error("Bulk archive failed", e);
+        alert('Bulk archive failed: ' + (e.response?.data?.message || 'Server error'));
+    } finally {
+        performingBulkArchive.value = false;
     }
 };
 

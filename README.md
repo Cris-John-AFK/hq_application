@@ -1,4 +1,4 @@
-# HatQ Inc. - HQ Management System
+# HatQ Inc. - HQ Leave Management System
 
 A professional, enterprise-grade human capital management application built with **Laravel 12**, **PostgreSQL**, and **Vue.js 3**. Designed for high-performance employee leave tracking, attendance analytics, and organizational transparency.
 
@@ -31,9 +31,11 @@ A professional, enterprise-grade human capital management application built with
 
 ### 📁 Advanced Leave & Masterlist Management
 - **Unified Masterlist Support**: Seamlessly manage leave for both system users and "Masterlist Employees" (staff without digital accounts) with 100% data parity.
+- **Leave Archiving & Registry**: Industry-standard data lifecycle management. Processed records (Approved/Rejected/Cancelled) can be manually moved to a read-only **Archive Registry** to keep the active management workspace clean.
+- **Bulk Cleanup Maintenance**: High-performance administrative tool to mass-archive legacy records using smart date thresholds (30, 60, or 90 days ago) with a single click.
+- **One-Click Restoration**: Data integrity fallback allowing administrators to restore any archived record back to the active list without data loss.
 - **Admin-Filing with Auto-Approval**: Administrators can bypass approval workflows by filing leaves directly on behalf of employees, triggering instant credit deductions.
 - **Disciplinary Metadata Tracking**: New **Attendance Category** system allows administrators to classify leaves (UA, WMC, WD, UH) for advanced absenteeism reporting.
-- **Digital Form Fidelity**: Pixel-perfect digital authorization forms that match physical compliance standards.
 - **Conflict Prevention**: Intelligent overlap validation prevents filing duplicate requests for the same date.
 - **Precision SIL Tracking**: Consolidated Service Incentive Leave (SIL) system with 100% accurate numeric deductions and restorations.
 

@@ -100,6 +100,10 @@ class LeaveRequestController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
+        if ($request->filled('year')) {
+            $query->whereYear('from_date', $request->year);
+        }
+
         if ($request->filled('month')) {
             $query->whereMonth('from_date', $request->month);
         }
@@ -341,21 +345,21 @@ class LeaveRequestController extends Controller
                 // Scenario A: Transitioning to Approved
                 if ($newStatus === 'Approved' && $oldStatus !== 'Approved') {
                     if ($newIsPaid) {
-                        $subject->decrement($creditField, $days);
+                        $subject->decrement($creditField, (float) $days);
                     }
                 }
                 // Scenario B: Transitioning out of Approved
                 elseif ($newStatus !== 'Approved' && $oldStatus === 'Approved') {
                     if ($oldIsPaid) {
-                        $subject->increment($creditField, $days);
+                        $subject->increment($creditField, (float) $days);
                     }
                 }
                 // Scenario C: Already Approved, but toggling Pay Status
                 elseif ($newStatus === 'Approved' && $oldStatus === 'Approved') {
                     if (!$oldIsPaid && $newIsPaid) {
-                        $subject->decrement($creditField, $days);
+                        $subject->decrement($creditField, (float) $days);
                     } elseif ($oldIsPaid && !$newIsPaid) {
-                        $subject->increment($creditField, $days);
+                        $subject->increment($creditField, (float) $days);
                     }
                 }
             }
@@ -485,22 +489,30 @@ class LeaveRequestController extends Controller
             ->count();
 
         // Paid vs Unpaid (Approved)
-        $approvedPaid = LeaveRequest::where('status', 'Approved')->where('is_paid', true)->count();
-        $approvedUnpaid = LeaveRequest::where('status', 'Approved')->where('is_paid', false)->count();
+        $approvedPaid = LeaveRequest::where('status', 'Approved')
+            ->where('is_archived', '!=', true)
+            ->where('is_paid', true)
+            ->count();
+        $approvedUnpaid = LeaveRequest::where('status', 'Approved')
+            ->where('is_archived', '!=', true)
+            ->where('is_paid', false)
+            ->count();
 
         // By Leave Type
         $byType = LeaveRequest::select('leave_type as name', \DB::raw('count(*) as count'))
+            ->where('is_archived', '!=', true)
             ->groupBy('leave_type')
             ->orderBy(\DB::raw('count(*)'), 'desc')
             ->take(5)
             ->get();
 
-        // By Department (Approximate)
+        // By Department
         $byDept = \DB::table('leave_requests')
             ->leftJoin('employees', 'leave_requests.employee_id', '=', 'employees.id')
             ->leftJoin('departments as ed', 'employees.department_id', '=', 'ed.id')
             ->leftJoin('users', 'leave_requests.user_id', '=', 'users.id')
             ->leftJoin('departments as ud', 'users.department_id', '=', 'ud.id')
+            ->where('leave_requests.is_archived', '!=', true)
             ->select(\DB::raw('COALESCE(ed.name, ud.name, users.department, \'General\') as name'), \DB::raw('count(*) as count'))
             ->groupBy(\DB::raw('COALESCE(ed.name, ud.name, users.department, \'General\')'))
             ->orderBy(\DB::raw('count(*)'), 'desc')
@@ -681,8 +693,8 @@ class LeaveRequestController extends Controller
                 'type' => $evt->type, // event, holiday, meeting
                 'title' => $evt->title,
                 'description' => $evt->description,
-                'from_date' => $evt->start_date->format('Y-m-d'),
-                'to_date' => $evt->end_date ? $evt->end_date->format('Y-m-d') : $evt->start_date->format('Y-m-d'),
+                'from_date' => \Carbon\Carbon::parse($evt->start_date)->format('Y-m-d'),
+                'to_date' => $evt->end_date ? \Carbon\Carbon::parse($evt->end_date)->format('Y-m-d') : \Carbon\Carbon::parse($evt->start_date)->format('Y-m-d'),
                 'is_read' => $evt->is_read,
             ];
         });
@@ -697,11 +709,14 @@ class LeaveRequestController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $leave = LeaveRequest::findOrFail($id);
+        $leave = LeaveRequest::with(['user', 'employee'])->findOrFail($id);
         $leave->update([
             'is_archived' => true,
             'archived_at' => now(),
         ]);
+
+        $subjectName = $leave->user->name ?? ($leave->employee ? $leave->employee->first_name . ' ' . $leave->employee->last_name : 'Unknown');
+        \App\Utils\AuditLogger::log('Leaves', 'Archived', "Archived leave request #{$leave->id} for {$subjectName}.");
 
         return response()->json(['message' => 'Leave request archived successfully']);
     }
@@ -712,12 +727,88 @@ class LeaveRequestController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $leave = LeaveRequest::findOrFail($id);
+        $leave = LeaveRequest::with(['user', 'employee'])->findOrFail($id);
         $leave->update([
             'is_archived' => false,
             'archived_at' => null,
         ]);
 
+        $subjectName = $leave->user->name ?? ($leave->employee ? $leave->employee->first_name . ' ' . $leave->employee->last_name : 'Unknown');
+        \App\Utils\AuditLogger::log('Leaves', 'Restored', "Restored leave request #{$leave->id} for {$subjectName} from archive.");
+
         return response()->json(['message' => 'Leave request restored from archive']);
+    }
+
+    public function bulkArchive(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'before_date' => 'required' // 'all' or a valid date string
+        ]);
+
+        $query = LeaveRequest::where('is_archived', false)
+            ->whereIn('status', ['Approved', 'Rejected', 'Cancelled']);
+
+        if ($request->before_date !== 'all') {
+            $query->where('from_date', '<', $request->before_date);
+        }
+
+        $count = $query->update([
+            'is_archived' => true,
+            'archived_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        $logDesc = $request->before_date === 'all'
+            ? "Performed bulk archive for all eligible records."
+            : "Performed bulk archive for records before {$request->before_date}.";
+
+        \App\Utils\AuditLogger::log('Leaves', 'Bulk Archived', "{$logDesc} Total requests affected: {$count}.");
+
+        return response()->json([
+            'message' => "Successfully archived $count leave requests.",
+            'count' => $count
+        ]);
+    }
+
+    public function getArchiveIndex()
+    {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        // Get years and months where archived data exists
+        $structure = LeaveRequest::where('is_archived', true)
+            ->selectRaw('EXTRACT(YEAR FROM from_date) as year, EXTRACT(MONTH FROM from_date) as month, COUNT(*) as count')
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->get();
+
+        $grouped = [];
+        foreach ($structure as $item) {
+            $year = (int) $item->year;
+            $month = (int) $item->month;
+
+            if (!isset($grouped[$year])) {
+                $grouped[$year] = [
+                    'year' => $year,
+                    'total' => 0,
+                    'months' => []
+                ];
+            }
+
+            $grouped[$year]['months'][] = [
+                'month' => $month,
+                'month_name' => date('F', mktime(0, 0, 0, $month, 10)),
+                'count' => (int) $item->count
+            ];
+            $grouped[$year]['total'] += (int) $item->count;
+        }
+
+        return response()->json(array_values($grouped));
     }
 }

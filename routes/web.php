@@ -61,6 +61,8 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
 
         Route::post('/api/leave-requests/{id}/archive', [\App\Http\Controllers\LeaveRequestController::class, 'archive']);
         Route::post('/api/leave-requests/{id}/unarchive', [\App\Http\Controllers\LeaveRequestController::class, 'unarchive']);
+        Route::post('/api/leave-requests/bulk-archive', [\App\Http\Controllers\LeaveRequestController::class, 'bulkArchive']);
+        Route::get('/api/leave-requests/archive-index', [\App\Http\Controllers\LeaveRequestController::class, 'getArchiveIndex']);
     });
 
     // Share/Employee Access Routes (Read-only for most)
