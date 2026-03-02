@@ -95,6 +95,36 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- NEW: Contextual widgets below the grid to fill empty space -->
+                <div v-if="!loading" class="mt-3 grid grid-cols-1 gap-3">
+                    <div class="px-4 py-3 bg-teal-50 border border-teal-100 rounded-2xl flex items-center justify-between group hover:bg-teal-100 transition-colors shadow-sm cursor-pointer" @click="activeTab = 'leaves'">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-teal-500 text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                                <i class="pi pi-users text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-black uppercase tracking-[0.1em] text-teal-600 mb-0.5">On Leave Today</p>
+                                <p class="text-xs font-bold text-teal-800">Currently out of office</p>
+                            </div>
+                        </div>
+                        <span class="text-xl font-black text-teal-700">{{ leaveStats.on_leave_today || 0 }}</span>
+                    </div>
+
+                    <div class="px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-between group hover:bg-indigo-100 transition-colors shadow-sm cursor-pointer" @click="activeTab = 'leaves'">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-indigo-500 text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                                <i class="pi pi-calendar-plus text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-600 mb-0.5">Upcoming Leaves</p>
+                                <p class="text-xs font-bold text-indigo-800">Approved & scheduled</p>
+                            </div>
+                        </div>
+                        <span class="text-xl font-black text-indigo-700">{{ leaveStats.scheduled || 0 }}</span>
+                    </div>
+                </div>
+
             </div>
 
             <!-- Right: Recent Activity Panel with Tabs -->

@@ -35,6 +35,9 @@ class LeaveAnalyticsMonthlyTrendSheet implements FromCollection, WithTitle, With
     public function collection()
     {
         $year = $this->filters['year'] ?? now()->year;
+        $month = $this->filters['month'] ?? null;
+        $week = $this->filters['week'] ?? null;
+        $day = $this->filters['day'] ?? null;
         $status = $this->filters['status'] ?? null;
         $type = $this->filters['leave_type'] ?? null;
 
@@ -49,6 +52,9 @@ class LeaveAnalyticsMonthlyTrendSheet implements FromCollection, WithTitle, With
             )
             ->where('is_archived', '!=', true)
             ->whereYear('from_date', $year)
+            ->when($month, fn($q) => $q->whereMonth('from_date', $month))
+            ->when($week && $month, fn($q) => $q->whereRaw("floor((EXTRACT(DAY FROM from_date) - 1) / 7 + 1) = ?", [$week]))
+            ->when($day && $month, fn($q) => $q->whereDay('from_date', $day))
             ->when($status, fn($q) => $q->where('status', $status))
             ->when($type, fn($q) => $q->where('leave_type', $type))
             ->groupBy(DB::raw('EXTRACT(MONTH FROM from_date)'))
@@ -88,6 +94,8 @@ class LeaveAnalyticsMonthlyTrendSheet implements FromCollection, WithTitle, With
             ->where('is_archived', '!=', true)
             ->whereYear('from_date', $year)
             ->whereMonth('from_date', $monthToWeekly)
+            ->when($week, fn($q) => $q->whereRaw("floor((EXTRACT(DAY FROM from_date) - 1) / 7 + 1) = ?", [$week]))
+            ->when($day, fn($q) => $q->whereDay('from_date', $day))
             ->when($status, fn($q) => $q->where('status', $status))
             ->when($type, fn($q) => $q->where('leave_type', $type))
             ->groupBy(DB::raw("floor((EXTRACT(DAY FROM from_date) - 1) / 7 + 1)"))

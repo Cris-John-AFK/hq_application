@@ -38,6 +38,8 @@ class LeaveAnalyticsSummarySheet implements FromCollection, WithTitle, WithHeadi
     {
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['month'] ?? null;
+        $week = $this->filters['week'] ?? null;
+        $day = $this->filters['day'] ?? null;
         $status = $this->filters['status'] ?? null;
         $type = $this->filters['leave_type'] ?? null;
 
@@ -46,6 +48,10 @@ class LeaveAnalyticsSummarySheet implements FromCollection, WithTitle, WithHeadi
 
         if ($month)
             $base->whereMonth('from_date', $month);
+        if ($week && $month)
+            $base->whereRaw("floor((EXTRACT(DAY FROM from_date) - 1) / 7 + 1) = ?", [$week]);
+        if ($day && $month)
+            $base->whereDay('from_date', $day);
         if ($status)
             $base->where('status', $status);
         if ($type)

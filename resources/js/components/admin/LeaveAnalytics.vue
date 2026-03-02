@@ -43,6 +43,18 @@
                     <option v-for="t in leaveTypes" :key="t" :value="t">{{ t }}</option>
                 </select>
 
+                <!-- Week Filter (Only if Month is selected) -->
+                <select v-if="filterMonth" v-model="filterWeek" class="px-3 py-2 text-xs font-bold border border-gray-200 rounded-lg bg-white text-gray-700 shadow-sm cursor-pointer focus:ring-2 focus:ring-teal-400 outline-none">
+                    <option value="">All Weeks</option>
+                    <option v-for="w in 5" :key="w" :value="w">Week {{ w }}</option>
+                </select>
+
+                <!-- Day Filter (Only if Month is selected) -->
+                <select v-if="filterMonth" v-model="filterDay" class="px-3 py-2 text-xs font-bold border border-gray-200 rounded-lg bg-white text-gray-700 shadow-sm cursor-pointer focus:ring-2 focus:ring-teal-400 outline-none">
+                    <option value="">All Days</option>
+                    <option v-for="d in 31" :key="d" :value="d">Day {{ d }}</option>
+                </select>
+
                 <!-- Refresh -->
                 <button @click="fetchAnalytics" class="px-3 py-2 text-xs font-bold border border-teal-200 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm">
                     <i class="pi pi-refresh text-xs" :class="{ 'animate-spin': loading }"></i>
@@ -134,8 +146,8 @@
                                 ></div>
                                 <div v-if="bar.total === 0" class="w-full bg-gray-100 rounded" style="height: 4px"></div>
                             </div>
-                            <span class="text-[8px] font-bold text-gray-400 group-hover:text-teal-600 transition-colors">{{ bar.label }}</span>
-                            <span v-if="bar.total > 0" class="text-[8px] font-black text-gray-600">{{ bar.total }}</span>
+                            <span class="text-xs font-bold text-gray-500 group-hover:text-teal-600 transition-colors">{{ bar.label }}</span>
+                            <span v-if="bar.total > 0" class="text-xs font-black text-gray-700">{{ bar.total }}</span>
                         </div>
                     </div>
                 </div>
@@ -287,6 +299,8 @@ watch(() => leaveStore.analyticsKey, () => fetchAnalytics());
 const now = new Date();
 const filterYear = ref(now.getFullYear());
 const filterMonth = ref('');      // '' = all months
+const filterWeek = ref('');
+const filterDay = ref('');
 const filterStatus = ref('');
 const filterType = ref('');
 const deptLimit = ref(5);
@@ -297,15 +311,25 @@ const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 const leaveTypes = [
     'Sick Leave', 'Vacation Leave', 'Emergency Leave', 'Maternity Leave',
     'Paternity Leave', 'Solo Parent', 'Special Non-Working', 'VAWC',
-    'Rehabilitation Leave', 'Study Leave'
+    'Rehabilitation Leave', 'Study Leave', 'SIL'
 ];
+
+watch(filterMonth, (newVal) => {
+    if (!newVal) {
+        filterWeek.value = '';
+        filterDay.value = '';
+    }
+});
 
 // ── Derived Labels ─────────────────────────────────
 const filterLabel = computed(() => {
     const m = filterMonth.value ? months[filterMonth.value - 1] : 'All Months';
+    const w = filterWeek.value ? `Week ${filterWeek.value}` : '';
+    const d = filterDay.value ? `Day ${filterDay.value}` : '';
+    const timeDetail = [m, w, d].filter(Boolean).join(', ');
     const s = filterStatus.value || 'All Statuses';
     const t = filterType.value || 'All Types';
-    return `${m}, ${filterYear.value} · ${s} · ${t}`;
+    return `${timeDetail}, ${filterYear.value} · ${s} · ${t}`;
 });
 
 // ── API Fetch ──────────────────────────────────────
@@ -314,6 +338,8 @@ const fetchAnalytics = async () => {
     try {
         const params = { year: filterYear.value };
         if (filterMonth.value) params.month = filterMonth.value;
+        if (filterWeek.value) params.week = filterWeek.value;
+        if (filterDay.value) params.day = filterDay.value;
         if (filterStatus.value) params.status = filterStatus.value;
         if (filterType.value) params.leave_type = filterType.value;
 
@@ -333,13 +359,15 @@ const exportExcel = () => {
     const params = new URLSearchParams({ 
         year: filterYear.value,
         month: filterMonth.value,
+        week: filterWeek.value,
+        day: filterDay.value,
         status: filterStatus.value,
         leave_type: filterType.value
     });
     window.location.href = `/api/leave-analytics/export?${params.toString()}`;
 };
 
-watch([filterYear, filterMonth, filterStatus, filterType], fetchAnalytics);
+watch([filterYear, filterMonth, filterWeek, filterDay, filterStatus, filterType], fetchAnalytics);
 onMounted(fetchAnalytics);
 
 // ── Computed ───────────────────────────────────────

@@ -451,6 +451,8 @@ class LeaveRequestController extends Controller
 
         $year = $request->get('year', now()->year);
         $month = $request->get('month', null);   // null = all months
+        $week = $request->get('week', null);
+        $day = $request->get('day', null);
         $status = $request->get('status', null);
         $type = $request->get('leave_type', null);
 
@@ -459,6 +461,10 @@ class LeaveRequestController extends Controller
 
         if ($month)
             $base->whereMonth('from_date', $month);
+        if ($week && $month)
+            $base->whereRaw("floor((EXTRACT(DAY FROM from_date) - 1) / 7 + 1) = ?", [$week]);
+        if ($day && $month)
+            $base->whereDay('from_date', $day);
         if ($status)
             $base->where('status', $status);
         if ($type)
@@ -491,6 +497,8 @@ class LeaveRequestController extends Controller
             ->where('leave_requests.is_archived', '!=', true)
             ->whereYear('leave_requests.from_date', $year)
             ->when($month, fn($q) => $q->whereMonth('leave_requests.from_date', $month))
+            ->when($week && $month, fn($q) => $q->whereRaw("floor((EXTRACT(DAY FROM leave_requests.from_date) - 1) / 7 + 1) = ?", [$week]))
+            ->when($day && $month, fn($q) => $q->whereDay('leave_requests.from_date', $day))
             ->when($status, fn($q) => $q->where('leave_requests.status', $status))
             ->when($type, fn($q) => $q->where('leave_requests.leave_type', $type))
             ->select(\DB::raw("COALESCE(ed.name, ud.name, users.department, 'General') as name"), \DB::raw('count(*) as count'))
@@ -510,6 +518,9 @@ class LeaveRequestController extends Controller
             )
             ->where('is_archived', '!=', true)
             ->whereYear('from_date', $year)
+            ->when($month, fn($q) => $q->whereMonth('from_date', $month))
+            ->when($week && $month, fn($q) => $q->whereRaw("floor((EXTRACT(DAY FROM from_date) - 1) / 7 + 1) = ?", [$week]))
+            ->when($day && $month, fn($q) => $q->whereDay('from_date', $day))
             ->when($status, fn($q) => $q->where('status', $status))
             ->when($type, fn($q) => $q->where('leave_type', $type))
             ->groupBy(\DB::raw('EXTRACT(MONTH FROM from_date)'))
@@ -538,7 +549,7 @@ class LeaveRequestController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $filters = $request->only(['year', 'month', 'status', 'leave_type', 'department']);
+        $filters = $request->only(['year', 'month', 'week', 'day', 'status', 'leave_type', 'department']);
 
         // Audit Log
         \App\Utils\AuditLogger::log('Leaves', 'Exported', "Exported leave analytics Excel report for " . ($filters['year'] ?? now()->year) . ".");

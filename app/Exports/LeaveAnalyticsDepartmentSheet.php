@@ -36,6 +36,8 @@ class LeaveAnalyticsDepartmentSheet implements FromCollection, WithTitle, WithHe
     {
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['month'] ?? null;
+        $week = $this->filters['week'] ?? null;
+        $day = $this->filters['day'] ?? null;
         $status = $this->filters['status'] ?? null;
         $type = $this->filters['leave_type'] ?? null;
 
@@ -43,6 +45,8 @@ class LeaveAnalyticsDepartmentSheet implements FromCollection, WithTitle, WithHe
             ->where('is_archived', '!=', true)
             ->whereYear('from_date', $year)
             ->when($month, fn($q) => $q->whereMonth('from_date', $month))
+            ->when($week && $month, fn($q) => $q->whereRaw("floor((EXTRACT(DAY FROM from_date) - 1) / 7 + 1) = ?", [$week]))
+            ->when($day && $month, fn($q) => $q->whereDay('from_date', $day))
             ->when($status, fn($q) => $q->where('status', $status))
             ->when($type, fn($q) => $q->where('leave_type', $type))
             ->count();
@@ -55,6 +59,8 @@ class LeaveAnalyticsDepartmentSheet implements FromCollection, WithTitle, WithHe
             ->where('leave_requests.is_archived', '!=', true)
             ->whereYear('leave_requests.from_date', $year)
             ->when($month, fn($q) => $q->whereMonth('leave_requests.from_date', $month))
+            ->when($week && $month, fn($q) => $q->whereRaw("floor((EXTRACT(DAY FROM leave_requests.from_date) - 1) / 7 + 1) = ?", [$week]))
+            ->when($day && $month, fn($q) => $q->whereDay('leave_requests.from_date', $day))
             ->when($status, fn($q) => $q->where('leave_requests.status', $status))
             ->when($type, fn($q) => $q->where('leave_requests.leave_type', $type))
             ->select(
