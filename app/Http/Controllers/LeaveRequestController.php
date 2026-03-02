@@ -420,7 +420,7 @@ class LeaveRequestController extends Controller
 
         $patterns = $this->leavePatternService->detectPatterns($subject);
         $impact = $this->impactService->checkImpact($subject, $leaveRequest->from_date, $leaveRequest->to_date);
-        $compliance = $this->complianceService->validateRule($subject, $leaveRequest->leave_type, $leaveRequest->days_taken);
+        $compliance = $this->complianceService->validateRule($subject, $leaveRequest->leave_type, (float) $leaveRequest->days_taken);
         $forecast = $this->creditForecastingService->forecast($subject);
 
         return response()->json([
@@ -530,6 +530,20 @@ class LeaveRequestController extends Controller
             'by_department' => $byDept,
             'monthly_trend' => $monthlyTrend,
         ]);
+    }
+
+    public function analyticsExport(Request $request)
+    {
+        if (Auth::user()->role !== 'admin' && Auth::user()->role !== 'hr') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $filters = $request->only(['year', 'month', 'status', 'leave_type', 'department']);
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('Leaves', 'Exported', "Exported leave analytics Excel report for " . ($filters['year'] ?? now()->year) . ".");
+
+        return (new \App\Exports\LeaveAnalyticsExport($filters))->download('Leave_Analytics_Report_' . now()->format('Y_m_d') . '.xlsx');
     }
 
     // For tracing/reporting - get user history + credits

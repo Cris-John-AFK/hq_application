@@ -48,6 +48,12 @@
                     <i class="pi pi-refresh text-xs" :class="{ 'animate-spin': loading }"></i>
                     Refresh
                 </button>
+
+                <!-- Export Excel -->
+                <button @click="exportExcel" :disabled="loading" class="px-3 py-2 text-xs font-bold border border-emerald-200 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm disabled:opacity-50">
+                    <i class="pi pi-file-excel text-xs"></i>
+                    Export Excel
+                </button>
             </div>
         </div>
 
@@ -321,6 +327,16 @@ const fetchAnalytics = async () => {
     } finally {
         loading.value = false;
     }
+};
+
+const exportExcel = () => {
+    const params = new URLSearchParams({ 
+        year: filterYear.value,
+        month: filterMonth.value,
+        status: filterStatus.value,
+        leave_type: filterType.value
+    });
+    window.location.href = `/api/leave-analytics/export?${params.toString()}`;
 };
 
 watch([filterYear, filterMonth, filterStatus, filterType], fetchAnalytics);

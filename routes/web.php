@@ -85,6 +85,7 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     Route::get('/api/leave-requests/export', [\App\Http\Controllers\LeaveRequestController::class, 'export']);
     Route::get('/api/leave-stats', [\App\Http\Controllers\LeaveRequestController::class, 'stats']);
     Route::get('/api/leave-analytics', [\App\Http\Controllers\LeaveRequestController::class, 'analyticsData']);
+    Route::get('/api/leave-analytics/export', [\App\Http\Controllers\LeaveRequestController::class, 'analyticsExport']);
 
     Route::get('/api/leave-requests/{id}/analysis', [\App\Http\Controllers\LeaveRequestController::class, 'getAnalysis']);
     Route::get('/api/users/{id}/forecast', [\App\Http\Controllers\LeaveRequestController::class, 'getUserForecast']);
