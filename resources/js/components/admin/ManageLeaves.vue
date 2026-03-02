@@ -398,16 +398,19 @@
                                     <div v-else-if="analysis" class="space-y-4 animate-in fade-in slide-in-from-left-4 duration-500">
                                         
                                         <!-- Patterns / Flags -->
-                                        <div v-if="analysis.patterns?.length > 0" class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                                            <h4 class="text-xs font-bold text-amber-800 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                                <i class="pi pi-flag-fill"></i> Detected Patterns
+                                        <div v-if="analysis.patterns?.length > 0" class="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
+                                            <div class="absolute top-0 right-0 w-24 h-24 bg-white/30 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                                            <h4 class="text-xs font-black text-amber-800 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                <i class="pi pi-sparkles"></i> AI Attendance Insights
                                             </h4>
-                                            <div class="space-y-2">
-                                                <div v-for="(pat, idx) in analysis.patterns" :key="idx" class="flex gap-2 items-start bg-white/50 p-2 rounded-lg border border-amber-100">
-                                                    <i class="pi pi-exclamation-circle text-amber-600 mt-0.5"></i>
+                                            <div class="space-y-3">
+                                                <div v-for="(pat, idx) in analysis.patterns" :key="idx" class="flex gap-3 items-start bg-white p-3.5 rounded-xl border border-amber-100 shadow-sm transition-all hover:shadow-md hover:border-amber-300">
+                                                    <div class="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shrink-0 shadow-inner">
+                                                        <i :class="['pi', pat.icon || 'pi-info-circle', 'text-lg']"></i>
+                                                    </div>
                                                     <div>
-                                                        <p class="text-xs font-bold text-amber-900">{{ pat.label }}</p>
-                                                        <p class="text-[10px] text-amber-800/80">{{ pat.description }}</p>
+                                                        <p class="text-sm font-black text-amber-900 leading-none mb-1.5">{{ pat.label }}</p>
+                                                        <p class="text-xs font-medium text-gray-600 leading-snug">{{ pat.description }}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -506,11 +509,19 @@
                                         </div>
 
                                         <!-- Additional Custom Details -->
-                                        <div v-if="selectedRequest.additional_details && Object.keys(selectedRequest.additional_details).length" class="mb-4">
+                                        <div v-if="selectedRequest.additional_details && Object.keys(selectedRequest.additional_details).filter(k => !k.endsWith('_input')).length" class="mb-5">
+                                            <h4 class="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-3">Custom Form Details Collected</h4>
                                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div v-for="(val, key) in selectedRequest.additional_details" :key="key" class="bg-indigo-50/50 p-3 rounded-lg border border-indigo-100">
-                                                    <p class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">{{ key.replace('_', ' ') }}</p>
-                                                    <p class="text-sm font-bold text-indigo-900">{{ val }}</p>
+                                                <div v-for="key in Object.keys(selectedRequest.additional_details).filter(k => !k.endsWith('_input'))" :key="key" class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 shadow-sm relative overflow-hidden hover:border-indigo-300 transition-all">
+                                                    <div class="absolute top-0 right-0 w-16 h-16 bg-white/40 rounded-full -translate-y-1/2 translate-x-1/3 blur-xl pointer-events-none"></div>
+                                                    <p class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><i class="pi pi-list"></i> {{ key.replace('_', ' ') }}</p>
+                                                    <div class="flex flex-col gap-2">
+                                                        <p class="text-sm font-black text-indigo-900 leading-tight">Option: {{ selectedRequest.additional_details[key] || 'Not specified' }}</p>
+                                                        <div v-if="selectedRequest.additional_details[key + '_input']" class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/80 backdrop-blur-sm rounded-lg border border-indigo-50 w-max shadow-sm">
+                                                            <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Input Value:</span>
+                                                            <span class="text-sm font-black text-indigo-700">{{ selectedRequest.additional_details[key + '_input'] }}</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -529,41 +540,64 @@
                                             <i class="pi pi-gavel text-teal-600"></i> Decision & Justification
                                         </h4>
 
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                        <div class="flex flex-col gap-6 mb-6">
+                                            <!-- Pay Config -->
                                             <div>
                                                 <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Pay Configuration</label>
-                                                <div class="flex items-center gap-2 mb-3">
+                                                <div class="flex items-center gap-3">
                                                     <button 
                                                         @click="selectedRequest.is_paid = !selectedRequest.is_paid"
-                                                        :class="['cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-sm font-medium', selectedRequest.is_paid ? 'bg-teal-50 border-teal-200 text-teal-700' : 'bg-white border-gray-200 text-gray-500']"
+                                                        :class="['cursor-pointer flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all text-sm font-black uppercase tracking-tight', selectedRequest.is_paid ? 'bg-teal-50 border-teal-500 text-teal-700 shadow-sm shadow-teal-100' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50']"
                                                     >
                                                         <i :class="['pi', selectedRequest.is_paid ? 'pi-check-circle' : 'pi-circle']"></i>
                                                         With Pay
                                                     </button>
-                                                </div>
-                                                <div v-if="selectedRequest.is_paid" class="animate-in fade-in slide-in-from-top-1">
-                                                    <label class="text-[10px] uppercase font-bold text-gray-400">Days Paid</label>
-                                                    <input 
-                                                        v-model="selectedRequest.days_paid" 
-                                                        type="number" 
-                                                        step="0.5" 
-                                                        class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold"
-                                                    >
+                                                    <div v-if="selectedRequest.is_paid" class="animate-in fade-in slide-in-from-left-2 flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-xl border-2 border-gray-200">
+                                                        <label class="text-[10px] uppercase font-bold text-gray-400">Days Paid:</label>
+                                                        <input 
+                                                            v-model="selectedRequest.days_paid" 
+                                                            type="number" 
+                                                            step="0.5" 
+                                                            class="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 bg-white"
+                                                        >
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <div>
+                                            <!-- Classification Metadata -->
+                                            <div class="pt-5 border-t border-gray-100">
+                                                <label class="block text-xs font-bold text-gray-500 uppercase mb-3">Disciplinary Metadata / Category</label>
+                                                <div class="flex flex-wrap gap-3">
+                                                    <label class="flex items-center gap-3 px-4 py-3 rounded-xl border-2 cursor-pointer transition-all hover:bg-purple-50 group hover:border-purple-200 min-w-[160px]" :class="!selectedRequest.category ? 'border-purple-500 bg-purple-50 shadow-sm shadow-purple-100' : 'border-gray-100 bg-white'">
+                                                        <input type="radio" v-model="selectedRequest.category" :value="''" class="peer h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 cursor-pointer">
+                                                        <div class="flex flex-col text-left">
+                                                            <span class="text-xs font-black uppercase tracking-tight" :class="!selectedRequest.category ? 'text-purple-800' : 'text-gray-600'">None Applied</span>
+                                                            <span class="text-[9px] font-bold text-gray-400">Regular Leave</span>
+                                                        </div>
+                                                    </label>
+                                                    <label v-for="cat in settingsStore.attendanceCategories" :key="cat.code" class="flex items-center gap-3 px-4 py-3 rounded-xl border-2 cursor-pointer transition-all hover:bg-purple-50 group hover:border-purple-200 min-w-[160px]" :class="selectedRequest.category === cat.code ? 'border-purple-500 bg-purple-50 shadow-sm shadow-purple-100' : 'border-gray-100 bg-white'">
+                                                        <input type="radio" v-model="selectedRequest.category" :value="cat.code" class="peer h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 cursor-pointer">
+                                                        <div class="flex flex-col text-left">
+                                                            <span class="text-xs font-black uppercase tracking-tight" :class="selectedRequest.category === cat.code ? 'text-purple-800' : 'text-gray-600'">{{ cat.code }}</span>
+                                                            <span class="text-[9px] font-bold text-gray-400 line-clamp-1 truncate max-w-[140px]" :title="cat.label">{{ cat.label }}</span>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <!-- Decision Justification -->
+                                            <div class="pt-5 border-t border-gray-100">
                                                 <label class="block text-xs font-bold text-gray-500 uppercase mb-2">
                                                     Decision Justification <span class="text-red-500">*</span>
                                                 </label>
                                                 <textarea 
                                                     v-model="justification" 
                                                     rows="3" 
-                                                    class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm transition-all"
+                                                    class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none text-sm transition-all bg-gray-50 hover:bg-white"
                                                     placeholder="Required: Explain why you are approving or rejecting this request..."
-                                                    :class="{'border-red-300 ring-2 ring-red-100': showJustificationError}"
+                                                    :class="showJustificationError ? 'border-red-300 ring-4 ring-red-50 bg-red-50/30' : 'border-gray-200'"
                                                 ></textarea>
-                                                <p v-if="showJustificationError" class="text-xs text-red-500 mt-1 font-bold">Justification is required for this action.</p>
+                                                <p v-if="showJustificationError" class="text-xs text-red-500 mt-2 font-bold flex items-center gap-1"><i class="pi pi-exclamation-circle"></i> Justification is required for this action.</p>
                                             </div>
                                         </div>
 
@@ -705,6 +739,7 @@ import axios from 'axios';
 import { useAuthStore } from '../../stores/auth';
 import { useLeaveStore } from '../../stores/leaves';
 import { useEmployeeStore } from '../../stores/employees';
+import { useSettingsStore } from '../../stores/settings';
 import { storeToRefs } from 'pinia';
 import MainLayout from '../../layouts/MainLayout.vue';
 import LeaveRequestModal from '../common/LeaveRequestModal.vue';
@@ -712,6 +747,8 @@ import LeaveRequestModal from '../common/LeaveRequestModal.vue';
 const authStore = useAuthStore();
 const leaveStore = useLeaveStore();
 const employeeStore = useEmployeeStore();
+const settingsStore = useSettingsStore();
+
 const { user } = storeToRefs(authStore);
 const { stats } = storeToRefs(leaveStore);
 const { departments } = storeToRefs(employeeStore);
@@ -800,6 +837,8 @@ onMounted(async () => {
     if (adminFileTarget) {
         showAdminApplyModal.value = true;
     }
+    
+    settingsStore.fetchSettings();
     await fetchRequests();
     leaveStore.fetchStats();
 });
@@ -885,7 +924,8 @@ const handleAction = async (newStatus) => {
             status: newStatus,
             is_paid: selectedRequest.value.is_paid,
             days_paid: selectedRequest.value.days_paid || 0,
-            admin_remarks: justification.value
+            admin_remarks: justification.value,
+            category: selectedRequest.value.category || null
         };
         
         await axios.put(`/api/leave-requests/${selectedRequest.value.id}`, payload);

@@ -11,6 +11,7 @@ import Inventory from '../components/admin/Inventory.vue';
 import Settings from '../components/admin/Settings.vue';
 import LoginForm from '../components/login/loginForm.vue';
 import SystemLogs from '../pages/SystemLogs.vue';
+import EmployeePortal from '../pages/EmployeePortal.vue';
 
 // User Components
 import UserDashboard from '../components/user/UserDashboard.vue';
@@ -30,6 +31,12 @@ const routes = [
         name: 'Dashboard',
         component: Dashboard,
         meta: { title: 'HQ Inc. - Dashboard Page', requiresAuth: true }
+    },
+    {
+        path: '/portal',
+        name: 'EmployeePortal',
+        component: EmployeePortal,
+        meta: { title: 'HQ Inc. - Employee Portal', public: true }
     },
     // Admin Routes
     {
@@ -113,6 +120,12 @@ router.beforeEach(async (to, from, next) => {
             next('/login');
             return;
         }
+    }
+
+    // Bypass public routes from role redirection logic
+    if (to.meta.public) {
+        next();
+        return;
     }
 
     // 2. Redirect logged-in users away from login page

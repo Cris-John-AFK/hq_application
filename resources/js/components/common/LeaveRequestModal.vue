@@ -1,10 +1,10 @@
 <template>
-    <div v-if="modelValue" class="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in" @click.self="closeModal">
+    <div v-if="modelValue || isPortalMode" :class="isPortalMode ? 'w-full h-full' : 'fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in'" @click.self="!isPortalMode && closeModal()">
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div v-if="!isPortalMode" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
         
         <!-- Modal Container -->
-        <div class="wrapper relative z-10 w-full max-w-2xl max-h-[90vh] flex flex-col bg-[#f0f2f5] rounded-xl overflow-hidden shadow-2xl" @click.stop>
+        <div :class="['relative z-10 w-full flex flex-col rounded-xl overflow-hidden shadow-2xl bg-[#f0f2f5]', isPortalMode ? 'min-h-full' : 'wrapper max-w-2xl max-h-[90vh]']" @click.stop>
             <!-- Purple Top Bar & Admin Tools -->
             <div class="h-2.5 bg-[#673ab7] w-full shrink-0 relative">
                 <button v-if="isAdminMode" 
@@ -560,10 +560,41 @@
                         <div v-if="getSection('details').options?.length" class="mt-6 pt-6 border-t border-gray-100">
                             <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Additional Selection</span>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <label v-for="opt in getSection('details').options" :key="opt" class="flex items-center cursor-pointer p-3 rounded-lg border border-gray-100 hover:bg-purple-50 hover:border-purple-200 transition-all group">
-                                    <input type="radio" v-model="form.additionalDetails[getSection('details').id]" :value="opt" class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300">
-                                    <span class="ml-3 text-sm text-gray-700 group-hover:text-purple-700 font-medium">{{ opt }}</span>
-                                </label>
+                                <div v-for="opt in getSection('details').options" :key="opt" 
+                                    class="flex flex-col justify-center p-3 rounded-lg border border-gray-100 hover:bg-purple-50 hover:border-purple-200 transition-all group cursor-pointer"
+                                    @click="() => { 
+                                        if (form.additionalDetails[getSection('details').id] === opt) { 
+                                            form.additionalDetails[getSection('details').id] = ''; 
+                                            form.additionalDetails[getSection('details').id + '_input'] = '';
+                                        } else {
+                                            form.additionalDetails[getSection('details').id] = opt;
+                                        }
+                                    }">
+                                    <div class="flex items-center">
+                                        <input type="radio" 
+                                            :checked="form.additionalDetails[getSection('details').id] === opt"
+                                            @click.stop="() => { 
+                                                if (form.additionalDetails[getSection('details').id] === opt) { 
+                                                    form.additionalDetails[getSection('details').id] = ''; 
+                                                    form.additionalDetails[getSection('details').id + '_input'] = '';
+                                                } else {
+                                                    form.additionalDetails[getSection('details').id] = opt;
+                                                }
+                                            }"
+                                            class="h-4 w-4 cursor-pointer text-purple-600 focus:ring-purple-500 border-gray-300"
+                                        >
+                                        <span class="ml-3 text-sm text-gray-700 group-hover:text-purple-700 font-medium">{{ opt }}</span>
+                                    </div>
+                                    <transition name="slide-down">
+                                        <div v-if="form.additionalDetails[getSection('details').id] === opt" class="mt-2 ml-7" @click.stop>
+                                            <input type="number" step="0.5" 
+                                                v-model="form.additionalDetails[getSection('details').id + '_input']" 
+                                                placeholder="Specify Value / Amount"
+                                                class="w-full text-sm p-1.5 border border-purple-200 bg-white rounded focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
+                                            >
+                                        </div>
+                                    </transition>
+                                </div>
                             </div>
                         </div>
                     </template>
@@ -804,9 +835,10 @@
 
             <!-- Footer Actions -->
             <div class="bg-[#f0f2f5] p-4 flex justify-between items-center shrink-0 border-t border-gray-200">
-                <div @click="closeModal" class="btn-text cursor-pointer text-[#673ab7] text-sm font-bold uppercase hover:bg-[#673ab7]/10 px-4 py-2 rounded transition-colors tracking-wide">
+                <div v-if="!isPortalMode" @click="closeModal" class="btn-text cursor-pointer text-[#673ab7] text-sm font-bold uppercase hover:bg-[#673ab7]/10 px-4 py-2 rounded transition-colors tracking-wide">
                     Cancel
                 </div>
+                <div v-else></div> <!-- Spacer for portal mode -->
                 <button 
                     @click="submitForm" 
                     :disabled="loading"
@@ -829,7 +861,9 @@ const props = defineProps({
     modelValue: { type: Boolean, default: false },
     initialData: { type: Object, default: null },
     isEdit: { type: Boolean, default: false },
-    isAdminMode: { type: Boolean, default: false }
+    isAdminMode: { type: Boolean, default: false },
+    isPortalMode: { type: Boolean, default: false },
+    employeeData: { type: Object, default: null }
 });
 
 const emit = defineEmits(['update:modelValue', 'submit', 'update']);
@@ -889,6 +923,7 @@ const acceptGhost = (e) => {
 };
 
 const displayUser = computed(() => {
+    if (props.isPortalMode && props.employeeData) return props.employeeData;
     if (props.isAdminMode && searchedEmployee.value) return searchedEmployee.value;
     return user.value;
 });
@@ -922,7 +957,7 @@ const today = computed(() => {
 });
 
 onMounted(() => {
-    if (!user.value) authStore.fetchUser();
+    if (!props.isPortalMode && !user.value) authStore.fetchUser();
     settingsStore.fetchSettings();
 });
 
@@ -1207,6 +1242,16 @@ const submitForm = async () => {
 
     loading.value = true;
 
+    // Use employee id from props if portal mode
+    let targetEmployeeId = null;
+    if (props.isPortalMode) {
+        targetEmployeeId = props.employeeData?.id;
+    } else if (props.isAdminMode) {
+        targetEmployeeId = searchedEmployee.value?.id;
+    } else {
+        targetEmployeeId = user.value?.id;
+    }
+
     // Map payload to snake_case for backend validation
     const payload = {
         leave_type: form.value.leaveType === 'Others' ? form.value.otherLeaveType : form.value.leaveType,
@@ -1221,7 +1266,7 @@ const submitForm = async () => {
         date_filed: form.value.dateFiled,
         is_paid: form.value.isPaid,
         days_paid: form.value.isPaid ? form.value.daysPaid : 0,
-        employee_id: props.isAdminMode ? searchedEmployee.value?.id : null,
+        employee_id: targetEmployeeId,
         attachment: form.value.attachment,
         additional_details: form.value.additionalDetails
     };

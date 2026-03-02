@@ -22,6 +22,20 @@ Route::middleware('guest')->group(function () {
 // Allow logging expiry even if unauthenticated (called when session dies)
 Route::post('/api/log-expiry', [AuthController::class, 'logExpiry']);
 
+// Employee Portal (Public)
+Route::post('/api/employee-portal/login', [\App\Http\Controllers\EmployeePortalController::class, 'login']);
+Route::post('/api/employee-portal/submit-leave', [\App\Http\Controllers\EmployeePortalController::class, 'submitLeave']);
+Route::put('/api/employee-portal/update-leave/{id}', [\App\Http\Controllers\EmployeePortalController::class, 'updateLeave']);
+
+// Serve the app shell for the employee portal route without strictly matching auth middleware
+Route::get('/portal', function () {
+    return response()
+        ->view('dashboard')
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        ->header('Pragma', 'no-cache')
+        ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
+});
+
 Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/api/user', [AuthController::class, 'user']);
@@ -65,12 +79,13 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
         Route::post('/api/leave-requests/{id}/unarchive', [\App\Http\Controllers\LeaveRequestController::class, 'unarchive']);
         Route::post('/api/leave-requests/bulk-archive', [\App\Http\Controllers\LeaveRequestController::class, 'bulkArchive']);
         Route::get('/api/leave-requests/archive-index', [\App\Http\Controllers\LeaveRequestController::class, 'getArchiveIndex']);
-        Route::put('/api/settings/{key}', [\App\Http\Controllers\SystemSettingsController::class, 'update']);
     });
+});
 
-    Route::get('/api/settings', [\App\Http\Controllers\SystemSettingsController::class, 'getAll']);
-    Route::get('/api/settings/{key}', [\App\Http\Controllers\SystemSettingsController::class, 'get']);
+Route::get('/api/settings', [\App\Http\Controllers\SystemSettingsController::class, 'getAll']);
+Route::get('/api/settings/{key}', [\App\Http\Controllers\SystemSettingsController::class, 'get']);
 
+Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     // Share/Employee Access Routes (Read-only for most)
     Route::get('/api/employees', [\App\Http\Controllers\EmployeeController::class, 'index']);
     Route::get('/api/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'show']);

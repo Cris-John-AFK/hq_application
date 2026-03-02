@@ -265,6 +265,7 @@ class LeaveRequestController extends Controller
                 'days_paid' => 'nullable|numeric|min:0',
                 'admin_remarks' => 'nullable|string',
                 'justification' => 'sometimes|string|nullable',
+                'category' => 'nullable|string',
                 'additional_details' => 'nullable|array'
             ]);
         } else {
