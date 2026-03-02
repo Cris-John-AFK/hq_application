@@ -10,6 +10,6 @@ class SystemLogsController extends Controller
     {
         return \App\Models\SystemLog::with('user')
             ->orderBy('created_at', 'desc')
-            ->paginate(100);
+            ->paginate(10);
     }
 }

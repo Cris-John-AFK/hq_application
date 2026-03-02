@@ -56,22 +56,8 @@
                                 <label class="block text-xs font-semibold text-gray-600 mb-1">Date Hired <span class="text-red-500">*</span></label>
                                 <input v-model="form.date_hired" type="date" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" required>
                             </div>
-                             <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Company Email</label>
-                                <input v-model="form.email" type="email" placeholder="email@company.com" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Initial SIL Balance</label>
-                                <div class="relative">
-                                    <input 
-                                        v-model.number="form.leave_credits" 
-                                        type="number" 
-                                        step="0.5" 
-                                        class="w-full pl-3 pr-10 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none font-bold text-teal-700"
-                                    >
-                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold">DAYS</span>
-                                </div>
-                            </div>
+
+
                         </div>
                     </div>
 

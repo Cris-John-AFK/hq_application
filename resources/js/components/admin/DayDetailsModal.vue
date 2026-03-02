@@ -66,9 +66,21 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="font-bold text-gray-800 text-sm truncate">{{ leave.user_name || leave.title }}</p>
-                                <p class="text-xs text-gray-500">{{ leave.leave_type }}</p>
+                                <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                                    <span v-if="leave.user_department" class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded text-[10px] font-bold uppercase tracking-wide">
+                                        <i class="pi pi-building text-[8px]"></i>
+                                        {{ leave.user_department }}
+                                    </span>
+                                    <span v-if="leave.user_position" class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 rounded text-[10px] font-bold uppercase tracking-wide">
+                                        <i class="pi pi-briefcase text-[8px]"></i>
+                                        {{ leave.user_position }}
+                                    </span>
+                                    <span class="inline-flex items-center px-2 py-0.5 bg-violet-100 text-violet-700 border border-violet-200 rounded text-[10px] font-bold uppercase tracking-wide">
+                                        {{ leave.leave_type }}
+                                    </span>
+                                </div>
                             </div>
-                            <div class="text-right">
+                            <div class="text-right shrink-0">
                                 <span class="px-2 py-1 bg-white text-violet-700 text-[10px] font-bold rounded border border-violet-100 shadow-sm uppercase tracking-wider">
                                     {{ leave.request_type }}
                                 </span>

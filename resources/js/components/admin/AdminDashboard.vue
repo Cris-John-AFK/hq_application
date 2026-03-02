@@ -9,6 +9,7 @@
                 icon="pi-users" 
                 :value="leaveStats.total_employees" 
                 label="Total Employees" 
+                :subLabel="`As of ${currentMonthYear}`"
                 iconBgClass="bg-orange-50"
                 iconTextClass="text-orange-500"
                 :loading="loading"
@@ -17,7 +18,7 @@
                 icon="pi-check-circle" 
                 :value="leaveStats.approved_this_month" 
                 label="Monthly Approved" 
-        
+                :subLabel="`This month · ${currentMonthYear}`"
                 iconBgClass="bg-green-50"
                 iconTextClass="text-green-500"
                 :loading="loading"
@@ -26,7 +27,7 @@
                 icon="pi-calendar-plus" 
                 :value="leaveStats.scheduled" 
                 label="Upcoming Leaves" 
-    
+                subLabel="Scheduled ahead"
                 iconBgClass="bg-blue-50"
                 iconTextClass="text-blue-500"
                 :loading="loading"
@@ -35,6 +36,7 @@
                 icon="pi-money-bill" 
                 :value="leaveStats.approved_paid" 
                 label="Leaves with Pay" 
+                :subLabel="`This month · ${currentMonthYear}`"
                 iconBgClass="bg-teal-50"
                 iconTextClass="text-teal-600"
                 :loading="loading"
@@ -43,11 +45,13 @@
                 icon="pi-calendar" 
                 :value="leaveStats.on_leave_today" 
                 label="On Leave Today" 
+                :subLabel="`Today · ${currentDay}`"
                 iconBgClass="bg-purple-50"
                 iconTextClass="text-purple-500"
                 :loading="loading"
             />
         </div>
+
 
         <!-- 2. Mid Section: Leave Overview & Recent Activity -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -324,9 +328,9 @@
                 </div>
             </div>
         </div>
-        <!-- 5. Employee Management -->
+        <!-- 5. Leave Analytics -->
         <div class="w-full pt-4">
-            <EmployeeList />
+            <LeaveAnalytics />
         </div>
     </div>
 </template>
@@ -339,7 +343,7 @@
     import { storeToRefs } from 'pinia';
     import StatCard from '../common/StatCard.vue';
     import BulletinBoard from '../common/BulletinBoard.vue';
-    import EmployeeList from '../common/EmployeeList.vue';
+    import LeaveAnalytics from './LeaveAnalytics.vue';
 
     const authStore = useAuthStore();
     const leaveStore = useLeaveStore();
@@ -350,6 +354,12 @@
     
     const loading = ref(true);
     const getInitials = (name) => employeeStore.getInitials(name);
+
+    // Live date labels for stat card context
+    const now = new Date();
+    const currentMonthYear = now.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    const currentDay = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
 
     // Pagination & Tab state
     const activeTab = ref('leaves');

@@ -135,8 +135,18 @@
                         <div class="w-px h-6 bg-gray-200"></div>
                     </div>
 
-                    <!-- Notifications -->
-                    <NotificationDropdown />
+
+                    <!-- Settings (Admin only) -->
+                    <div v-if="user?.role === 'admin'" class="relative">
+                        <button
+                            @click="isSettingsOpen = !isSettingsOpen"
+                            class="cursor-pointer flex items-center gap-1.5 text-gray-500 hover:text-teal-600 transition-colors text-sm font-medium"
+                            :class="{ 'text-teal-600': isSettingsOpen }"
+                            title="Admin Settings"
+                        >
+                            <i class="pi pi-cog text-lg" :class="{ 'animate-spin-slow': isSettingsOpen }"></i>
+                        </button>
+                    </div>
 
                     <div class="w-px h-6 bg-gray-200"></div>
 
@@ -267,6 +277,89 @@
         <!-- Global Scroll Indicator -->
         <ScrollIndicator />
 
+        <!-- ===== SETTINGS PANEL (Admin) ===== -->
+        <transition name="slide-settings">
+            <div
+                v-if="isSettingsOpen && user?.role === 'admin'"
+                class="fixed top-16 right-0 z-50 h-[calc(100vh-4rem)] w-80 bg-white border-l border-gray-200 shadow-2xl flex flex-col"
+            >
+                <!-- Panel Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
+                    <div class="flex items-center gap-2">
+                        <i class="pi pi-cog text-teal-600"></i>
+                        <h2 class="font-bold text-gray-800 text-base">Admin Settings</h2>
+                    </div>
+                    <button @click="isSettingsOpen = false" class="p-1.5 hover:bg-gray-200 rounded-full text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+                        <i class="pi pi-times text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- Panel Body -->
+                <div class="flex-1 overflow-y-auto p-6 space-y-8">
+
+
+
+                    <!-- Experimental / Placeholder Pages -->
+                    <div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Experimental Pages</p>
+                        <p class="text-[11px] text-gray-400 mb-4">These pages are hidden by default. Toggle to show them in the sidebar.</p>
+                        <div class="space-y-3">
+
+                            <!-- Attendance -->
+                            <label class="flex items-center justify-between gap-4 p-3 rounded-xl bg-gray-50 border border-gray-100 cursor-pointer hover:border-teal-200 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center">
+                                        <i class="pi pi-calendar-clock text-amber-500 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-gray-700">Attendance</p>
+                                        <p class="text-[10px] text-gray-400">Attendance tracking page</p>
+                                    </div>
+                                </div>
+                                <button
+                                    @click="settings.showAttendance = !settings.showAttendance"
+                                    class="relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none cursor-pointer"
+                                    :class="settings.showAttendance ? 'bg-teal-500' : 'bg-gray-300'"
+                                >
+                                    <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200" :class="settings.showAttendance ? 'translate-x-5' : 'translate-x-0'"></span>
+                                </button>
+                            </label>
+
+                            <!-- Reports -->
+                            <label class="flex items-center justify-between gap-4 p-3 rounded-xl bg-gray-50 border border-gray-100 cursor-pointer hover:border-teal-200 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center">
+                                        <i class="pi pi-chart-bar text-blue-500 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-gray-700">Reports</p>
+                                        <p class="text-[10px] text-gray-400">Analytics & reporting page</p>
+                                    </div>
+                                </div>
+                                <button
+                                    @click="settings.showReports = !settings.showReports"
+                                    class="relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none cursor-pointer"
+                                    :class="settings.showReports ? 'bg-teal-500' : 'bg-gray-300'"
+                                >
+                                    <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200" :class="settings.showReports ? 'translate-x-5' : 'translate-x-0'"></span>
+                                </button>
+                            </label>
+
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Panel Footer -->
+                <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+                    <p class="text-[10px] text-gray-400 text-center">Settings are saved automatically to this browser.</p>
+                </div>
+            </div>
+        </transition>
+
+        <!-- Settings overlay (close on outside click) -->
+        <div v-if="isSettingsOpen" @click="isSettingsOpen = false" class="fixed inset-0 z-40"></div>
+
         <!-- Leave Request Modal -->
         <LeaveRequestModal 
             v-model="showLeaveModal"
@@ -279,13 +372,13 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useSettingsStore } from '../stores/settings';
 import { useAuthStore } from '../stores/auth';
 import { useRoute, useRouter } from 'vue-router';
 import { useCalendarStore } from '../stores/calendar';
 import { storeToRefs } from 'pinia';
 import EventCalendar from '../components/common/EventCalendar.vue';
 import ScrollIndicator from '../components/common/ScrollIndicator.vue';
-import NotificationDropdown from '../components/common/NotificationDropdown.vue';
 import LeaveRequestModal from '../components/common/LeaveRequestModal.vue';
 import { useLeaveStore } from '../stores/leaves';
 import axios from 'axios';
@@ -303,8 +396,13 @@ const leaveStore = useLeaveStore();
 const { events: allEvents } = storeToRefs(calendarStore);
 const title = computed(() => route.meta.title?.split(' - ').pop() || '');
 
+const settings = useSettingsStore();
+
+
+
 const isSidebarOpen = ref(false);
 const isCalendarOpen = ref(false);
+const isSettingsOpen = ref(false);
 const showLeaveModal = ref(false);
 const unreadEventsCount = ref(0);
 const currentTime = ref('');
@@ -368,29 +466,40 @@ const handleLogout = () => {
     authStore.logout();
 };
 
-const handleLeaveSubmit = async (payload) => {
+const handleLeaveSubmit = async (payload, resolve, reject) => {
     try {
         const formData = new FormData();
         Object.keys(payload).forEach(key => {
-            if (payload[key] !== null && payload[key] !== undefined) {
-                formData.append(key, payload[key]);
+            const val = payload[key];
+            if (val !== null && val !== undefined) {
+                if (key === 'additional_details' && typeof val === 'object' && !Array.isArray(val)) {
+                    Object.entries(val).forEach(([subKey, subVal]) => {
+                        formData.append(`${key}[${subKey}]`, subVal);
+                    });
+                } else {
+                    const value = typeof val === 'boolean' ? (val ? 1 : 0) : val;
+                    formData.append(key, value);
+                }
             }
         });
         
         await axios.post('/api/leave-requests', formData);
-        alert(props.user?.role === 'admin' ? 'Leave request filed successfully on behalf of employee.' : 'Leave request submitted successfully.');
-        showLeaveModal.value = false;
-        
+
         // Refresh relevant data
         calendarStore.fetchEvents();
         if (typeof leaveStore.fetchStats === 'function') {
             leaveStore.fetchStats(true);
         }
+        leaveStore.bumpAnalytics(); // triggers LeaveAnalytics to re-fetch
+
+        resolve?.(); // Signal modal to close
     } catch (e) {
-        console.error("Leave submission failed", e);
-        alert('Failed to submit request: ' + (e.response?.data?.message || 'Server error'));
+        const msg = e.response?.data?.message || 'Server error. Please try again.';
+        console.error('Leave submission failed', e);
+        reject?.(msg); // Send error message back to modal
     }
 };
+
 
 onMounted(() => {
     updateTime();
@@ -429,7 +538,11 @@ const todayFormatted = computed(() => {
 const todaySchedule = computed(() => {
     const today = new Date().toISOString().split('T')[0];
     return allEvents.value.filter(event => {
-        return event.from_date <= today && event.to_date >= today;
+        // Date range must cover today
+        if (!(event.from_date <= today && event.to_date >= today)) return false;
+        // For leave events: only show if status is Approved (or no status = custom calendar event)
+        if (event.type === 'leave' && event.status && event.status !== 'Approved') return false;
+        return true;
     }).map(event => {
         if (event.type === 'leave') {
             return {
@@ -457,21 +570,39 @@ const todaySchedule = computed(() => {
 
 const menuItems = computed(() => {
     const isAdmin = props.user?.role === 'admin';
-    return isAdmin ? [
+    if (!isAdmin) {
+        return [
+            { label: 'Dashboard', icon: 'pi-home', href: '/dashboard' },
+            { label: 'My Profile', icon: 'pi-user', href: '/profile' },
+            { label: 'My Attendance', icon: 'pi-clock', href: '/my-attendance' },
+        ];
+    }
+
+    const items = [
         { label: 'Dashboard', icon: 'pi-objects-column', href: '/dashboard' },
         { label: 'Employees', icon: 'pi-users', href: '/employees' },
-        { label: 'Attendance', icon: 'pi-calendar-clock', href: '/attendance' },
+    ];
+
+    if (settings.showAttendance) {
+        items.push({ label: 'Attendance', icon: 'pi-calendar-clock', href: '/attendance' });
+    }
+
+    items.push(
         { label: 'Calendar', icon: 'pi-calendar', href: '/schedules' },
-        { label: 'Reports', icon: 'pi-chart-bar', href: '/reports' },
+    );
+
+    if (settings.showReports) {
+        items.push({ label: 'Reports', icon: 'pi-chart-bar', href: '/reports' });
+    }
+
+    items.push(
         { label: 'Manage Leaves', icon: 'pi-calendar-times', href: '/manage-leaves' },
         { label: 'Assets', icon: 'pi-box', href: '/inventory' },
         { label: 'Activity Logs', icon: 'pi-list', href: '/activity-logs' },
         { label: 'Archive Registry', icon: 'pi-folder', href: '/archive-leaves' },
-    ] : [
-        { label: 'Dashboard', icon: 'pi-home', href: '/dashboard' },
-        { label: 'My Profile', icon: 'pi-user', href: '/profile' },
-        { label: 'My Attendance', icon: 'pi-clock', href: '/my-attendance' },
-    ];
+    );
+
+    return items;
 });
 </script>
 
@@ -504,4 +635,25 @@ nav::-webkit-scrollbar-thumb:hover {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
 }
+
+/* Settings panel slide-in from right */
+.slide-settings-enter-active,
+.slide-settings-leave-active {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+}
+.slide-settings-enter-from,
+.slide-settings-leave-to {
+    transform: translateX(100%);
+    opacity: 0;
+}
+
+/* Slow spin for the cog */
+@keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+}
+
 </style>

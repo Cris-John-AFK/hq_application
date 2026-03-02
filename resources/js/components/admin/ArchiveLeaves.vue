@@ -10,8 +10,19 @@
                         <div class="space-y-4">
                             <div class="flex items-center gap-4">
                                 <button @click="resetNavigation" class="text-gray-400 hover:text-black transition-colors text-base font-bold uppercase tracking-[0.2em]">Archive Registry</button>
-                                <i v-if="selectedYear" class="pi pi-chevron-right text-xs text-gray-300"></i>
-                                <button v-if="selectedYear" @click="selectedMonth = null" class="text-gray-400 hover:text-black transition-colors text-base font-bold uppercase tracking-[0.2em]">{{ selectedYear.year }}</button>
+                                
+                                <template v-if="selectedCategory">
+                                    <i class="pi pi-chevron-right text-xs text-gray-300"></i>
+                                    <button @click="backToCategoryRoot" class="text-gray-400 hover:text-black transition-colors text-base font-bold uppercase tracking-[0.2em]">
+                                        {{ selectedCategory === 'leaves' ? 'Leave Requests' : 'Employee Records' }}
+                                    </button>
+                                </template>
+
+                                <template v-if="selectedYear">
+                                    <i class="pi pi-chevron-right text-xs text-gray-300"></i>
+                                    <button @click="selectedMonth = null" class="text-gray-400 hover:text-black transition-colors text-base font-bold uppercase tracking-[0.2em]">{{ selectedYear.year }}</button>
+                                </template>
+
                                 <i v-if="selectedMonth" class="pi pi-chevron-right text-xs text-gray-300"></i>
                                 <span v-if="selectedMonth" class="text-teal-600 text-base font-black uppercase tracking-[0.2em]">{{ selectedMonth.month_name }}</span>
                             </div>
@@ -21,7 +32,7 @@
                         </div>
                         
                         <!-- Search Bar -->
-                        <div v-if="selectedMonth" class="relative group">
+                        <div v-if="isListView" class="relative group">
                             <input 
                                 v-model="searchQuery" 
                                 type="text" 
@@ -42,12 +53,12 @@
                             </div>
                         </div>
 
-                        <!-- 1. Year/Month Folder Grid -->
-                        <div v-if="!selectedMonth" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-y-20 gap-x-12 pb-32">
+                        <!-- 1. Folder Grid View -->
+                        <div v-if="!isListView" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-y-20 gap-x-12 pb-32">
                             <!-- Back Button -->
                             <div 
-                                v-if="selectedYear && !selectedMonth"
-                                @click="selectedYear = null"
+                                v-if="selectedCategory"
+                                @click="handleBack"
                                 class="flex flex-col items-center group cursor-pointer"
                             >
                                 <div class="w-full aspect-square relative flex items-center justify-center mb-6 transition-transform group-hover:-translate-y-2 group-active:scale-95">
@@ -55,7 +66,7 @@
                                         <i class="pi pi-arrow-left text-4xl"></i>
                                     </div>
                                 </div>
-                                <p class="text-sm font-black text-gray-500 uppercase tracking-widest text-center">Back to Index</p>
+                                <p class="text-sm font-black text-gray-500 uppercase tracking-widest text-center">Go Back</p>
                             </div>
 
                             <!-- Folders -->
@@ -93,58 +104,106 @@
                             </div>
                         </div>
 
-                        <!-- 2. Detailed File View (Windows 11 List View Style) -->
+                        <!-- 2. Detailed List View -->
                         <div v-else class="space-y-10 pb-32">
                             <div class="bg-white rounded-[40px] border-2 border-gray-100 overflow-hidden shadow-2xl shadow-gray-200/50">
                                 <table class="w-full text-left">
                                     <thead class="bg-gray-50 border-b-2 border-gray-100">
-                                        <tr>
+                                        <tr v-if="selectedCategory === 'leaves'">
                                             <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Official Document / Subject</th>
                                             <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Classification</th>
                                             <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Interval</th>
                                             <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em] text-right">Operations</th>
                                         </tr>
+                                        <tr v-else>
+                                            <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Employee Detail</th>
+                                            <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Department / Position</th>
+                                            <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Archived Date</th>
+                                            <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em] text-right">Operations</th>
+                                        </tr>
                                     </thead>
                                     <tbody class="divide-y-2 divide-gray-50">
-                                        <tr v-for="request in requests" :key="request.id" class="hover:bg-gray-50 transition-all group">
-                                            <td class="py-8 px-10">
-                                                <div class="flex items-center gap-6">
-                                                    <div class="w-12 h-16 bg-gray-50 border-2 border-gray-100 rounded-lg flex flex-col p-2.5 shadow-sm group-hover:bg-white transition-colors">
-                                                        <div class="h-[2px] w-full bg-gray-200 mb-2"></div>
-                                                        <div class="h-[2px] w-3/4 bg-gray-200 mb-2"></div>
-                                                        <div class="h-[2px] w-full bg-gray-200"></div>
+                                        <!-- Leave Records Row -->
+                                        <template v-if="selectedCategory === 'leaves'">
+                                            <tr v-for="request in requests" :key="request.id" class="hover:bg-gray-50 transition-all group">
+                                                <td class="py-8 px-10">
+                                                    <div class="flex items-center gap-6">
+                                                        <div class="w-12 h-16 bg-gray-50 border-2 border-gray-100 rounded-lg flex flex-col p-2.5 shadow-sm group-hover:bg-white transition-colors">
+                                                            <div class="h-[2px] w-full bg-gray-200 mb-2"></div>
+                                                            <div class="h-[2px] w-3/4 bg-gray-200 mb-2"></div>
+                                                            <div class="h-[2px] w-full bg-gray-200"></div>
+                                                        </div>
+                                                        <div>
+                                                            <p class="text-xl font-black text-black leading-none mb-2 transition-colors">
+                                                                {{ request.user?.name || (request.employee?.last_name + ', ' + request.employee?.first_name) }}
+                                                            </p>
+                                                            <p class="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">ID-{{ request.user?.id_number || request.employee?.employee_id }}</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p class="text-xl font-black text-black leading-none mb-2 transition-colors">
-                                                            {{ request.user?.name || (request.employee?.last_name + ', ' + request.employee?.first_name) }}
-                                                        </p>
-                                                        <p class="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">ID-{{ request.user?.id_number || request.employee?.employee_id }}</p>
+                                                </td>
+                                                <td class="py-8 px-10">
+                                                    <div class="flex flex-col gap-1.5">
+                                                        <span class="text-base font-black text-gray-700">{{ request.leave_type }}</span>
+                                                        <span class="text-xs text-teal-600 font-black uppercase tracking-tighter">{{ request.request_type }} CATEGORY</span>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td class="py-8 px-10">
-                                                <div class="flex flex-col gap-1.5">
-                                                    <span class="text-base font-black text-gray-700">{{ request.leave_type }}</span>
-                                                    <span class="text-xs text-teal-600 font-black uppercase tracking-tighter">{{ request.request_type }} CATEGORY</span>
-                                                </div>
-                                            </td>
-                                            <td class="py-8 px-10">
-                                                <div class="flex flex-col gap-1.5">
-                                                    <span class="text-base font-bold text-gray-500 tabular-nums">{{ formatDate(request.from_date) }}</span>
-                                                    <span class="text-xs font-black text-gray-400 uppercase tracking-widest">{{ request.days_taken }} Day Count</span>
-                                                </div>
-                                            </td>
-                                            <td class="py-8 px-10 text-right">
-                                                <div class="flex items-center justify-end gap-6">
-                                                    <button @click="viewRecord(request)" class="p-3.5 bg-gray-50 hover:bg-black hover:text-white rounded-2xl text-gray-400 transition-all border-2 border-gray-100 shadow-sm">
-                                                        <i class="pi pi-eye text-xl"></i>
-                                                    </button>
-                                                    <button @click="unarchiveRequest(request.id)" class="text-xs font-black uppercase tracking-[0.2em] px-8 py-3.5 bg-black text-white rounded-2xl hover:bg-teal-600 transition-all shadow-xl active:scale-95">
-                                                        Restore
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                                </td>
+                                                <td class="py-8 px-10">
+                                                    <div class="flex flex-col gap-1.5">
+                                                        <span class="text-base font-bold text-gray-500 tabular-nums">{{ formatDate(request.from_date) }}</span>
+                                                        <span class="text-xs font-black text-gray-400 uppercase tracking-widest">{{ request.days_taken }} Day Count</span>
+                                                    </div>
+                                                </td>
+                                                <td class="py-8 px-10 text-right">
+                                                    <div class="flex items-center justify-end gap-6">
+                                                        <button @click="viewRecord(request)" class="p-3.5 bg-gray-50 hover:bg-black hover:text-white rounded-2xl text-gray-400 transition-all border-2 border-gray-100 shadow-sm">
+                                                            <i class="pi pi-eye text-xl"></i>
+                                                        </button>
+                                                        <button @click="unarchiveLeave(request.id)" class="text-xs font-black uppercase tracking-[0.2em] px-8 py-3.5 bg-black text-white rounded-2xl hover:bg-teal-600 transition-all shadow-xl active:scale-95">
+                                                            Restore
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </template>
+
+                                        <!-- Employee Records Row -->
+                                        <template v-else>
+                                            <tr v-for="emp in employees" :key="emp.id" class="hover:bg-gray-50 transition-all group">
+                                                <td class="py-8 px-10">
+                                                    <div class="flex items-center gap-6">
+                                                        <div class="w-14 h-14 rounded-2xl bg-teal-50 flex items-center justify-center text-teal-600 font-black text-xl border-2 border-teal-100 shadow-sm overflow-hidden">
+                                                            <img v-if="emp.avatar" :src="emp.avatar" class="w-full h-full object-cover">
+                                                            <span v-else>{{ emp.initials }}</span>
+                                                        </div>
+                                                        <div>
+                                                            <p class="text-xl font-black text-black leading-none mb-2 transition-colors">
+                                                                {{ emp.last_name }}, {{ emp.first_name }}
+                                                            </p>
+                                                            <p class="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">ID-{{ emp.employee_id }}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="py-8 px-10">
+                                                    <div class="flex flex-col gap-1.5">
+                                                        <span class="text-base font-black text-gray-700">{{ emp.department?.name }}</span>
+                                                        <span class="text-xs text-teal-600 font-black uppercase tracking-tighter">{{ emp.position }}</span>
+                                                    </div>
+                                                </td>
+                                                <td class="py-8 px-10">
+                                                    <div class="flex flex-col gap-1.5">
+                                                        <span class="text-base font-bold text-gray-500 tabular-nums">{{ emp.archived_at ? formatDate(emp.archived_at) : 'Historical Record' }}</span>
+                                                        <span class="text-xs font-black text-gray-400 uppercase tracking-widest">{{ emp.employment_status }} Status</span>
+                                                    </div>
+                                                </td>
+                                                <td class="py-8 px-10 text-right">
+                                                    <div class="flex items-center justify-end gap-6">
+                                                        <button @click="unarchiveEmployee(emp.id)" class="text-xs font-black uppercase tracking-[0.2em] px-8 py-3.5 bg-black text-white rounded-2xl hover:bg-teal-600 transition-all shadow-xl active:scale-95">
+                                                            Restore Employee
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </template>
                                     </tbody>
                                 </table>
                             </div>
@@ -260,12 +319,14 @@ const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
 // Navigation State
-const archiveIndex = ref([]);
+const archiveBaseStats = ref({ leaves: [], employees: { count: 0 } });
+const selectedCategory = ref(null);
 const selectedYear = ref(null);
 const selectedMonth = ref(null);
 
 // Records State
 const requests = ref([]);
+const employees = ref([]);
 const loading = ref(false);
 const page = ref(1);
 const lastPage = ref(1);
@@ -276,11 +337,50 @@ const selectedRecord = ref(null);
 const currentViewTitle = computed(() => {
     if (selectedMonth.value) return selectedMonth.value.month_name;
     if (selectedYear.value) return selectedYear.value.year.toString();
-    return 'Document Registry';
+    if (selectedCategory.value === 'employees') return 'Archived Employees';
+    if (selectedCategory.value === 'leaves') return 'Historical Leaves';
+    return 'Archive Registry';
+});
+
+const isListView = computed(() => {
+    return (selectedCategory.value === 'leaves' && selectedMonth.value) || 
+           (selectedCategory.value === 'employees');
 });
 
 const displayFolders = computed(() => {
-    if (selectedYear.value && !selectedMonth.value) {
+    // Stage 1: Root Categories
+    if (!selectedCategory.value) {
+        return [
+            {
+                id: 'leaves',
+                label: 'Leave Requests',
+                sub: archiveBaseStats.value.leaves.reduce((acc, y) => acc + y.total, 0),
+                action: () => { selectedCategory.value = 'leaves'; }
+            },
+            {
+                id: 'employees',
+                label: 'Employee Records',
+                sub: archiveBaseStats.value.employees.count,
+                action: () => { 
+                    selectedCategory.value = 'employees';
+                    fetchArchivedEmployees();
+                }
+            }
+        ];
+    }
+
+    // Stage 2: Leaves (Years)
+    if (selectedCategory.value === 'leaves' && !selectedYear.value) {
+        return archiveBaseStats.value.leaves.map(y => ({
+            id: y.year,
+            label: y.year.toString(),
+            sub: y.total,
+            action: () => selectYear(y)
+        }));
+    }
+
+    // Stage 3: Leaves (Months)
+    if (selectedCategory.value === 'leaves' && selectedYear.value && !selectedMonth.value) {
         return selectedYear.value.months.map(m => ({
             id: m.month,
             label: m.month_name,
@@ -288,19 +388,15 @@ const displayFolders = computed(() => {
             action: () => selectMonth(m)
         }));
     }
-    return archiveIndex.value.map(y => ({
-        id: y.year,
-        label: y.year.toString(),
-        sub: y.total,
-        action: () => selectYear(y)
-    }));
+
+    return [];
 });
 
 const fetchArchiveIndex = async () => {
     loading.value = true;
     try {
         const response = await axios.get('/api/leave-requests/archive-index');
-        archiveIndex.value = response.data;
+        archiveBaseStats.value = response.data;
     } catch (e) {
         console.error("Archive index fetch failed", e);
     } finally {
@@ -343,14 +439,52 @@ const fetchMonthlyRequests = async () => {
     }
 };
 
+const fetchArchivedEmployees = async () => {
+    loading.value = true;
+    try {
+        const params = {
+            page: page.value,
+            archived: true,
+            search: searchQuery.value
+        };
+        const response = await axios.get('/api/employees', { params });
+        employees.value = response.data.data;
+        lastPage.value = response.data.last_page;
+        totalRecords.value = response.data.total;
+    } catch (e) {
+        console.error("Employee archive fetch failed", e);
+    } finally {
+        loading.value = false;
+    }
+};
+
+const handleBack = () => {
+    if (selectedMonth.value) {
+        selectedMonth.value = null;
+    } else if (selectedYear.value) {
+        selectedYear.value = null;
+    } else {
+        selectedCategory.value = null;
+    }
+};
+
+const backToCategoryRoot = () => {
+    selectedYear.value = null;
+    selectedMonth.value = null;
+    if (selectedCategory.value === 'employees') {
+        fetchArchivedEmployees();
+    }
+};
+
 const resetNavigation = () => {
+    selectedCategory.value = null;
     selectedYear.value = null;
     selectedMonth.value = null;
     searchQuery.value = '';
     fetchArchiveIndex();
 };
 
-const unarchiveRequest = async (id) => {
+const unarchiveLeave = async (id) => {
     if (!confirm('Restore this record to the active list?')) return;
     try {
         await axios.post(`/api/leave-requests/${id}/unarchive`);
@@ -358,6 +492,19 @@ const unarchiveRequest = async (id) => {
         totalRecords.value--;
         alert('Record restored successfully.');
         if (requests.value.length === 0) fetchArchiveIndex();
+    } catch (e) {
+        alert('Restore failed.');
+    }
+};
+
+const unarchiveEmployee = async (id) => {
+    if (!confirm('Restore this employee to the active masterlist?')) return;
+    try {
+        await axios.post(`/api/employees/${id}/unarchive`);
+        employees.value = employees.value.filter(e => e.id !== id);
+        totalRecords.value--;
+        alert('Employee restored successfully.');
+        fetchArchiveIndex();
     } catch (e) {
         alert('Restore failed.');
     }
@@ -374,16 +521,21 @@ let debounceTimer = null;
 watch(searchQuery, () => {
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-        if (selectedMonth.value) {
+        if (selectedCategory.value === 'leaves' && selectedMonth.value) {
             page.value = 1;
             fetchMonthlyRequests();
+        } else if (selectedCategory.value === 'employees') {
+            page.value = 1;
+            fetchArchivedEmployees();
         }
     }, 400);
 });
 
 watch(page, () => {
-    if (selectedMonth.value) {
+    if (selectedCategory.value === 'leaves' && selectedMonth.value) {
         fetchMonthlyRequests();
+    } else if (selectedCategory.value === 'employees') {
+        fetchArchivedEmployees();
     }
 });
 

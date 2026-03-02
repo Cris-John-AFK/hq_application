@@ -130,6 +130,7 @@ class LeaveRequestController extends Controller
             'is_paid' => 'nullable|boolean',
             'days_paid' => 'nullable|numeric',
             'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // Max 5MB
+            'additional_details' => 'nullable|array'
         ]);
 
         $currentUser = Auth::user();
@@ -206,7 +207,8 @@ class LeaveRequestController extends Controller
                 'user_id' => $targetUserId,
                 'employee_id' => $targetEmployeeId,
                 'status' => $status,
-                'attachment_path' => $attachmentPath
+                'attachment_path' => $attachmentPath,
+                'additional_details' => $validated['additional_details'] ?? []
             ]
         ));
 
@@ -263,6 +265,7 @@ class LeaveRequestController extends Controller
                 'days_paid' => 'nullable|numeric|min:0',
                 'admin_remarks' => 'nullable|string',
                 'justification' => 'sometimes|string|nullable',
+                'additional_details' => 'nullable|array'
             ]);
         } else {
             // Validation for User (Owner)
@@ -280,6 +283,7 @@ class LeaveRequestController extends Controller
                     'to_date' => 'nullable|date|after_or_equal:from_date',
                     'days_taken' => 'sometimes|required|numeric',
                     'reason' => 'sometimes|required|string',
+                    'additional_details' => 'nullable|array'
                 ]);
             }
         }
@@ -373,6 +377,9 @@ class LeaveRequestController extends Controller
             if ($oldIsPaid !== $newIsPaid) {
                 $changes[] = 'Pay Status: [' . ($oldIsPaid ? 'Paid' : 'Unpaid') . '] to [' . ($newIsPaid ? 'Paid' : 'Unpaid') . ']';
             }
+            if (isset($validated['additional_details']) && $validated['additional_details'] !== $leaveRequest->additional_details) {
+                $changes[] = 'Additional Details updated';
+            }
 
             if (!empty($changes)) {
                 $changeDesc .= ' Changed ' . implode(', ', $changes) . '.';
@@ -387,8 +394,8 @@ class LeaveRequestController extends Controller
                 'Leaves',
                 'Updated',
                 $changeDesc,
-                ['status' => $oldStatus, 'is_paid' => $oldIsPaid],
-                ['status' => $newStatus, 'is_paid' => $newIsPaid]
+                ['status' => $oldStatus, 'is_paid' => $oldIsPaid, 'additional_details' => $leaveRequest->additional_details],
+                ['status' => $newStatus, 'is_paid' => $newIsPaid, 'additional_details' => $validated['additional_details'] ?? $leaveRequest->additional_details]
             );
 
             return response()->json($leaveRequest);
@@ -435,7 +442,95 @@ class LeaveRequestController extends Controller
         return response()->json($this->creditForecastingService->forecast($user));
     }
 
-    // Existing helper methods ...
+    // Leave Analytics — filtered aggregation for the dashboard analytics panel
+    public function analyticsData(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $year = $request->get('year', now()->year);
+        $month = $request->get('month', null);   // null = all months
+        $status = $request->get('status', null);
+        $type = $request->get('leave_type', null);
+
+        $base = LeaveRequest::where('is_archived', '!=', true)
+            ->whereYear('from_date', $year);
+
+        if ($month)
+            $base->whereMonth('from_date', $month);
+        if ($status)
+            $base->where('status', $status);
+        if ($type)
+            $base->where('leave_type', $type);
+
+        $total = (clone $base)->count();
+        $approved = (clone $base)->where('status', 'Approved')->count();
+        $pending = (clone $base)->where('status', 'Pending')->count();
+        $rejected = (clone $base)->where('status', 'Rejected')->count();
+        $cancelled = (clone $base)->where('status', 'Cancelled')->count();
+        $daysTaken = (clone $base)->sum('days_taken');
+        $avgDays = $total > 0 ? round($daysTaken / $total, 1) : 0;
+
+        $approvedPaid = (clone $base)->where('status', 'Approved')->where('is_paid', true)->count();
+        $approvedUnpaid = (clone $base)->where('status', 'Approved')->where('is_paid', false)->count();
+
+        // By Leave Type
+        $byType = (clone $base)
+            ->select('leave_type as name', \DB::raw('count(*) as count'))
+            ->groupBy('leave_type')
+            ->orderByDesc(\DB::raw('count(*)'))
+            ->get();
+
+        // By Department (employee or user)
+        $byDept = \DB::table('leave_requests')
+            ->leftJoin('employees', 'leave_requests.employee_id', '=', 'employees.id')
+            ->leftJoin('departments as ed', 'employees.department_id', '=', 'ed.id')
+            ->leftJoin('users', 'leave_requests.user_id', '=', 'users.id')
+            ->leftJoin('departments as ud', 'users.department_id', '=', 'ud.id')
+            ->where('leave_requests.is_archived', '!=', true)
+            ->whereYear('leave_requests.from_date', $year)
+            ->when($month, fn($q) => $q->whereMonth('leave_requests.from_date', $month))
+            ->when($status, fn($q) => $q->where('leave_requests.status', $status))
+            ->when($type, fn($q) => $q->where('leave_requests.leave_type', $type))
+            ->select(\DB::raw("COALESCE(ed.name, ud.name, users.department, 'General') as name"), \DB::raw('count(*) as count'))
+            ->groupBy(\DB::raw("COALESCE(ed.name, ud.name, users.department, 'General')"))
+            ->orderByDesc(\DB::raw('count(*)'))
+            ->get();
+
+        // Monthly Trend (for bar chart)
+        $monthlyTrend = \DB::table('leave_requests')
+            ->select(
+                \DB::raw('EXTRACT(MONTH FROM from_date)::int as month'),
+                \DB::raw("SUM(CASE WHEN status = 'Approved'  THEN 1 ELSE 0 END) as approved"),
+                \DB::raw("SUM(CASE WHEN status = 'Pending'   THEN 1 ELSE 0 END) as pending"),
+                \DB::raw("SUM(CASE WHEN status = 'Rejected'  THEN 1 ELSE 0 END) as rejected"),
+                \DB::raw("SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled"),
+                \DB::raw('count(*) as total')
+            )
+            ->where('is_archived', '!=', true)
+            ->whereYear('from_date', $year)
+            ->when($status, fn($q) => $q->where('status', $status))
+            ->when($type, fn($q) => $q->where('leave_type', $type))
+            ->groupBy(\DB::raw('EXTRACT(MONTH FROM from_date)'))
+            ->orderBy('month')
+            ->get();
+
+        return response()->json([
+            'total' => $total,
+            'approved' => $approved,
+            'pending' => $pending,
+            'rejected' => $rejected,
+            'cancelled' => $cancelled,
+            'days_taken' => $daysTaken,
+            'avg_days' => $avgDays,
+            'approved_paid' => $approvedPaid,
+            'approved_unpaid' => $approvedUnpaid,
+            'by_type' => $byType,
+            'by_department' => $byDept,
+            'monthly_trend' => $monthlyTrend,
+        ]);
+    }
 
     // For tracing/reporting - get user history + credits
     public function userHistory($userId)
@@ -448,6 +543,7 @@ class LeaveRequestController extends Controller
 
         return response()->json($history);
     }
+
 
     public function stats()
     {
@@ -552,6 +648,21 @@ class LeaveRequestController extends Controller
         if ($request->filled('leave_type')) {
             $query->where('leave_type', $request->leave_type);
         }
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+        if ($request->filled('from_date')) {
+            $query->whereDate('from_date', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('to_date', '<=', $request->to_date);
+        }
+        // Allow overriding is_archived if explicitly requested (e.g. from Archive Registry)
+        if ($request->has('is_archived')) {
+            $query->where('is_archived', filter_var($request->is_archived, FILTER_VALIDATE_BOOLEAN));
+        } else {
+            $query->where('is_archived', false);
+        }
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -591,7 +702,7 @@ class LeaveRequestController extends Controller
             'Is Paid',
             'No. of Days Paid',
             'Reason',
-            'Latest SIL Balance',
+            'Attendance Category',
         ];
 
         $callback = function () use ($requests, $columns) {
@@ -599,12 +710,10 @@ class LeaveRequestController extends Controller
             fputcsv($file, $columns);
 
             foreach ($requests as $req) {
-                $subject = $req->user ?? $req->employee;
-                $name = $req->user->name ?? ($req->employee ? $req->employee->name : 'Unknown');
-                $idNumber = $req->user->id_number ?? ($req->employee->employee_id ?? 'N/A');
-                $dept = $req->user->department ?? ($req->employee->department->name ?? 'N/A');
-                $position = $req->user->position ?? ($req->employee->position ?? 'N/A');
-                $credits = $subject->leave_credits ?? $subject->sil_credits ?? 0;
+                $name = $req->user?->name ?? ($req->employee ? $req->employee->name : 'Unknown');
+                $idNumber = $req->user?->id_number ?? ($req->employee?->employee_id ?? 'N/A');
+                $dept = $req->user?->department ?? ($req->employee?->department?->name ?? 'N/A');
+                $position = $req->user?->position ?? ($req->employee?->position ?? 'N/A');
 
                 fputcsv($file, [
                     $req->id,
@@ -621,7 +730,7 @@ class LeaveRequestController extends Controller
                     $req->is_paid ? 'YES' : 'NO',
                     $req->days_paid,
                     $req->reason,
-                    $credits,
+                    $req->category ?? '',
                 ]);
             }
 
@@ -636,9 +745,10 @@ class LeaveRequestController extends Controller
 
     public function calendarEvents(Request $request)
     {
-        // 1. Fetch Approved Leaves
+        // 1. Fetch Approved, Non-Archived Leaves
         $leaveQuery = LeaveRequest::with(['user:id,name,avatar,department,position,id_number', 'employee.department'])
-            ->where('status', 'Approved');
+            ->where('status', 'Approved')
+            ->where('is_archived', '!=', true);
 
         if ($request->filled('month')) {
             $leaveQuery->whereMonth('from_date', $request->month);
@@ -662,6 +772,7 @@ class LeaveRequestController extends Controller
             return [
                 'id' => 'leave_' . $leave->id,
                 'type' => 'leave',
+                'status' => $leave->status,
                 'user_name' => $name,
                 'user_id_number' => $idNumber,
                 'user_department' => $dept,
@@ -780,35 +891,43 @@ class LeaveRequestController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // Get years and months where archived data exists
-        $structure = LeaveRequest::where('is_archived', true)
+        // 1. Leave Requests Structure
+        $leaveStructure = LeaveRequest::where('is_archived', true)
             ->selectRaw('EXTRACT(YEAR FROM from_date) as year, EXTRACT(MONTH FROM from_date) as month, COUNT(*) as count')
             ->groupBy('year', 'month')
             ->orderBy('year', 'desc')
             ->orderBy('month', 'desc')
             ->get();
 
-        $grouped = [];
-        foreach ($structure as $item) {
+        $leaveGrouped = [];
+        foreach ($leaveStructure as $item) {
             $year = (int) $item->year;
             $month = (int) $item->month;
+            $monthName = date('F', mktime(0, 0, 0, $month, 10));
 
-            if (!isset($grouped[$year])) {
-                $grouped[$year] = [
+            if (!isset($leaveGrouped[$year])) {
+                $leaveGrouped[$year] = [
                     'year' => $year,
                     'total' => 0,
                     'months' => []
                 ];
             }
-
-            $grouped[$year]['months'][] = [
+            $leaveGrouped[$year]['months'][] = [
                 'month' => $month,
-                'month_name' => date('F', mktime(0, 0, 0, $month, 10)),
+                'month_name' => $monthName,
                 'count' => (int) $item->count
             ];
-            $grouped[$year]['total'] += (int) $item->count;
+            $leaveGrouped[$year]['total'] += (int) $item->count;
         }
 
-        return response()->json(array_values($grouped));
+        // 2. Employees Structure
+        $employeeCount = \App\Models\Employee::where('is_archived', true)->count();
+
+        return response()->json([
+            'leaves' => array_values($leaveGrouped),
+            'employees' => [
+                'count' => $employeeCount
+            ]
+        ]);
     }
 }

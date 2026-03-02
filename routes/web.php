@@ -40,6 +40,8 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
         Route::post('/api/employees', [\App\Http\Controllers\EmployeeController::class, 'store']);
         Route::put('/api/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'update']);
         Route::delete('/api/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'destroy']);
+        Route::post('/api/employees/{id}/archive', [\App\Http\Controllers\EmployeeController::class, 'archive']);
+        Route::post('/api/employees/{id}/unarchive', [\App\Http\Controllers\EmployeeController::class, 'unarchive']);
 
         Route::post('/api/departments', [\App\Http\Controllers\DepartmentController::class, 'store']);
 
@@ -63,7 +65,11 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
         Route::post('/api/leave-requests/{id}/unarchive', [\App\Http\Controllers\LeaveRequestController::class, 'unarchive']);
         Route::post('/api/leave-requests/bulk-archive', [\App\Http\Controllers\LeaveRequestController::class, 'bulkArchive']);
         Route::get('/api/leave-requests/archive-index', [\App\Http\Controllers\LeaveRequestController::class, 'getArchiveIndex']);
+        Route::put('/api/settings/{key}', [\App\Http\Controllers\SystemSettingsController::class, 'update']);
     });
+
+    Route::get('/api/settings', [\App\Http\Controllers\SystemSettingsController::class, 'getAll']);
+    Route::get('/api/settings/{key}', [\App\Http\Controllers\SystemSettingsController::class, 'get']);
 
     // Share/Employee Access Routes (Read-only for most)
     Route::get('/api/employees', [\App\Http\Controllers\EmployeeController::class, 'index']);
@@ -78,6 +84,7 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
 
     Route::get('/api/leave-requests/export', [\App\Http\Controllers\LeaveRequestController::class, 'export']);
     Route::get('/api/leave-stats', [\App\Http\Controllers\LeaveRequestController::class, 'stats']);
+    Route::get('/api/leave-analytics', [\App\Http\Controllers\LeaveRequestController::class, 'analyticsData']);
 
     Route::get('/api/leave-requests/{id}/analysis', [\App\Http\Controllers\LeaveRequestController::class, 'getAnalysis']);
     Route::get('/api/users/{id}/forecast', [\App\Http\Controllers\LeaveRequestController::class, 'getUserForecast']);

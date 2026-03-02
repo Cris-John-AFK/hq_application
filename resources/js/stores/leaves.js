@@ -17,7 +17,8 @@ export const useLeaveStore = defineStore('leaves', {
         },
         lastFetched: null,
         loading: false,
-        fetchingPromise: null
+        fetchingPromise: null,
+        analyticsKey: 0   // increment to signal LeaveAnalytics to refresh
     }),
 
     actions: {
@@ -47,6 +48,10 @@ export const useLeaveStore = defineStore('leaves', {
 
         invalidate() {
             this.lastFetched = null;
+        },
+
+        bumpAnalytics() {
+            this.analyticsKey++;
         }
     }
 });

@@ -26,6 +26,10 @@ return new class extends Migration {
             $table->string('avatar')->nullable();
             $table->decimal('leave_credits', 8, 2)->default(0);
 
+            // Archiving
+            $table->boolean('is_archived')->default(false)->index();
+            $table->timestamp('archived_at')->nullable();
+
             $table->timestamps();
             $table->softDeletes();
         });

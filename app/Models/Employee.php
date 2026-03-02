@@ -21,7 +21,9 @@ class Employee extends Model
         'date_hired',
         'email',
         'avatar',
-        'leave_credits'
+        'leave_credits',
+        'is_archived',
+        'archived_at'
     ];
 
     protected $appends = ['name', 'initials'];
@@ -36,7 +38,7 @@ class Employee extends Model
     {
         return $this->belongsTo(Department::class);
     }
-    
+
     // Accessors
     public function getNameAttribute()
     {

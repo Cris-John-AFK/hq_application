@@ -57,45 +57,11 @@
                                 <label class="block text-xs font-semibold text-gray-600 mb-1">Date Hired <span class="text-red-500">*</span></label>
                                 <input v-model="form.date_hired" type="date" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" required>
                             </div>
-                             <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Company Email</label>
-                                <input v-model="form.email" type="email" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
-                            </div>
+
                         </div>
                     </div>
 
-                    <!-- Section 2: SIL (Leave) Management -->
-                    <div>
-                        <h4 class="text-sm font-bold text-teal-700 uppercase tracking-widest mb-4 border-b border-teal-100 pb-2 flex items-center gap-2">
-                             <i class="pi pi-calendar-plus text-teal-500"></i>
-                             SIL (Leave) Balance Management
-                        </h4>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end bg-teal-50/50 p-4 rounded-xl border border-teal-100">
-                            <div>
-                                <label class="block text-xs font-black text-teal-900 uppercase tracking-wider mb-2">Available SIL Credits</label>
-                                <div class="relative">
-                                    <input 
-                                        v-model.number="form.leave_credits" 
-                                        type="number" 
-                                        step="0.5"
-                                        class="w-full pl-4 pr-12 py-3 border-2 border-teal-200 rounded-xl text-lg font-black text-teal-900 focus:ring-4 focus:ring-teal-100 focus:border-teal-500 outline-none transition-all shadow-sm" 
-                                    >
-                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-teal-600 uppercase">Days</span>
-                                </div>
-                            </div>
-                            <div class="md:col-span-2">
-                                <div class="flex items-center gap-3 p-3 bg-white rounded-lg border border-teal-100 shadow-sm">
-                                    <div class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center shrink-0">
-                                        <i class="pi pi-info text-teal-600"></i>
-                                    </div>
-                                    <p class="text-[11px] text-teal-800 leading-tight">
-                                        Standard Service Incentive Leave (SIL) is <strong class="text-teal-900">5 days</strong> per year. 
-                                        You can manually adjust this balance for manual additions or deductions.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
 
                     <!-- Section 3: Personal Information -->
                     <div>
@@ -292,8 +258,6 @@ const handleSubmit = () => {
         position: form.position,
         employment_status: form.employment_status,
         date_hired: form.date_hired,
-        email: form.email,
-        leave_credits: form.leave_credits,
         
         details: {
             birthdate: form.birthdate,

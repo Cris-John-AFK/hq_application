@@ -31,13 +31,16 @@ A professional, enterprise-grade human capital management application built with
 
 ### 📁 Advanced Leave & Masterlist Management
 - **Unified Masterlist Support**: Seamlessly manage leave for both system users and "Masterlist Employees" (staff without digital accounts) with 100% data parity.
-- **Leave Archiving & Registry**: Industry-standard data lifecycle management. Processed records (Approved/Rejected/Cancelled) can be manually moved to a read-only **Archive Registry** to keep the active management workspace clean.
-- **Bulk Cleanup Maintenance**: High-performance administrative tool to mass-archive legacy records using smart date thresholds (30, 60, or 90 days ago) with a single click.
-- **One-Click Restoration**: Data integrity fallback allowing administrators to restore any archived record back to the active list without data loss.
+- **Advanced Archive Registry**: Featuring a Windows 11-inspired Explorer navigation system. Records are categorized into secure "Folders":
+    - **Leave Request Archive**: Structured by Year and Month for high-density historical lookup.
+    - **Employee Masterlist Archive**: A dedicated registry for archived/off-boarded personnel, keeping the active workspace clutter-free.
+- **Soft-Delete Maintenance**: High-performance administrative tool to mass-archive legacy records using smart date thresholds (30, 60, or 90 days ago) with a single click.
+- **One-Click Restoration**: Full data integrity fallback allowing administrators to restore any archived record or employee back to the active list instantly.
 - **Admin-Filing with Auto-Approval**: Administrators can bypass approval workflows by filing leaves directly on behalf of employees, triggering instant credit deductions.
+- **Streamlined Personnel Management**: Simplified primary employee views by removing credit management and non-essential contact fields (like email) from the masterlist to prioritize high-density organizational data.
 - **Disciplinary Metadata Tracking**: New **Attendance Category** system allows administrators to classify leaves (UA, WMC, WD, UH) for advanced absenteeism reporting.
 - **Conflict Prevention**: Intelligent overlap validation prevents filing duplicate requests for the same date.
-- **Precision SIL Tracking**: Consolidated Service Incentive Leave (SIL) system with 100% accurate numeric deductions and restorations.
+- **Precision SIL Tracking**: Automated Service Incentive Leave (SIL) system with 100% accurate numeric deductions and restorations, managed through dedicated leave modules rather than the masterlist.
 
 ---
 

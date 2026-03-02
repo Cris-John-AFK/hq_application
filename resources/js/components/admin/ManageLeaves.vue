@@ -505,6 +505,16 @@
                                             <p class="text-gray-700 italic">"{{ selectedRequest.reason }}"</p>
                                         </div>
 
+                                        <!-- Additional Custom Details -->
+                                        <div v-if="selectedRequest.additional_details && Object.keys(selectedRequest.additional_details).length" class="mb-4">
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div v-for="(val, key) in selectedRequest.additional_details" :key="key" class="bg-indigo-50/50 p-3 rounded-lg border border-indigo-100">
+                                                    <p class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">{{ key.replace('_', ' ') }}</p>
+                                                    <p class="text-sm font-bold text-indigo-900">{{ val }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div v-if="selectedRequest.attachment_path" class="mb-2">
                                             <a :href="selectedRequest.attachment_path" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg border border-purple-200 hover:bg-purple-100 transition-colors text-sm font-bold">
                                                 <i class="pi pi-download"></i>
@@ -957,7 +967,17 @@ const handleAdminSubmit = async (payload) => {
     try {
         const formData = new FormData();
         Object.keys(payload).forEach(key => {
-            if (payload[key] !== null) formData.append(key, payload[key]);
+            const val = payload[key];
+            if (val !== null && val !== undefined) {
+                if (key === 'additional_details' && typeof val === 'object' && !Array.isArray(val)) {
+                    Object.entries(val).forEach(([subKey, subVal]) => {
+                        formData.append(`${key}[${subKey}]`, subVal);
+                    });
+                } else {
+                    const value = typeof val === 'boolean' ? (val ? 1 : 0) : val;
+                    formData.append(key, value);
+                }
+            }
         });
         
         await axios.post('/api/leave-requests', formData);
@@ -975,6 +995,10 @@ const exportReport = () => {
         search: filters.value.search,
         status: filters.value.status,
         leave_type: filters.value.type,
+        request_type: filters.value.request_type,
+        department: filters.value.department,
+        from_date: filters.value.from_date,
+        to_date: filters.value.to_date,
         user_id: filters.value.user_id || ''
     });
     window.location.href = `/api/leave-requests/export?${params.toString()}`;

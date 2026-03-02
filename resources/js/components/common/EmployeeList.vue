@@ -171,7 +171,6 @@
                                 </div>
                                 <div>
                                     <p class="font-bold text-gray-800 text-sm">{{ employee.last_name }}, {{ employee.first_name }} {{ employee.suffix || '' }}</p>
-                                    <p class="text-xs text-gray-500">{{ employee.email || 'No email' }}</p>
                                 </div>
                             </div>
                         </td>
@@ -208,11 +207,11 @@
                                     <i class="pi pi-plus text-xs"></i>
                                 </button>
                                 <button 
-                                    @click="deleteEmployee(employee.id)" 
+                                    @click="archiveEmployee(employee.id)" 
                                     class="w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center transition-colors cursor-pointer"
-                                    title="Delete Record"
+                                    title="Archive Record"
                                 >
-                                    <i class="pi pi-trash text-xs"></i>
+                                    <i class="pi pi-folder text-xs"></i>
                                 </button>
                              </div>
                         </td>
@@ -412,13 +411,14 @@ const adminFileLeave = (employeeId) => {
     window.location.href = `/manage-leaves?admin_file_target=${employeeId}`;
 };
 
-const deleteEmployee = async (id) => {
-    if (!confirm('Are you sure you want to delete this record?')) return;
+const archiveEmployee = async (id) => {
+    if (!confirm('Move this employee to the archive registry? They will no longer appear in the active masterlist.')) return;
     try {
-        await axios.delete(`/api/employees/${id}`);
+        await axios.post(`/api/employees/${id}/archive`);
         fetchEmployees(currentPage.value);
+        alert('Employee has been successfully archived.');
     } catch (e) {
-        alert('Failed to delete');
+        alert('Failed to archive employee.');
     }
 };
 

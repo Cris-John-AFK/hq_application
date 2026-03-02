@@ -14,15 +14,22 @@ class EmployeeController extends Controller
     {
         $query = Employee::with(['department', 'details']);
 
+        // Default: only show non-archived
+        if ($request->boolean('archived', false)) {
+            $query->where('is_archived', true);
+        } else {
+            $query->where('is_archived', false);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('last_name', 'ilike', "%{$search}%")
-                  ->orWhere('first_name', 'ilike', "%{$search}%")
-                  ->orWhere('employee_id', 'ilike', "%{$search}%");
+                    ->orWhere('first_name', 'ilike', "%{$search}%")
+                    ->orWhere('employee_id', 'ilike', "%{$search}%");
             });
         }
-        
+
         if ($request->filled('department_id')) {
             $query->where('department_id', $request->department_id);
         }
@@ -32,13 +39,13 @@ class EmployeeController extends Controller
         }
 
         if ($request->filled('gender')) {
-            $query->whereHas('details', function($q) use ($request) {
+            $query->whereHas('details', function ($q) use ($request) {
                 $q->where('gender', $request->gender);
             });
         }
 
         if ($request->filled('civil_status')) {
-            $query->whereHas('details', function($q) use ($request) {
+            $query->whereHas('details', function ($q) use ($request) {
                 $q->where('civil_status', $request->civil_status);
             });
         }
@@ -48,12 +55,16 @@ class EmployeeController extends Controller
         }
 
         if ($request->filled('missing_id')) {
-            $query->whereHas('details', function($q) use ($request) {
+            $query->whereHas('details', function ($q) use ($request) {
                 $type = $request->missing_id;
-                if ($type === 'sss') $q->whereNull('sss_number')->orWhere('sss_number', '');
-                if ($type === 'philhealth') $q->whereNull('philhealth_number')->orWhere('philhealth_number', '');
-                if ($type === 'pagibig') $q->whereNull('pagibig_number')->orWhere('pagibig_number', '');
-                if ($type === 'tin') $q->whereNull('tin_number')->orWhere('tin_number', '');
+                if ($type === 'sss')
+                    $q->whereNull('sss_number')->orWhere('sss_number', '');
+                if ($type === 'philhealth')
+                    $q->whereNull('philhealth_number')->orWhere('philhealth_number', '');
+                if ($type === 'pagibig')
+                    $q->whereNull('pagibig_number')->orWhere('pagibig_number', '');
+                if ($type === 'tin')
+                    $q->whereNull('tin_number')->orWhere('tin_number', '');
             });
         }
 
@@ -74,7 +85,7 @@ class EmployeeController extends Controller
             'date_hired' => 'required|date',
             'email' => 'nullable|email',
             'leave_credits' => 'nullable|numeric',
-            
+
             // Details
             'birthdate' => 'required|date',
             'gender' => 'required|string',
@@ -142,8 +153,15 @@ class EmployeeController extends Controller
 
         return DB::transaction(function () use ($request, $employee, $oldData) {
             $employee->update($request->only([
-                'first_name', 'last_name', 'middle_name', 'department_id',
-                'position', 'employment_status', 'date_hired', 'email', 'leave_credits'
+                'first_name',
+                'last_name',
+                'middle_name',
+                'department_id',
+                'position',
+                'employment_status',
+                'date_hired',
+                'email',
+                'leave_credits'
             ]));
 
             if ($request->has('details')) {
@@ -168,17 +186,56 @@ class EmployeeController extends Controller
         $employee = Employee::findOrFail($id);
         $empName = $employee->name;
         $empId = $employee->employee_id;
-        $employee->delete();
+
+        // Use archiving instead of soft-deleting if requested by user pattern
+        $employee->update([
+            'is_archived' => true,
+            'archived_at' => now()
+        ]);
 
         // Audit Log
-        \App\Utils\AuditLogger::log('Masterlist', 'Deleted', "Removed employee from masterlist: {$empName} ({$empId}).");
+        \App\Utils\AuditLogger::log('Masterlist', 'Archived', "Archived employee from masterlist: {$empName} ({$empId}).");
 
-        return response()->json(['message' => 'Employee deleted']);
+        return response()->json(['message' => 'Employee moved to archive']);
+    }
+
+    public function archive($id)
+    {
+        return $this->destroy($id);
+    }
+
+    public function unarchive($id)
+    {
+        $employee = Employee::findOrFail($id);
+        $empName = $employee->name;
+        $empId = $employee->employee_id;
+
+        $employee->update([
+            'is_archived' => false,
+            'archived_at' => null
+        ]);
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('Masterlist', 'Restored', "Restored employee to masterlist: {$empName} ({$empId}).");
+
+        return response()->json(['message' => 'Employee restored from archive']);
     }
 
     public function findByEmployeeId($id)
     {
-        $employee = Employee::with(['details', 'department'])->where('employee_id', $id)->firstOrFail();
+        $employee = Employee::with(['details', 'department'])
+            ->where(function ($q) use ($id) {
+                $q->where('employee_id', $id)
+                    ->orWhere('first_name', 'ilike', "%{$id}%")
+                    ->orWhere('last_name', 'ilike', "%{$id}%");
+            })
+            ->where('is_archived', false)
+            ->first();
+
+        if (!$employee) {
+            return response()->json(['message' => 'Employee not found'], 404);
+        }
+
         return response()->json($employee);
     }
 
@@ -190,7 +247,7 @@ class EmployeeController extends Controller
 
         try {
             \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\EmployeesImport, $request->file('file'));
-            
+
             // Audit Log
             \App\Utils\AuditLogger::log('Masterlist', 'Imported', "Imported employees via Excel file.");
 
