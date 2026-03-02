@@ -14,108 +14,93 @@ class ReportController extends Controller
     public function annualAttendance(Request $request)
     {
         $year = $request->input('year', date('Y'));
-        
-        // Mock Data Structure
         $months = [
-            'January', 'February', 'March', 'April', 'May', 'June', 
-            'July', 'August', 'September', 'October', 'November', 'December'
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December'
         ];
 
         $data = [];
-        
-        foreach ($months as $index => $month) {
-            // Logic to simulate realistic looking data or empty if future
-            $isPast = $year < date('Y') || ($year == date('Y') && $index <= date('n') - 1);
-            
-            if ($isPast) {
-                $headcount = 16;
-                $workingDays = 22;
-                $presentDays = rand(300, 340); // aggregate of all employees
-                $absentDays = ($headcount * $workingDays) - $presentDays;
-                
-                $attendanceRate = round(($presentDays / ($headcount * $workingDays)) * 100, 2);
-                $absenteeismRate = round(100 - $attendanceRate, 2);
-                
-                $data[] = [
-                    'month' => $month,
-                    'headcount' => $headcount,
-                    'total_present_days' => $presentDays,
-                    'total_working_days' => $headcount * $workingDays,
-                    'attendance_rate' => $attendanceRate . '%',
-                    'total_absent_days' => $absentDays,
-                    'absenteeism_rate' => $absenteeismRate . '%',
-                    'employees_late' => rand(0, 5),
-                    'tardiness_frequency' => rand(0, 2) . '%',
-                    'employees_undertime' => rand(0, 2),
-                    'total_undertime_mins' => rand(0, 120),
-                    'undertime_frequency' => rand(0, 1) . '%'
-                ];
-            } else {
-                // Future months empty structure
-                $data[] = [
-                    'month' => $month,
-                    'headcount' => 0,
-                    'total_present_days' => 0,
-                    'total_working_days' => 0,
-                    'attendance_rate' => '#DIV/0!',
-                    'total_absent_days' => 0,
-                    'absenteeism_rate' => '#DIV/0!',
-                    'employees_late' => 0,
-                    'tardiness_frequency' => '#DIV/0!',
-                    'employees_undertime' => 0,
-                    'total_undertime_mins' => 0,
-                    'undertime_frequency' => '#DIV/0!'
-                ];
-            }
+        $totalEmployees = \App\Models\Employee::count();
+
+        foreach ($months as $index => $monthName) {
+            $monthNum = $index + 1;
+
+            // Get records for this month
+            $records = \App\Models\AttendanceRecord::whereYear('date', $year)
+                ->whereMonth('date', $monthNum)
+                ->get();
+
+            $workingDays = 22; // Hard-coded assumption for now, could be dynamic
+            $totalPossibleDays = $totalEmployees * $workingDays;
+            $presentDays = $records->where('status', 'Present')->count() + ($records->where('status', 'Late')->count());
+            $absentDays = $records->where('status', 'Absent')->count();
+
+            $attendanceRate = $totalPossibleDays > 0 ? round(($presentDays / $totalPossibleDays) * 100, 2) : 0;
+            $absenteeismRate = $totalPossibleDays > 0 ? round(($absentDays / $totalPossibleDays) * 100, 2) : 0;
+
+            $data[] = [
+                'month' => $monthName,
+                'headcount' => $totalEmployees,
+                'total_present_days' => $presentDays,
+                'total_working_days' => $totalPossibleDays,
+                'attendance_rate' => $attendanceRate . '%',
+                'total_absent_days' => $absentDays,
+                'absenteeism_rate' => $absenteeismRate . '%',
+                'employees_late' => $records->where('status', 'Late')->count(),
+                'tardiness_frequency' => $totalPossibleDays > 0 ? round(($records->where('status', 'Late')->count() / $totalPossibleDays) * 100, 2) . '%' : '0%',
+                'employees_undertime' => $records->where('status', 'Half Day')->count(),
+                'total_undertime_mins' => $records->where('status', 'Half Day')->count() * 240, // assume 4 hours
+                'undertime_frequency' => $totalPossibleDays > 0 ? round(($records->where('status', 'Half Day')->count() / $totalPossibleDays) * 100, 2) . '%' : '0%'
+            ];
         }
 
         return response()->json($data);
     }
 
-    /**
-     * Get Monthly Department Report Data (Mocked)
-     * Matches user's Image 2 columns
-     */
     public function monthlyDepartment(Request $request)
     {
         $month = $request->input('month', date('n'));
         $year = $request->input('year', date('Y'));
 
-        $departments = [
-            'Production', 'Quality Control', 'Embroidery', 'Packing', 
-            'Warehouse', 'Cutting', 'PPIC', 'PRD', 'Sample Line', 
-            'Shipping', 'Maintenance & Engineering', 'HR & Admin', 'Accounting'
-        ];
-
+        $departments = \App\Models\Department::all();
         $data = [];
 
         foreach ($departments as $dept) {
-            // Mock realistic values
-            $employees = rand(3, 15);
+            $records = \App\Models\AttendanceRecord::whereYear('date', $year)
+                ->whereMonth('date', $month)
+                ->where('department', $dept->name)
+                ->get();
+
+            $empCount = \App\Models\Employee::where('department_id', $dept->id)->count();
             $workingDays = 22;
-            $scheduledHours = $employees * $workingDays * 8;
-            $actualHours = round($scheduledHours * (rand(90, 100) / 100), 2);
-            $regularHours = round($actualHours * 0.9, 2); // Regular is distinct from Total
-            $otHours = rand(0, 20);
-            $excessHours = rand(0, 5);
-            
-            $avgDailyHours = round($actualHours / ($employees * $workingDays), 2);
+
+            $actualHours = $records->sum('hours_worked');
+            $scheduledHours = $empCount * $workingDays * 8;
 
             $data[] = [
-                'department' => $dept,
-                'total_employees' => $employees,
-                'total_working_days' => $workingDays * $employees, // aggregate days
+                'department' => $dept->name,
+                'total_employees' => $empCount,
+                'total_working_days' => $empCount * $workingDays,
                 'total_scheduled_hours' => $scheduledHours,
                 'total_actual_hours' => $actualHours,
-                'regular_actual_hours' => $regularHours,
-                'overtime_actual_hours' => $otHours,
-                'excess_hours_worked' => $excessHours,
-                'employees_with_excess_ot' => rand(0, 2),
-                'avg_daily_working_hours' => $avgDailyHours
+                'regular_actual_hours' => $actualHours, // simplistic for now
+                'overtime_actual_hours' => $records->where('status', 'Overtime')->sum('hours_worked'), // if status allows
+                'excess_hours_worked' => 0,
+                'employees_with_excess_ot' => 0,
+                'avg_daily_working_hours' => ($empCount * $workingDays) > 0 ? round($actualHours / ($empCount * $workingDays), 2) : 0
             ];
         }
 
-        // Add 'Total' row logic in frontend or here if needed, usually frontend calculates totals
         return response()->json($data);
     }
 }

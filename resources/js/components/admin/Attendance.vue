@@ -27,19 +27,7 @@
                     </div>
                 </div>
 
-                <!-- WIP Banner -->
-                <div class="flex items-center gap-4 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4">
-                    <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-                        <i class="pi pi-wrench text-amber-600 text-lg"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-black text-amber-800">This page is a Work in Progress — All data shown is a placeholder.</p>
-                        <p class="text-xs text-amber-600 mt-0.5 font-medium">Attendance Management requires a biometric or time-keeping system integration before real records can be tracked. Import and filter features are non-functional at this time.</p>
-                    </div>
-                    <div class="ml-auto flex-shrink-0">
-                        <span class="text-[10px] font-black uppercase tracking-widest text-amber-500 bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-full">Coming Soon</span>
-                    </div>
-                </div>
+
 
                 <!-- Filters -->
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
@@ -90,16 +78,8 @@
 
                 <!-- Attendance Table -->
                 <div class="relative">
-                    <!-- Frosted Glass WIP Overlay -->
-                    <div class="absolute inset-0 z-10 rounded-2xl backdrop-blur-[3px] bg-white/60 flex flex-col items-center justify-center gap-4 border border-dashed border-amber-300" style="min-height: 200px;">
-                        <div class="bg-white rounded-2xl shadow-xl border border-amber-100 px-10 py-8 flex flex-col items-center gap-3 max-w-md text-center">
-                            <div class="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center">
-                                <i class="pi pi-clock text-3xl text-amber-500"></i>
-                            </div>
-                            <h3 class="text-lg font-black text-gray-900">Attendance Tracking Not Yet Available</h3>
-                            <p class="text-sm text-gray-500 font-medium leading-relaxed">This section will show real-time attendance records once a biometric or time-keeping integration is in place. All data below is <strong class="text-amber-600">sample/placeholder only</strong>.</p>
-                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 bg-amber-50 border border-amber-200 px-4 py-2 rounded-full mt-1">🔧 Under Construction</span>
-                        </div>
+                    <div v-if="isLoadingRecords" class="absolute inset-0 z-10 bg-white/50 flex items-center justify-center">
+                        <i class="pi pi-spin pi-spinner text-3xl text-teal-600"></i>
                     </div>
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <div class="overflow-x-auto">
@@ -121,8 +101,9 @@
                                     <td class="px-6 py-3 font-medium text-gray-800">{{ formatDate(record.date) }}</td>
                                     <td class="px-6 py-3">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-xs">
-                                                {{ record.avatar }}
+                                            <div class="w-8 h-8 rounded-full overflow-hidden bg-teal-50 flex items-center justify-center text-teal-600 font-black text-[10px] uppercase shadow-inner border border-teal-100">
+                                                <img v-if="record.avatar" :src="record.avatar" class="w-full h-full object-cover">
+                                                <span v-else>{{ getInitials(record.employee_name) }}</span>
                                             </div>
                                             <div>
                                                 <p class="font-medium text-gray-800">{{ record.employee_name }}</p>
@@ -232,21 +213,38 @@
                         </p>
                     </div>
                     
-                    <div class="mt-6 flex gap-3">
-                        <button 
-                            @click="showImportModal = false"
-                            class="cursor-pointer flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button 
-                            @click="importFile"
-                            :disabled="!selectedFile || isImporting"
-                            class="cursor-pointer flex-1 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            <i v-if="isImporting" class="pi pi-spin pi-spinner"></i>
-                            <span>{{ isImporting ? 'Importing...' : 'Import' }}</span>
-                        </button>
+                    <div class="mt-6 flex flex-col gap-4">
+                        <!-- Progress View -->
+                        <div v-if="isImporting" class="space-y-3">
+                            <div class="flex justify-between items-end">
+                                <span class="text-xs font-bold text-teal-600 uppercase tracking-widest">{{ importStatus }}</span>
+                                <span class="text-xs font-black text-gray-400">{{ importProgress }}%</span>
+                            </div>
+                            <div class="h-2 w-full bg-gray-100 rounded-full overflow-hidden border border-gray-50">
+                                <div 
+                                    class="h-full bg-teal-500 rounded-full transition-all duration-300 shadow-sm"
+                                    :style="{ width: importProgress + '%' }"
+                                ></div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <button 
+                                @click="showImportModal = false"
+                                :disabled="isImporting"
+                                class="cursor-pointer flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                @click="importFile"
+                                :disabled="!selectedFile || isImporting"
+                                class="cursor-pointer flex-1 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                <i v-if="isImporting" class="pi pi-spin pi-spinner"></i>
+                                <span>{{ isImporting ? 'Processing...' : 'Import' }}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -262,7 +260,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useAuthStore } from '../../stores/auth';
 import { storeToRefs } from 'pinia';
 import MainLayout from '../../layouts/MainLayout.vue';
@@ -284,6 +282,8 @@ const currentPage = ref(1);
 const itemsPerPage = 10;
 const employees = ref([]);
 const isLoadingEmployees = ref(false);
+const importProgress = ref(0);
+const importStatus = ref('');
 
 // Filters
 const filters = ref({
@@ -297,65 +297,63 @@ const filters = ref({
 // Attendance records - will be populated from Excel import
 const attendanceRecords = ref([]);
 
+const isLoadingRecords = ref(false);
+const fetchAttendanceRecords = async () => {
+    isLoadingRecords.value = true;
+    try {
+        const params = {};
+        if (filters.value.startDate) params.start_date = filters.value.startDate;
+        if (filters.value.endDate) params.end_date = filters.value.endDate;
+
+        // Note: Department and Status filters are handled client-side in 'filteredRecords'
+        // for better consistency with the employee masterlist.
+        const { data } = await axios.get('/api/attendance-records', { params });
+        attendanceRecords.value = data.map(r => {
+            const emp = employees.value.find(e => 
+                String(e.employee_id) === String(r.employee_id_number) ||
+                String(e.name).toLowerCase() === String(r.employee_name).toLowerCase()
+            );
+            return {
+                ...r,
+                employee_name: emp?.name || r.employee_name,
+                employee_id: emp?.employee_id || r.employee_id_number,
+                department: emp?.department || r.department, 
+                avatar: emp?.avatar
+            };
+        });
+    } catch (error) {
+        console.error('Failed to fetch attendance records:', error);
+    } finally {
+        isLoadingRecords.value = false;
+    }
+};
+
 // Fetch employees from database
 const fetchEmployees = async () => {
     isLoadingEmployees.value = true;
     try {
-        const response = await axios.get('/api/users');
-        const usersArray = response.data.data || response.data;
-        employees.value = usersArray.map(user => ({
-            id: user.id,
-            name: user.name,
-            employee_id: user.id_number || `HQI-${String(user.id).padStart(4, '0')}`,
-            department: user.department?.name || user.department || 'N/A',
-            avatar: user.avatar_url
+        const response = await axios.get('/api/employees?all=true'); // Fetch from masterlist
+        const empArray = response.data.data || response.data;
+        employees.value = empArray.map(emp => ({
+            id: emp.id,
+            name: `${emp.first_name} ${emp.last_name}`,
+            employee_id: emp.employee_id,
+            department: emp.department?.name || 'N/A',
+            avatar: emp.avatar
         }));
         
-        // Generate sample attendance for demonstration (optional - remove in production)
-        generateSampleAttendance();
+        // Load real records
+        fetchAttendanceRecords();
     } catch (error) {
-        console.error('Failed to fetch employees:', error);
+        console.error('Failed to fetch employee masterlist:', error);
     } finally {
         isLoadingEmployees.value = false;
     }
 };
 
-// Generate sample attendance records using real employees (for demo purposes)
-const generateSampleAttendance = () => {
-    if (employees.value.length === 0) return;
-    
-    const statuses = ['Present', 'Absent', 'Late', 'Half Day'];
-    const today = new Date();
-    const sampleRecords = [];
-    
-    // Generate last 7 days of attendance for each employee
-    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - dayOffset);
-        const dateStr = date.toISOString().split('T')[0];
-        
-        employees.value.forEach((emp, index) => {
-            const status = statuses[Math.floor(Math.random() * statuses.length)];
-            const timeIn = status !== 'Absent' ? '08:00' : '-';
-            const timeOut = status === 'Half Day' ? '12:30' : (status !== 'Absent' ? '17:00' : '-');
-            const hoursWorked = status === 'Absent' ? '-' : (status === 'Half Day' ? '4.5' : '8.0');
-            
-            sampleRecords.push({
-                id: sampleRecords.length + 1,
-                date: dateStr,
-                employee_name: emp.name,
-                employee_id: emp.employee_id,
-                department: emp.department,
-                time_in: timeIn,
-                time_out: timeOut,
-                hours_worked: hoursWorked,
-                status: status,
-            });
-        });
-    }
-    
-    attendanceRecords.value = sampleRecords;
-};
+watch(() => filters.value, () => {
+    fetchAttendanceRecords();
+}, { deep: true });
 
 const departments = computed(() => {
     const depts = [...new Set(employees.value.map(e => e.department))];
@@ -414,47 +412,147 @@ const importFile = async () => {
     if (!selectedFile.value) return;
     
     isImporting.value = true;
+    importProgress.value = 10;
+    importStatus.value = 'Reading Excel file...';
     
     try {
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
+            importProgress.value = 30;
+            importStatus.value = 'Parsing biometric logs...';
+            
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
             
-            // Process and add to attendance records
-            jsonData.forEach((row, index) => {
-                // Try to match with existing employee
-                const empId = row['Employee ID'] || '';
-                const empName = row['Employee Name'] || '';
-                const matchedEmployee = employees.value.find(e => 
-                    e.employee_id === empId || e.name.toLowerCase() === empName.toLowerCase()
-                );
+            // Use header:1 to get array of arrays, skipping the first 5 rows (metadata + headers)
+            const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+            const dataRows = rows.slice(5);
+            
+            if (dataRows.length === 0) {
+                alert('No data found in the Excel file.');
+                isImporting.value = false;
+                return;
+            }
+
+            importProgress.value = 50;
+            importStatus.value = 'Grouping logs by personnel...';
+
+            const groups = {};
+            
+            dataRows.forEach(row => {
+                if (!row || row.length < 5) return;
                 
-                attendanceRecords.value.push({
-                    id: attendanceRecords.value.length + index + 1,
-                    date: row.Date || new Date().toISOString().split('T')[0],
-                    employee_name: matchedEmployee?.name || empName || 'Unknown',
-                    employee_id: matchedEmployee?.employee_id || empId || 'N/A',
-                    department: matchedEmployee?.department || row.Department || 'N/A',
-                    time_in: row['Time In'] || '-',
-                    time_out: row['Time Out'] || '-',
-                    hours_worked: row['Hours Worked'] || '-',
-                    status: row.Status || 'Present',
-                    avatar: avatar_url
-                });
+                const personnelId = String(row[0] || '').trim();
+                const personnelName = String(row[1] || '').trim();
+                const rawDate = String(row[2] || '').trim();
+                const rawTime = String(row[3] || '').trim();
+                const logType = String(row[4] || '').trim().toUpperCase();
+
+                if (!personnelId || !rawDate || personnelId === 'undefined' || rawDate === 'undefined') return;
+
+                // Format date from MM-DD-YYYY to YYYY-MM-DD
+                let formattedDate = rawDate;
+                if (rawDate.includes('-') || rawDate.includes('/')) {
+                    const parts = rawDate.split(/[-/]/);
+                    if (parts.length === 3) {
+                        let m = parts[0], d = parts[1], y = parts[2];
+                        if (y.length === 2) y = "20" + y;
+                        formattedDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+                    }
+                }
+
+                const key = `${personnelId}_${formattedDate}`;
+                if (!groups[key]) {
+                    groups[key] = {
+                        id: personnelId,
+                        name: personnelName, // Initially take the name from the first row found
+                        date: formattedDate,
+                        logs: []
+                    };
+                }
+                
+                // If name was missing on the first row but exists on this one, update it
+                if (!groups[key].name && personnelName) {
+                    groups[key].name = personnelName;
+                }
+
+                groups[key].logs.push({ time: rawTime, type: logType });
             });
-            
-            showImportModal.value = false;
-            selectedFile.value = null;
-            alert(`Successfully imported ${jsonData.length} attendance records!`);
+
+            importProgress.value = 70;
+            importStatus.value = 'Calculating work hours...';
+
+            const recordsToUpload = Object.values(groups).map(group => {
+                const inLogs = group.logs.filter(l => l.type === 'IN').sort((a, b) => a.time.localeCompare(b.time));
+                const outLogs = group.logs.filter(l => l.type === 'OUT').sort((a, b) => b.time.localeCompare(a.time));
+
+                const timeIn = inLogs.length > 0 ? inLogs[0].time : '-';
+                const timeOut = outLogs.length > 0 ? outLogs[0].time : '-';
+
+                // Calculate hours worked
+                let hoursWorked = 0;
+                if (timeIn !== '-' && timeOut !== '-') {
+                    try {
+                        const parseTime = (s) => {
+                            const [timePart, period] = s.split(' ');
+                            let [h, m] = timePart.split(':').map(Number);
+                            if (period === 'PM' && h < 12) h += 12;
+                            if (period === 'AM' && h === 12) h = 0;
+                            return h * 60 + m;
+                        };
+                        const start = parseTime(timeIn);
+                        const end = parseTime(timeOut);
+                        let diff = end - start;
+                        if (diff < 0) diff += 1440; // overnight check
+                        hoursWorked = (diff / 60).toFixed(2);
+                    } catch (e) {
+                        hoursWorked = 0;
+                    }
+                }
+
+                const matchedEmployee = employees.value.find(e => 
+                    String(e.employee_id).includes(group.id) || 
+                    e.name.toLowerCase().includes(group.name.toLowerCase())
+                );
+
+                return {
+                    employee_id_number: matchedEmployee?.employee_id || group.id,
+                    employee_name: matchedEmployee?.name || group.name,
+                    date: group.date,
+                    department: matchedEmployee?.department || 'N/A',
+                    time_in: timeIn,
+                    time_out: timeOut,
+                    hours_worked: hoursWorked,
+                    status: hoursWorked > 0 ? (hoursWorked < 4.5 ? 'Half Day' : 'Present') : 'Absent'
+                };
+            });
+
+            importProgress.value = 90;
+            importStatus.value = 'Uploading to server...';
+
+            try {
+                await axios.post('/api/attendance-records/bulk', { records: recordsToUpload });
+                await fetchAttendanceRecords();
+                importProgress.value = 100;
+                importStatus.value = 'Done!';
+                setTimeout(() => {
+                    showImportModal.value = false;
+                    selectedFile.value = null;
+                    isImporting.value = false;
+                    importProgress.value = 0;
+                    alert(`Successfully imported ${recordsToUpload.length} attendance records!`);
+                }, 500);
+            } catch (err) {
+                console.error('Bulk upload failed:', err);
+                alert('Failed to upload records to server.');
+                isImporting.value = false;
+            }
         };
         reader.readAsArrayBuffer(selectedFile.value);
     } catch (error) {
         console.error('Import failed:', error);
         alert('Failed to import file. Please check the format and try again.');
-    } finally {
         isImporting.value = false;
     }
 };

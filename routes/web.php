@@ -15,7 +15,7 @@ Route::get('/login', function () {
     return view('login');
 })->name('login');
 
-Route::middleware('guest')->group(function () {
+Route::middleware(['guest', 'throttle:5,1'])->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
@@ -23,9 +23,12 @@ Route::middleware('guest')->group(function () {
 Route::post('/api/log-expiry', [AuthController::class, 'logExpiry']);
 
 // Employee Portal (Public)
-Route::post('/api/employee-portal/login', [\App\Http\Controllers\EmployeePortalController::class, 'login']);
+Route::middleware('throttle:5,1')->group(function () {
+    Route::post('/api/employee-portal/login', [\App\Http\Controllers\EmployeePortalController::class, 'login']);
+});
 Route::post('/api/employee-portal/submit-leave', [\App\Http\Controllers\EmployeePortalController::class, 'submitLeave']);
 Route::put('/api/employee-portal/update-leave/{id}', [\App\Http\Controllers\EmployeePortalController::class, 'updateLeave']);
+Route::put('/api/employee-portal/archive-leave/{id}', [\App\Http\Controllers\EmployeePortalController::class, 'archiveLeave']);
 
 // Serve the app shell for the employee portal route without strictly matching auth middleware
 Route::get('/portal', function () {
@@ -79,6 +82,9 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
         Route::post('/api/leave-requests/{id}/unarchive', [\App\Http\Controllers\LeaveRequestController::class, 'unarchive']);
         Route::post('/api/leave-requests/bulk-archive', [\App\Http\Controllers\LeaveRequestController::class, 'bulkArchive']);
         Route::get('/api/leave-requests/archive-index', [\App\Http\Controllers\LeaveRequestController::class, 'getArchiveIndex']);
+        Route::get('/api/attendance-records', [\App\Http\Controllers\AttendanceController::class, 'index']);
+        Route::get('/api/attendance-stats/graph', [\App\Http\Controllers\AttendanceController::class, 'stats']);
+        Route::post('/api/attendance-records/bulk', [\App\Http\Controllers\AttendanceController::class, 'bulkStore']);
     });
 });
 

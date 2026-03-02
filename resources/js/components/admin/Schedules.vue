@@ -123,7 +123,7 @@
                                     <span v-else>&nbsp;</span>
                                 </div>
 
-                                <div v-for="event in date.events" :key="event.id" 
+                                <div v-for="event in date.events.slice(0, 2)" :key="event.id" 
                                     class="px-2 py-1 rounded text-[10px] font-bold bg-violet-100 text-violet-900 border border-violet-200 truncate hover:bg-violet-200 transition-colors"
                                     :title="`${event.user_name} - ${event.leave_type}`"
                                 >
@@ -131,6 +131,11 @@
                                         👤 {{ event.user_name }}
                                     </template>
                                     <span v-else>&nbsp;</span>
+                                </div>
+                                <div v-if="date.events.length > 2" 
+                                    class="px-2 py-0.5 text-[10px] font-black text-violet-400 text-center uppercase tracking-widest italic"
+                                >
+                                    + {{ date.events.length - 2 }} more on leave
                                 </div>
                             </div>
                         </div>
@@ -281,8 +286,9 @@
         for (let i = 1; i <= daysInMonth; i++) {
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
             
-            // Filter Leaves
-            const dayLeaves = allLeaves.value.filter(e => {
+            // Filter Leaves (Excluding Sundays)
+            const isSunday = new Date(dateStr).getDay() === 0;
+            const dayLeaves = isSunday ? [] : allLeaves.value.filter(e => {
                 return e.type === 'leave' && e.from_date <= dateStr && e.to_date >= dateStr;
             });
 

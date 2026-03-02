@@ -34,38 +34,9 @@ class EmployeeController extends Controller
             $query->where('department_id', $request->department_id);
         }
 
-        if ($request->filled('employment_status')) {
-            $query->where('employment_status', $request->employment_status);
-        }
-
-        if ($request->filled('gender')) {
-            $query->whereHas('details', function ($q) use ($request) {
-                $q->where('gender', $request->gender);
-            });
-        }
-
-        if ($request->filled('civil_status')) {
-            $query->whereHas('details', function ($q) use ($request) {
-                $q->where('civil_status', $request->civil_status);
-            });
-        }
-
-        if ($request->filled('hired_year')) {
-            $query->whereYear('date_hired', $request->hired_year);
-        }
-
-        if ($request->filled('missing_id')) {
-            $query->whereHas('details', function ($q) use ($request) {
-                $type = $request->missing_id;
-                if ($type === 'sss')
-                    $q->whereNull('sss_number')->orWhere('sss_number', '');
-                if ($type === 'philhealth')
-                    $q->whereNull('philhealth_number')->orWhere('philhealth_number', '');
-                if ($type === 'pagibig')
-                    $q->whereNull('pagibig_number')->orWhere('pagibig_number', '');
-                if ($type === 'tin')
-                    $q->whereNull('tin_number')->orWhere('tin_number', '');
-            });
+        // Check if user wants ALL records (no pagination)
+        if ($request->boolean('all', false)) {
+            return response()->json($query->latest()->get());
         }
 
         return response()->json($query->latest()->paginate(10));

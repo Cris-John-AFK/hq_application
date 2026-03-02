@@ -24,32 +24,20 @@ export const useEmployeeStore = defineStore('employees', {
             }
 
             this.loading = true;
-            this.fetchingEmployeesPromise = axios.get('/api/users').then(response => {
-                console.log('[DEBUG] /api/users response:', response.data);
-
-                // Laravel pagination wraps data in 'data' field. 
-                // We use response.data.data if it exists and is an array, otherwise fall back to response.data
-                const rawData = response.data;
-                const userData = (rawData && Array.isArray(rawData.data)) ? rawData.data : (Array.isArray(rawData) ? rawData : null);
-
-                if (!userData) {
-                    console.error('[ERROR] Unexpected data structure from /api/users. Expected array, got:', rawData);
-                    this.employees = [];
-                    return [];
-                }
-
-                this.employees = userData.map(user => ({
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    avatar: user.avatar_url,
-                    initials: this.getInitials(user.name),
-                    empId: user.id_number || 'N/A',
-                    department: user.department?.name || user.department || 'N/A',
-                    role: user.role,
-                    status: user.status || 'Available',
-                    position: user.position || 'Employee',
-                    leave_credits: user.leave_credits || 0
+            this.fetchingEmployeesPromise = axios.get('/api/employees?all=true').then(response => {
+                const empData = response.data.data || response.data;
+                this.employees = empData.map(emp => ({
+                    id: emp.id,
+                    name: `${emp.first_name} ${emp.last_name}`,
+                    email: emp.email,
+                    avatar: emp.avatar,
+                    initials: emp.initials || this.getInitials(`${emp.first_name} ${emp.last_name}`),
+                    empId: emp.employee_id || 'N/A',
+                    employee_id: emp.employee_id || 'N/A',
+                    department: emp.department?.name || 'N/A',
+                    status: emp.status || 'Available',
+                    position: emp.position || 'Employee',
+                    leave_credits: emp.leave_credits || 0
                 }));
                 this.lastFetchedEmployees = Date.now();
                 return this.employees;

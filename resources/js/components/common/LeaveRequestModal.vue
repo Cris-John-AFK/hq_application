@@ -1312,8 +1312,15 @@ watch([() => form.value.fromDate, () => form.value.toDate, () => form.value.requ
             return;
         }
 
-        const diffTime = Math.abs(e - s);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        // Count days excluding Sundays
+        let diffDays = 0;
+        let cur = new Date(s);
+        while (cur <= e) {
+            if (cur.getDay() !== 0) { // 0 is Sunday
+                diffDays++;
+            }
+            cur.setDate(cur.getDate() + 1);
+        }
         
         if (type === 'Halfday') form.value.numberOfDays = 0.5;
         else if (type === 'Undertime') form.value.numberOfDays = 0;

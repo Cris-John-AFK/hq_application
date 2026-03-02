@@ -162,7 +162,11 @@
             window.location.href = '/dashboard';
         } catch (err) {
             console.error(err);
-            error.value = 'Invalid credentials. Please try again.';
+            if (err.response?.status === 429) {
+                error.value = 'Too many failed attempts. Please wait 1 minute before trying again.';
+            } else {
+                error.value = 'Invalid credentials. Please try again.';
+            }
             isLoading.value = false;
         }
     };
@@ -190,7 +194,9 @@
             showEmployeeModal.value = false;
             window.location.href = '/portal';
         } catch (err) {
-            if (err.response?.status === 422) {
+            if (err.response?.status === 429) {
+                empError.value = 'Too many attempts. Please wait 1 minute before trying again.';
+            } else if (err.response?.status === 422) {
                 empError.value = 'Please enter a valid birthdate (MMDDYYYY).';
             } else {
                 empError.value = err.response?.data?.message || 'Verification failed. Please check your details.';

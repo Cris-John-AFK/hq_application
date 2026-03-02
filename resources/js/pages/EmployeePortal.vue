@@ -47,10 +47,15 @@
                             <div v-for="leave in leaveHistory" :key="leave.id" 
                                 @click="leave.status === 'Pending' ? startEdit(leave) : null"
                                 :class="[
-                                    'p-5 border border-gray-200 rounded-xl transition-all group bg-white flex flex-col md:flex-row justify-between gap-4',
+                                    'p-5 border border-gray-200 rounded-xl transition-all group bg-white flex flex-col md:flex-row justify-between gap-4 relative',
                                     leave.status === 'Pending' ? 'cursor-pointer hover:border-[#673ab7] hover:shadow-md hover:bg-purple-50/20 shadow-sm' : 'cursor-default'
                                 ]">
-                                <div>
+                                
+                                <button type="button" @click.stop.prevent="promptArchive(leave)" class="absolute top-3 right-3 text-rose-300 hover:text-white bg-rose-50 hover:bg-rose-500 p-2.5 rounded-lg opacity-100 transition-all z-20 cursor-pointer shadow-sm hover:shadow-md" title="Remove / Archive">
+                                    <i class="pi pi-trash text-sm"></i>
+                                </button>
+
+                                <div class="pr-8">
                                     <div class="flex items-center gap-3 mb-2">
                                         <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest"
                                             :class="leave.status === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
@@ -115,6 +120,34 @@
             </div>
             
         </div>
+        
+        <!-- Archive Confirm Modal -->
+        <transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100" leave-active-class="transition duration-100 ease-in" leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
+            <div v-if="showArchiveModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm" @click.stop="showArchiveModal = false">
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs overflow-hidden" @click.stop>
+                    <div class="p-6 text-center">
+                        <div class="w-16 h-16 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 mx-auto mb-4">
+                            <i class="pi pi-exclamation-circle text-3xl"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-gray-800 mb-2">Confirm Action</h3>
+                        <p class="text-xs font-bold text-gray-400 mb-6 px-2">
+                            {{ archiveTarget?.status === 'Pending' ? 'Are you sure you want to delete this pending request? This will formally cancel it.' : 'Are you sure you want to remove this requested leave from your history?' }}
+                        </p>
+                        
+                        <div class="flex gap-3">
+                            <button type="button" @click="showArchiveModal = false" class="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-black text-xs uppercase tracking-widest cursor-pointer transition-colors shadow-sm">
+                                Cancel
+                            </button>
+                            <button type="button" @click.prevent="confirmArchive" :disabled="archiveLoading" class="flex-1 px-4 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black text-xs uppercase tracking-widest cursor-pointer shadow-md shadow-rose-200 transition-all flex justify-center items-center gap-2">
+                                <i v-if="archiveLoading" class="pi pi-spinner pi-spin"></i>
+                                <span>Proceed</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
     </div>
 </template>
 
@@ -129,6 +162,10 @@ const leaveHistory = ref([]);
 const birthdateCred = ref('');
 const successMsg = ref('');
 const editData = ref(null);
+
+const showArchiveModal = ref(false);
+const archiveTarget = ref(null);
+const archiveLoading = ref(false);
 
 const SESSION_TIMEOUT = 5 * 60; // 5 minutes in seconds
 const timeLeft = ref(SESSION_TIMEOUT);
@@ -232,15 +269,28 @@ const startEdit = (leave) => {
 const handleFormSubmit = async (payload, resolve, reject) => {
     successMsg.value = '';
     
-    // Supplement payload with auth info
-    const finalPayload = {
+    // Supplement payload with auth info using FormData for file support
+    // We merge these first to avoid duplicated keys in FormData
+    const finalData = {
         ...payload,
         employee_id: employee.value?.id,
         birthdate: birthdateCred.value,
     };
 
+    const formData = new FormData();
+    Object.keys(finalData).forEach(key => {
+        const val = finalData[key];
+        if (val === null || val === undefined) return;
+
+        if (key === 'additional_details') {
+            formData.append(key, JSON.stringify(val));
+        } else {
+            formData.append(key, val);
+        }
+    });
+
     try {
-        const { data } = await axios.post('/api/employee-portal/submit-leave', finalPayload);
+        const { data } = await axios.post('/api/employee-portal/submit-leave', formData);
         successMsg.value = 'Your leave request has been sent to the HR successfully.';
         
         leaveHistory.value.unshift(data.leave); // Update history live
@@ -257,15 +307,29 @@ const handleFormSubmit = async (payload, resolve, reject) => {
 const handleFormUpdate = async (payload, resolve, reject) => {
     successMsg.value = '';
     
-    // Supplement payload with auth info
-    const finalPayload = {
+    // Supplement payload with auth info using FormData for file support
+    // We must use POST with _method=PUT for multipart updates in Laravel
+    const finalData = {
         ...payload,
         employee_id: employee.value?.id,
         birthdate: birthdateCred.value,
+        _method: 'PUT'
     };
 
+    const formData = new FormData();
+    Object.keys(finalData).forEach(key => {
+        const val = finalData[key];
+        if (val === null || val === undefined) return;
+
+        if (key === 'additional_details') {
+            formData.append(key, JSON.stringify(val));
+        } else {
+            formData.append(key, val);
+        }
+    });
+
     try {
-        const { data } = await axios.put(`/api/employee-portal/update-leave/${editData.value.id}`, finalPayload);
+        const { data } = await axios.post(`/api/employee-portal/update-leave/${editData.value.id}`, formData);
         successMsg.value = 'Your leave request has been successfully updated.';
         
         // Update history live
@@ -281,6 +345,29 @@ const handleFormUpdate = async (payload, resolve, reject) => {
         resolve(); // Tells the modal to clear its loading state and reset
     } catch (error) {
         reject(error.response?.data?.message || 'Failed to update form.');
+    }
+};
+
+const promptArchive = (leave) => {
+    archiveTarget.value = leave;
+    showArchiveModal.value = true;
+};
+
+const confirmArchive = async () => {
+    if (!archiveTarget.value) return;
+    archiveLoading.value = true;
+    try {
+        await axios.put(`/api/employee-portal/archive-leave/${archiveTarget.value.id}`, {
+            employee_id: employee.value?.id,
+            birthdate: birthdateCred.value
+        });
+        leaveHistory.value = leaveHistory.value.filter(l => l.id !== archiveTarget.value.id);
+        showArchiveModal.value = false;
+        archiveTarget.value = null;
+    } catch (e) {
+        alert(e.response?.data?.message || 'Failed to archive request.');
+    } finally {
+        archiveLoading.value = false;
     }
 };
 </script>

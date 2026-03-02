@@ -96,33 +96,9 @@
                     </div>
                 </div>
 
-                <!-- NEW: Contextual widgets below the grid to fill empty space -->
-                <div v-if="!loading" class="mt-3 grid grid-cols-1 gap-3">
-                    <div class="px-4 py-3 bg-teal-50 border border-teal-100 rounded-2xl flex items-center justify-between group hover:bg-teal-100 transition-colors shadow-sm cursor-pointer" @click="activeTab = 'leaves'">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-xl bg-teal-500 text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                                <i class="pi pi-users text-sm"></i>
-                            </div>
-                            <div>
-                                <p class="text-[9px] font-black uppercase tracking-[0.1em] text-teal-600 mb-0.5">On Leave Today</p>
-                                <p class="text-xs font-bold text-teal-800">Currently out of office</p>
-                            </div>
-                        </div>
-                        <span class="text-xl font-black text-teal-700">{{ leaveStats.on_leave_today || 0 }}</span>
-                    </div>
-
-                    <div class="px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-between group hover:bg-indigo-100 transition-colors shadow-sm cursor-pointer" @click="activeTab = 'leaves'">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-xl bg-indigo-500 text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                                <i class="pi pi-calendar-plus text-sm"></i>
-                            </div>
-                            <div>
-                                <p class="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-600 mb-0.5">Upcoming Leaves</p>
-                                <p class="text-xs font-bold text-indigo-800">Approved & scheduled</p>
-                            </div>
-                        </div>
-                        <span class="text-xl font-black text-indigo-700">{{ leaveStats.scheduled || 0 }}</span>
-                    </div>
+                <!-- Attendance Trend Graph -->
+                <div v-if="!loading" class="mt-6 flex-1">
+                    <AttendanceGraph />
                 </div>
 
             </div>
@@ -160,11 +136,7 @@
                             <span class="text-[9px] font-medium opacity-60">Imported on Jan 23, 2026</span>
                         </button>
                     </div>
-                    <!-- WIP notice: only on attendance tab -->
-                    <div v-if="activeTab === 'attendance'" class="px-4 py-2 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
-                        <i class="pi pi-wrench text-amber-500 text-xs"></i>
-                        <span class="text-[10px] font-black text-amber-600 uppercase tracking-widest">Placeholder data — not connected to live time-keeping</span>
-                    </div>
+
 
                     <!-- Tab Content -->
                     <div class="p-4">
@@ -209,7 +181,17 @@
                                                     {{ record.date }}
                                                 </span>
                                                 <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-                                                <span class="text-[10px] font-bold text-teal-600 uppercase tracking-wider">Present</span>
+                                                <span 
+                                                    class="text-[10px] font-black underline uppercase tracking-wider"
+                                                    :class="{
+                                                        'text-emerald-600': record.status === 'Present',
+                                                        'text-amber-600': record.status === 'Half Day',
+                                                        'text-rose-600': record.status === 'Absent',
+                                                        'text-orange-600': record.status === 'Late'
+                                                    }"
+                                                >
+                                                    {{ record.status || 'Present' }}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -374,6 +356,7 @@
     import StatCard from '../common/StatCard.vue';
     import BulletinBoard from '../common/BulletinBoard.vue';
     import LeaveAnalytics from './LeaveAnalytics.vue';
+    import AttendanceGraph from './AttendanceGraph.vue';
 
     const authStore = useAuthStore();
     const leaveStore = useLeaveStore();
@@ -397,29 +380,42 @@
     const leavesPage = ref(1);
     const pageSize = ref(5);
 
+    const recentAttendance = ref([]);
+    const fetchRecentAttendance = async () => {
+        try {
+            const { data } = await axios.get('/api/attendance-records');
+            recentAttendance.value = data.slice(0, 50).map(r => {
+                const emp = employees.value.find(e => 
+                    String(e.employee_id) === String(r.employee_id_number) ||
+                    String(e.name).toLowerCase() === String(r.employee_name).toLowerCase()
+                );
+                return {
+                    id: r.id,
+                    name: emp?.name || r.employee_name,
+                    initials: emp?.initials || getInitials(r.employee_name),
+                    avatar: emp?.avatar,
+                    date: new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                    timeIn: r.time_in,
+                    timeOut: r.time_out,
+                    status: r.status
+                };
+            });
+        } catch (error) {
+            console.error('Failed to fetch recent attendance:', error);
+        }
+    };
+
     onMounted(async () => {
         loading.value = true;
         await Promise.all([
             employeeStore.fetchEmployees(),
-            leaveStore.fetchStats(true)
+            leaveStore.fetchStats(true),
         ]);
+        await fetchRecentAttendance();
         loading.value = false;
     });
 
-    // Recent Attendance Data
-    const recentAttendance = computed(() => {
-        if (employees.value.length === 0) return [];
-        // Simulate attendance data from employees
-        return employees.value.map((emp, index) => ({
-            id: emp.id,
-            name: emp.name,
-            initials: emp.initials,
-            avatar: emp.avatar,
-            date: 'Jan 23, 2026',
-            timeIn: '08:00 AM',
-            timeOut: '05:00 PM'
-        }));
-    });
+
 
     const paginatedAttendance = computed(() => {
         const start = (attendancePage.value - 1) * pageSize.value;
