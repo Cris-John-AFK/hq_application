@@ -102,6 +102,7 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
 
     Route::get('/api/reports/annual', [\App\Http\Controllers\ReportController::class, 'annualAttendance']);
     Route::get('/api/reports/monthly-department', [\App\Http\Controllers\ReportController::class, 'monthlyDepartment']);
+    Route::get('/api/reports/attendance/export', [\App\Http\Controllers\ReportController::class, 'exportExcel']);
 
     Route::get('/api/leave-requests/export', [\App\Http\Controllers\LeaveRequestController::class, 'export']);
     Route::get('/api/leave-stats', [\App\Http\Controllers\LeaveRequestController::class, 'stats']);

@@ -12,9 +12,17 @@ A professional, enterprise-grade human capital management application built with
 
 ### 📊 Enterprise Analytics Dashboard
 - **Executive Stats Grid**: Real-time monitoring of **Total Employees**, **Daily Presence**, **Absences**, **Lateness**, and **On-Leave** staff.
+- **Attendance Trend Graph**: A high-fidelity, interactive **ApexCharts** visualization with toggleable **Daily**, **Weekly**, and **Monthly** perspectives for long-term presence tracking.
 - **Corporate Performance Ranking**: A data-driven leaderboard ranking departments by attendance excellence, fostering healthy motivation.
-- **Live Activity Feeds**: Paginated "Recent Attendance" and "Recent Leaves" streams with real-time status notifications.
-- **Rich Data Vis**: Interactive grouped bar charts for multi-dimensional attendance analysis.
+- **Live Activity Feeds**: Paginated "Recent Attendance" and "Recent Leaves" streams with real-time status notifications and high-density employee metadata.
+- **Unified HR Sync**: Attendance records are automatically cross-referenced with the centralized **Employee Masterlist**, resolving Department, Full Name, and Avatar data even for staff without digital accounts.
+
+### 🧬 Biometric Attendance Engine
+- **Universal Excel Parser**: High-performance client-side engine designed specifically for biometric scanning devices.
+- **Dual-Log Reconciliation**: Advanced logic that automatically groups separate **IN** and **OUT** rows, identifies the earliest/latest timestamps, and calculates exact work hours.
+- **Live Progress UI**: Real-time visual feedback during mass imports, showing parsing stages and calculation status with a synchronized progress bar.
+- **Smart Identity Matching**: Dual-layer verification that matches scanned logs via **Personnel ID** with a fallback to **Fuzzy Name Matching**, ensuring 100% data attribution.
+- **Status Classification**: Automatically determines **Present**, **Late**, **Half-Day**, or **Absent** statuses based on organizational time thresholds.
 
 ### 📅 Advanced Scheduling & Calendar
 - **Continuous Multi-Day Visualization**: Sophisticated logic that renders multi-day events as single, unbroken visual bars for clarity.
@@ -30,14 +38,14 @@ A professional, enterprise-grade human capital management application built with
 - **Advanced Audit Toolbar**: Instant real-time searching by **Serial Number**, **Asset Nomenclature**, or **Technical Description** with multi-criteria category filters.
 
 ### 📁 Advanced Leave & Masterlist Management
-- **Unified Masterlist Support**: Seamlessly manage leave for both system users and "Masterlist Employees" (staff without digital accounts) with 100% data parity.
+- **Unified Masterlist Support**: Seamlessly manage leave and attendance for both system users and "Masterlist Employees" (staff without digital accounts) with 100% data parity.
 - **Advanced Archive Registry**: Featuring a Windows 11-inspired Explorer navigation system. Records are categorized into secure "Folders":
     - **Leave Request Archive**: Structured by Year and Month for high-density historical lookup.
     - **Employee Masterlist Archive**: A dedicated registry for archived/off-boarded personnel, keeping the active workspace clutter-free.
 - **Soft-Delete Maintenance**: High-performance administrative tool to mass-archive legacy records using smart date thresholds (30, 60, or 90 days ago) with a single click.
 - **One-Click Restoration**: Full data integrity fallback allowing administrators to restore any archived record or employee back to the active list instantly.
 - **Admin-Filing with Auto-Approval**: Administrators can bypass approval workflows by filing leaves directly on behalf of employees, triggering instant credit deductions.
-- **Streamlined Personnel Management**: Simplified primary employee views by removing credit management and non-essential contact fields (like email) from the masterlist to prioritize high-density organizational data.
+- **Full-Spectrum HR Reconciliation**: Attendance records with missing department data are dynamically resolved by hot-linking to the Masterlist registry, fixing "N/A" gaps in reports.
 - **Disciplinary Metadata Tracking**: New **Attendance Category** system allows administrators to classify leaves (UA, WMC, WD, UH) for advanced absenteeism reporting.
 - **Conflict Prevention**: Intelligent overlap validation prevents filing duplicate requests for the same date.
 - **Precision SIL Tracking**: Automated Service Incentive Leave (SIL) system with 100% accurate numeric deductions and restorations, managed through dedicated leave modules rather than the masterlist.

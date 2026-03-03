@@ -445,6 +445,7 @@ const handleImport = async (event) => {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         alert('Masterlist imported successfully!');
+        fetchDepartments();
         fetchEmployees(1);
     } catch (e) {
         console.error(e);

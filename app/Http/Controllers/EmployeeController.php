@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Employee;
 use App\Models\EmployeeDetail;
+use App\Models\Department;
+use App\Models\AttendanceRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -98,8 +100,9 @@ class EmployeeController extends Controller
                 'tin_number' => $validated['tin_number'] ?? null,
             ]);
 
-            // Audit Log
-            \App\Utils\AuditLogger::log('Masterlist', 'Created', "Manually added a new employee: {$employee->name} ({$employee->employee_id}).", null, $employee->toArray());
+            // Post-action cleanup
+            Department::cleanup();
+            AttendanceRecord::syncDepartments();
 
             return response()->json($employee->load('details', 'department'), 201);
         });
@@ -145,8 +148,9 @@ class EmployeeController extends Controller
             $employee->refresh();
             $newData = $employee->load('details', 'department')->toArray();
 
-            // Audit Log
-            \App\Utils\AuditLogger::log('Masterlist', 'Updated', "Updated profile/details of employee: {$employee->name} ({$employee->employee_id}).", $oldData, $newData);
+            // Post-action cleanup
+            Department::cleanup();
+            AttendanceRecord::syncDepartments();
 
             return response()->json($employee);
         });
@@ -164,8 +168,9 @@ class EmployeeController extends Controller
             'archived_at' => now()
         ]);
 
-        // Audit Log
-        \App\Utils\AuditLogger::log('Masterlist', 'Archived', "Archived employee from masterlist: {$empName} ({$empId}).");
+        // Post-action cleanup
+        Department::cleanup();
+        AttendanceRecord::syncDepartments();
 
         return response()->json(['message' => 'Employee moved to archive']);
     }
@@ -186,8 +191,9 @@ class EmployeeController extends Controller
             'archived_at' => null
         ]);
 
-        // Audit Log
-        \App\Utils\AuditLogger::log('Masterlist', 'Restored', "Restored employee to masterlist: {$empName} ({$empId}).");
+        // Post-action cleanup
+        Department::cleanup();
+        AttendanceRecord::syncDepartments();
 
         return response()->json(['message' => 'Employee restored from archive']);
     }

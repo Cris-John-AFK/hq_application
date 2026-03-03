@@ -326,14 +326,7 @@ const getRateColor = (rateStr) => {
 };
 
 const downloadExcel = () => {
-    let data = activeTab.value === 'annual' ? annualData.value : departmentData.value;
-    let filename = activeTab.value === 'annual' 
-        ? `Annual_Report_${selectedYear.value}.xlsx` 
-        : `Department_Report_${months[selectedMonth.value-1]}_${selectedYear.value}.xlsx`;
-
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Report");
-    XLSX.writeFile(wb, filename);
+    const url = `/api/reports/attendance/export?year=${selectedYear.value}&month=${selectedMonth.value}`;
+    window.location.href = url;
 };
 </script>
