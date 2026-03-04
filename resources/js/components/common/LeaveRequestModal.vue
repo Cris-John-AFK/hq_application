@@ -526,8 +526,8 @@
                                     </div>
                                 </div>
 
-                                <!-- Pay Configuration (ADMIN ONLY) -->
-                                <div v-if="isAdminMode" class="bg-teal-50/50 p-4 rounded-lg border border-teal-100 animate-in fade-in transition-all">
+                                <!-- Pay Configuration -->
+                                <div class="bg-teal-50/50 p-4 rounded-lg border border-teal-100 animate-in fade-in transition-all">
                                     <label class="block text-[10px] font-black text-teal-700 uppercase tracking-widest mb-3">Pay Configuration</label>
                                     <div class="space-y-3">
                                         <div class="flex items-center gap-6">
@@ -1106,15 +1106,17 @@ const closeModal = () => {
 };
 
 // Watch for modal open and initialData to populate form
-watch(() => props.modelValue, (isOpen) => {
-    if (isOpen) {
+const initFormFromProps = () => {
+    if (props.modelValue) {
         if (props.isEdit && props.initialData) {
             const data = props.initialData;
+            const lTypes = leaveTypes.value || [];
             form.value = {
                 dateFiled: data.date_filed || new Date().toISOString().split('T')[0],
                 requestType: data.request_type || 'Leave',
-                leaveType: leaveTypes.includes(data.leave_type) ? data.leave_type : 'Others',
-                otherLeaveType: leaveTypes.includes(data.leave_type) ? '' : data.leave_type,
+                leaveType: lTypes.includes(data.leave_type) ? data.leave_type : 'Others',
+                category: data.category || '',
+                otherLeaveType: lTypes.includes(data.leave_type) ? '' : data.leave_type,
                 fromDate: data.from_date,
                 toDate: data.to_date || data.from_date,
                 numberOfDays: data.days_taken,
@@ -1123,7 +1125,7 @@ watch(() => props.modelValue, (isOpen) => {
                 endTime: data.end_time || '',
                 reason: data.reason,
                 attachment: null,
-                isPaid: data.is_paid || false,
+                isPaid: !!data.is_paid,
                 daysPaid: data.days_paid || 0,
                 additionalDetails: data.additional_details || {}
             };
@@ -1140,7 +1142,9 @@ watch(() => props.modelValue, (isOpen) => {
             }
         }
     }
-});
+};
+
+watch([() => props.modelValue, () => props.initialData, () => leaveTypes.value], initFormFromProps, { immediate: true });
 
 const searchEmployee = async () => {
     if (!adminSearchId.value) return;

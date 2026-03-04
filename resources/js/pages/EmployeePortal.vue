@@ -109,7 +109,7 @@
                         <span class="text-xs font-black text-purple-600 block">{{ employee.employee_id }}</span>
                     </div>
                 </div>
-
+ 
                 <button @click="openNewForm" :class="['w-full py-4 px-6 text-sm font-black uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer', activeTab === 'form' && !editData ? 'bg-[#673ab7] hover:bg-[#5e35b1] text-white active:scale-95' : 'bg-white text-[#673ab7] hover:bg-purple-50']">
                     NEW LEAVE FORM
                 </button>
@@ -283,7 +283,7 @@ const handleFormSubmit = async (payload, resolve, reject) => {
     // We merge these first to avoid duplicated keys in FormData
     const finalData = {
         ...payload,
-        employee_id: employee.value?.id,
+        employee_id: employee.value?.employee_id,
         birthdate: birthdateCred.value,
     };
 
@@ -321,7 +321,7 @@ const handleFormUpdate = async (payload, resolve, reject) => {
     // We must use POST with _method=PUT for multipart updates in Laravel
     const finalData = {
         ...payload,
-        employee_id: employee.value?.id,
+        employee_id: employee.value?.employee_id,
         birthdate: birthdateCred.value,
         _method: 'PUT'
     };
@@ -368,7 +368,7 @@ const confirmArchive = async () => {
     archiveLoading.value = true;
     try {
         await axios.put(`/api/employee-portal/archive-leave/${archiveTarget.value.id}`, {
-            employee_id: employee.value?.id,
+            employee_id: employee.value?.employee_id,
             birthdate: birthdateCred.value
         });
         leaveHistory.value = leaveHistory.value.filter(l => l.id !== archiveTarget.value.id);
