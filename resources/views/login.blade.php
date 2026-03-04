@@ -10,8 +10,8 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="bg-gradient-to-br from-teal-400 to-blue-500 h-screen flex items-center justify-center p-4">
-    <div id="app" class="w-full max-w-md">
+<body class="bg-gradient-to-br from-teal-400 to-blue-500 h-screen flex items-center justify-center p-4 overflow-hidden">
+    <div id="app" class="w-full max-w-6xl">
         <login-form></login-form>
     </div>
 </body>

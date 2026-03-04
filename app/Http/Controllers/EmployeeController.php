@@ -38,10 +38,10 @@ class EmployeeController extends Controller
 
         // Check if user wants ALL records (no pagination)
         if ($request->boolean('all', false)) {
-            return response()->json($query->latest()->get());
+            return response()->json($query->latest($request->boolean('archived', false) ? 'archived_at' : 'created_at')->get());
         }
 
-        return response()->json($query->latest()->paginate(10));
+        return response()->json($query->latest($request->boolean('archived', false) ? 'archived_at' : 'created_at')->paginate(10));
     }
 
     public function store(Request $request)
@@ -170,6 +170,9 @@ class EmployeeController extends Controller
             'archived_at' => now()
         ]);
 
+        // Audit Log
+        \App\Utils\AuditLogger::log('EMPLOYEES', 'ARCHIVED', "Archived employee {$empName} (#{$empId}).", null, $employee->toArray());
+
         // Post-action cleanup
         Department::cleanup();
         AttendanceRecord::syncDepartments();
@@ -193,6 +196,9 @@ class EmployeeController extends Controller
             'is_archived' => false,
             'archived_at' => null
         ]);
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('EMPLOYEES', 'RESTORED', "Restored employee {$empName} (#{$empId}) from archive.", null, $employee->toArray());
 
         // Post-action cleanup
         Department::cleanup();
@@ -230,7 +236,7 @@ class EmployeeController extends Controller
             \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\EmployeesImport, $request->file('file'));
 
             // Audit Log
-            \App\Utils\AuditLogger::log('Masterlist', 'Imported', "Imported employees via Excel file.");
+            \App\Utils\AuditLogger::log('MASTERLIST', 'IMPORTED', "Imported employees via Excel file.");
 
             // Invalidate cache
             \Illuminate\Support\Facades\Cache::flush();

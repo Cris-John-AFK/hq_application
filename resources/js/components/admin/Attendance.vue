@@ -385,7 +385,8 @@ const formatDate = (dateStr) => {
 
 const getInitials = (name) => {
     if (!name) return '??';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    const parts = name.trim().split(' ').filter(Boolean);
+    return parts.map(n => n.charAt(0)).join('').toUpperCase().substring(0, 2);
 };
 
 const handleFileSelect = (event) => {

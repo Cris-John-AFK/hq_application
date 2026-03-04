@@ -14,6 +14,7 @@ return new class extends Migration {
         Schema::create('leave_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignId('employee_id')->nullable()->constrained('employees')->cascadeOnDelete();
 
             // Leave Details
             $table->string('leave_type');
@@ -43,7 +44,7 @@ return new class extends Migration {
             $table->boolean('is_archived')->default(false)->index();
             $table->timestamp('archived_at')->nullable();
 
-            $table->unsignedBigInteger('employee_id')->nullable()->index();
+            $table->json('additional_details')->nullable();
 
             $table->timestamps();
 

@@ -246,7 +246,9 @@ const formatDate = (iso) => {
 };
 
 const getInitials = (name) => {
-    return name ? name.split(' ').map(n => n[0]).join('').slice(0, 2) : '??';
+    if (!name) return '??';
+    const parts = name.trim().split(' ').filter(p => p.length > 0);
+    return parts.map(part => part.charAt(0)).join('').toUpperCase().slice(0, 2);
 };
 
 const getActionClass = (action) => {

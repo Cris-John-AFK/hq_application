@@ -28,6 +28,12 @@ class Employee extends Model
 
     protected $appends = ['name', 'initials'];
 
+    protected $casts = [
+        'is_archived' => 'boolean',
+        'archived_at' => 'datetime',
+        'date_hired' => 'date',
+    ];
+
     // Relationships
     public function details()
     {

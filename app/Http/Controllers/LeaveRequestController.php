@@ -108,7 +108,8 @@ class LeaveRequestController extends Controller
             $query->whereMonth('from_date', $request->month);
         }
 
-        $results = $query->latest()->paginate(10);
+        $orderBy = $request->boolean('archived', false) ? 'archived_at' : 'created_at';
+        $results = $query->latest($orderBy)->paginate(10);
 
         return response()->json($results);
     }
@@ -917,42 +918,55 @@ class LeaveRequestController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
+        $newCutoff = now()->subHours(24);
+
         // 1. Leave Requests Structure
         $leaveStructure = LeaveRequest::where('is_archived', true)
-            ->selectRaw('EXTRACT(YEAR FROM from_date) as year, EXTRACT(MONTH FROM from_date) as month, COUNT(*) as count')
+            ->selectRaw('EXTRACT(YEAR FROM from_date) as year, EXTRACT(MONTH FROM from_date) as month, COUNT(*) as count, SUM(CASE WHEN archived_at >= ? THEN 1 ELSE 0 END) as new_count', [$newCutoff])
             ->groupBy('year', 'month')
             ->orderBy('year', 'desc')
             ->orderBy('month', 'desc')
             ->get();
 
         $leaveGrouped = [];
+        $totalNewLeaves = 0;
         foreach ($leaveStructure as $item) {
             $year = (int) $item->year;
             $month = (int) $item->month;
+            $newCount = (int) $item->new_count;
             $monthName = date('F', mktime(0, 0, 0, $month, 10));
 
             if (!isset($leaveGrouped[$year])) {
                 $leaveGrouped[$year] = [
                     'year' => $year,
                     'total' => 0,
+                    'new_total' => 0,
                     'months' => []
                 ];
             }
             $leaveGrouped[$year]['months'][] = [
                 'month' => $month,
                 'month_name' => $monthName,
-                'count' => (int) $item->count
+                'count' => (int) $item->count,
+                'new_count' => $newCount
             ];
             $leaveGrouped[$year]['total'] += (int) $item->count;
+            $leaveGrouped[$year]['new_total'] += $newCount;
+            $totalNewLeaves += $newCount;
         }
 
         // 2. Employees Structure
         $employeeCount = \App\Models\Employee::where('is_archived', true)->count();
+        $newEmployeeCount = \App\Models\Employee::where('is_archived', true)
+            ->where('archived_at', '>=', $newCutoff)
+            ->count();
 
         return response()->json([
             'leaves' => array_values($leaveGrouped),
+            'total_new_leaves' => $totalNewLeaves,
             'employees' => [
-                'count' => $employeeCount
+                'count' => $employeeCount,
+                'new_count' => $newEmployeeCount
             ]
         ]);
     }

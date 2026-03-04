@@ -137,7 +137,7 @@
                                                 class="w-full text-left p-3 hover:bg-purple-50 flex items-center gap-3 transition-colors border-b border-gray-50 last:border-0"
                                             >
                                                 <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold text-xs shrink-0">
-                                                    {{ emp.first_name[0] }}{{ emp.last_name[0] }}
+                                                    {{ (emp.first_name?.[0] || '') + (emp.last_name?.[0] || '') || '??' }}
                                                 </div>
                                                 <div class="min-w-0">
                                                     <p class="font-bold text-gray-800 text-sm truncate">{{ emp.name }}</p>
@@ -171,7 +171,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-2" v-if="displayUser">
                         <div>
                             <span class="block text-xs text-gray-500 uppercase">Name</span>
-                            <span class="font-bold text-gray-800">{{ displayUser.name || (displayUser.first_name + ' ' + displayUser.last_name) }}</span>
+                            <span class="font-bold text-gray-800">{{ (displayUser.name || ((displayUser.first_name || '') + ' ' + (displayUser.last_name || ''))).trim() || 'No Name Set' }}</span>
                         </div>
                         <div>
                             <span class="block text-xs text-gray-500 uppercase">Employee No.</span>
@@ -908,7 +908,7 @@ const ghostText = computed(() => {
     
     // Match starts with last name - rearrange to align ghost text
     if (emp.last_name && emp.last_name.toLowerCase().startsWith(q)) {
-        const rearranged = `${emp.last_name}, ${emp.first_name}`;
+        const rearranged = `${emp.last_name || ''}, ${emp.first_name || ''}`;
         return adminSearchId.value + rearranged.slice(q.length);
     }
     

@@ -88,6 +88,7 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     });
 });
 
+Route::middleware(['auth', 'admin'])->put('/api/settings/{key}', [\App\Http\Controllers\SystemSettingsController::class, 'update']);
 Route::get('/api/settings', [\App\Http\Controllers\SystemSettingsController::class, 'getAll']);
 Route::get('/api/settings/{key}', [\App\Http\Controllers\SystemSettingsController::class, 'get']);
 

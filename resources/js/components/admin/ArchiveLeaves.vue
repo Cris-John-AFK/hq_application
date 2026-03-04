@@ -78,6 +78,12 @@
                             >
                                 <div class="w-full aspect-square relative mb-8 transition-transform group-hover:-translate-y-3 group-active:scale-95 flex items-center justify-center">
                                     <div class="win11-folder-container relative w-36 h-28">
+                                        <!-- New Badge -->
+                                        <div v-if="item.new_count > 0 && !isViewed(item.view_id)" class="absolute -top-4 -right-4 bg-red-600 text-white text-[11px] font-black px-2.5 py-1 rounded-full z-30 shadow-xl border-2 border-white flex items-center gap-1">
+                                            <span class="animate-pulse">NEW</span>
+                                            <span class="bg-white/20 px-1 rounded">{{ item.new_count }}</span>
+                                        </div>
+
                                         <!-- Paper -->
                                         <div class="absolute bottom-6 left-1/2 -translate-x-1/2 w-16 h-20 bg-white rounded-md shadow-md opacity-90 transition-transform group-hover:-translate-y-6 z-0 border border-gray-100">
                                             <div class="p-3 space-y-2 mt-4">
@@ -112,31 +118,40 @@
                                         <tr v-if="selectedCategory === 'leaves'">
                                             <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Official Document / Subject</th>
                                             <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Classification</th>
-                                            <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Interval</th>
+                                            <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Temporal scope / Archived on</th>
                                             <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em] text-right">Operations</th>
                                         </tr>
                                         <tr v-else>
                                             <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Employee Detail</th>
-                                            <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Department / Position</th>
-                                            <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Archived Date</th>
+                                            <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Organization Unit / Role</th>
+                                            <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em]">Temporal Scope / Archived on</th>
                                             <th class="py-6 px-10 text-xs font-black text-gray-400 uppercase tracking-[0.3em] text-right">Operations</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y-2 divide-gray-50">
                                         <!-- Leave Records Row -->
                                         <template v-if="selectedCategory === 'leaves'">
-                                            <tr v-for="request in requests" :key="request.id" class="hover:bg-gray-50 transition-all group">
+                                            <tr 
+                                                v-for="request in requests" 
+                                                :key="request.id" 
+                                                class="hover:bg-gray-50 transition-all group relative"
+                                                :class="{ 'bg-red-50/70 border-l-4 border-red-500 animate-new-blink': isNewRecord(request.archived_at) }"
+                                            >
                                                 <td class="py-8 px-10">
                                                     <div class="flex items-center gap-6">
+                                                        <div v-if="isNewRecord(request.archived_at)" class="absolute left-0 top-1/2 -translate-y-1/2 h-full w-1 bg-red-600"></div>
                                                         <div class="w-12 h-16 bg-gray-50 border-2 border-gray-100 rounded-lg flex flex-col p-2.5 shadow-sm group-hover:bg-white transition-colors">
                                                             <div class="h-[2px] w-full bg-gray-200 mb-2"></div>
                                                             <div class="h-[2px] w-3/4 bg-gray-200 mb-2"></div>
                                                             <div class="h-[2px] w-full bg-gray-200"></div>
                                                         </div>
                                                         <div>
-                                                            <p class="text-xl font-black text-black leading-none mb-2 transition-colors">
-                                                                {{ request.user?.name || (request.employee?.last_name + ', ' + request.employee?.first_name) }}
-                                                            </p>
+                                                            <div class="flex items-center gap-3 mb-2">
+                                                                <p class="text-xl font-black text-black leading-none transition-colors">
+                                                                    {{ request.user?.name || (request.employee?.last_name + ', ' + request.employee?.first_name) }}
+                                                                </p>
+                                                                <span v-if="isNewRecord(request.archived_at)" class="px-2 py-0.5 bg-red-600 text-white text-[9px] font-black rounded uppercase tracking-widest animate-pulse">Just In</span>
+                                                            </div>
                                                             <p class="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">ID-{{ request.user?.id_number || request.employee?.employee_id }}</p>
                                                         </div>
                                                     </div>
@@ -149,8 +164,12 @@
                                                 </td>
                                                 <td class="py-8 px-10">
                                                     <div class="flex flex-col gap-1.5">
-                                                        <span class="text-base font-bold text-gray-500 tabular-nums">{{ formatDate(request.from_date) }}</span>
-                                                        <span class="text-xs font-black text-gray-400 uppercase tracking-widest">{{ request.days_taken }} Day Count</span>
+                                                        <span class="text-base font-bold text-gray-500 tabular-nums">{{ formatDate(request.from_date) }} <i class="pi pi-arrow-right mx-1 text-[10px] text-gray-300"></i> {{ formatDate(request.to_date) }}</span>
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="text-[10px] font-black text-teal-600 uppercase tracking-widest">ARCHIVED: {{ formatFullDateTime(request.archived_at) }}</span>
+                                                            <span class="h-1 w-1 rounded-full bg-gray-300"></span>
+                                                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ request.days_taken }} DAY COUNT</span>
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td class="py-8 px-10 text-right">
@@ -168,17 +187,26 @@
 
                                         <!-- Employee Records Row -->
                                         <template v-else>
-                                            <tr v-for="emp in employees" :key="emp.id" class="hover:bg-gray-50 transition-all group">
+                                            <tr 
+                                                v-for="emp in employees" 
+                                                :key="emp.id" 
+                                                class="hover:bg-gray-50 transition-all group relative"
+                                                :class="{ 'bg-red-50/70 border-l-4 border-red-500 animate-new-blink': isNewRecord(emp.archived_at) }"
+                                            >
                                                 <td class="py-8 px-10">
                                                     <div class="flex items-center gap-6">
-                                                        <div class="w-14 h-14 rounded-2xl bg-teal-50 flex items-center justify-center text-teal-600 font-black text-xl border-2 border-teal-100 shadow-sm overflow-hidden">
+                                                        <div v-if="isNewRecord(emp.archived_at)" class="absolute left-0 top-1/2 -translate-y-1/2 h-full w-1 bg-red-600"></div>
+                                                        <div class="w-14 h-14 rounded-2xl bg-teal-50 flex items-center justify-center text-teal-600 font-black text-xl border-2 border-teal-100 shadow-sm overflow-hidden whitespace-nowrap">
                                                             <img v-if="emp.avatar" :src="emp.avatar" class="w-full h-full object-cover">
                                                             <span v-else>{{ emp.initials }}</span>
                                                         </div>
                                                         <div>
-                                                            <p class="text-xl font-black text-black leading-none mb-2 transition-colors">
-                                                                {{ emp.last_name }}, {{ emp.first_name }}
-                                                            </p>
+                                                            <div class="flex items-center gap-3 mb-2">
+                                                                <p class="text-xl font-black text-black leading-none transition-colors">
+                                                                    {{ emp.last_name }}, {{ emp.first_name }}
+                                                                </p>
+                                                                <span v-if="isNewRecord(emp.archived_at)" class="px-2 py-0.5 bg-red-600 text-white text-[9px] font-black rounded uppercase tracking-widest animate-pulse">New Member</span>
+                                                            </div>
                                                             <p class="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">ID-{{ emp.employee_id }}</p>
                                                         </div>
                                                     </div>
@@ -191,12 +219,15 @@
                                                 </td>
                                                 <td class="py-8 px-10">
                                                     <div class="flex flex-col gap-1.5">
-                                                        <span class="text-base font-bold text-gray-500 tabular-nums">{{ emp.archived_at ? formatDate(emp.archived_at) : 'Historical Record' }}</span>
-                                                        <span class="text-xs font-black text-gray-400 uppercase tracking-widest">{{ emp.employment_status }} Status</span>
+                                                        <span class="text-base font-bold text-gray-700 tabular-nums">{{ emp.archived_at ? formatFullDateTime(emp.archived_at) : 'Historical Record' }}</span>
+                                                        <span class="text-[10px] font-black text-teal-600 uppercase tracking-widest">{{ emp.employment_status }} DIGITAL SEAL</span>
                                                     </div>
                                                 </td>
                                                 <td class="py-8 px-10 text-right">
                                                     <div class="flex items-center justify-end gap-6">
+                                                        <button @click="viewRecord(emp)" class="p-3.5 bg-gray-50 hover:bg-black hover:text-white rounded-2xl text-gray-400 transition-all border-2 border-gray-100 shadow-sm">
+                                                            <i class="pi pi-eye text-xl"></i>
+                                                        </button>
                                                         <button @click="unarchiveEmployee(emp.id)" class="text-xs font-black uppercase tracking-[0.2em] px-8 py-3.5 bg-black text-white rounded-2xl hover:bg-teal-600 transition-all shadow-xl active:scale-95">
                                                             Restore Employee
                                                         </button>
@@ -233,7 +264,7 @@
                             </div>
                             <div>
                                 <h3 class="text-2xl font-black text-white tracking-tight">Record Properties</h3>
-                                <p class="text-[11px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-2">CLASSIFICATION: SECURE ARCHIVE</p>
+                                <p class="text-[11px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-2">CLASSIFICATION: {{ selectedRecord.employee_id && !selectedRecord.leave_type ? 'EMPLOYEE IDENTIFIER' : 'SECURE ARCHIVE' }}</p>
                             </div>
                         </div>
                         <button @click="selectedRecord = null" class="w-12 h-12 rounded-full hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all"><i class="pi pi-times text-xl"></i></button>
@@ -243,31 +274,55 @@
                         <div class="grid grid-cols-2 gap-12">
                             <div class="space-y-2">
                                 <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest">Legal Subject</label>
-                                <p class="text-xl font-black text-white uppercase tracking-tight">{{ selectedRecord.user?.name || (selectedRecord.employee?.last_name + ', ' + selectedRecord.employee?.first_name) }}</p>
+                                <p class="text-xl font-black text-white uppercase tracking-tight">
+                                    {{ selectedRecord.employee_id && !selectedRecord.leave_type ? (selectedRecord.last_name + ', ' + selectedRecord.first_name) : (selectedRecord.user?.name || (selectedRecord.employee?.last_name + ', ' + selectedRecord.employee?.first_name)) }}
+                                </p>
                             </div>
                             <div class="space-y-2">
                                 <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest">Document Status</label>
-                                <p class="text-xl font-black text-teal-400 uppercase tracking-widest">CAPTURED IN REGISTRY</p>
+                                <p class="text-xl font-black text-teal-400 uppercase tracking-widest">{{ selectedRecord.employee_id && !selectedRecord.leave_type ? 'MASTERLIST ARCHIVE' : 'CAPTURED IN REGISTRY' }}</p>
                             </div>
                         </div>
 
                         <div class="bg-black/30 p-10 rounded-3xl border border-white/5 space-y-8 shadow-inner">
-                            <div class="grid grid-cols-2 gap-10">
-                                <div class="space-y-1.5">
-                                    <label class="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em]">Leave Category</label>
-                                    <p class="text-base font-bold text-slate-200">{{ selectedRecord.leave_type }}</p>
+                            <template v-if="selectedRecord.employee_id && !selectedRecord.leave_type">
+                                <div class="grid grid-cols-2 gap-10">
+                                    <div class="space-y-1.5">
+                                        <label class="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em]">Organization Unit</label>
+                                        <p class="text-base font-bold text-slate-200">{{ selectedRecord.department?.name }}</p>
+                                    </div>
+                                    <div class="space-y-1.5">
+                                        <label class="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em]">Historical Role</label>
+                                        <p class="text-base font-bold text-slate-200">{{ selectedRecord.position }}</p>
+                                    </div>
+                                    <div class="space-y-1.5">
+                                        <label class="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em]">Hire Date</label>
+                                        <p class="text-base font-bold text-slate-200">{{ formatDate(selectedRecord.date_hired) }}</p>
+                                    </div>
+                                    <div class="space-y-1.5">
+                                        <label class="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em]">Termination/Archive Seal</label>
+                                        <p class="text-base font-bold text-slate-200">{{ formatFullDateTime(selectedRecord.archived_at) }}</p>
+                                    </div>
                                 </div>
-                                <div class="space-y-1.5">
-                                    <label class="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em]">Temporal Scope</label>
-                                    <p class="text-base font-bold text-slate-200 tabular-nums">{{ formatDate(selectedRecord.from_date) }} - {{ formatDate(selectedRecord.to_date) }}</p>
+                            </template>
+                            <template v-else>
+                                <div class="grid grid-cols-2 gap-10">
+                                    <div class="space-y-1.5">
+                                        <label class="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em]">Leave Category</label>
+                                        <p class="text-base font-bold text-slate-200">{{ selectedRecord.leave_type }}</p>
+                                    </div>
+                                    <div class="space-y-1.5">
+                                        <label class="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em]">Temporal Scope</label>
+                                        <p class="text-base font-bold text-slate-200 tabular-nums">{{ formatDate(selectedRecord.from_date) }} - {{ formatDate(selectedRecord.to_date) }}</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="pt-6 border-t border-white/5">
-                                <label class="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em] mb-3 block">Audit Narrative</label>
-                                <p class="text-sm text-slate-400 leading-relaxed italic border-l-4 border-teal-500/40 pl-6 py-2">
-                                    "{{ selectedRecord.reason || 'No specific metadata captured for this historical interval.' }}"
-                                </p>
-                            </div>
+                                <div class="pt-6 border-t border-white/5">
+                                    <label class="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em] mb-3 block">Audit Narrative</label>
+                                    <p class="text-sm text-slate-400 leading-relaxed italic border-l-4 border-teal-500/40 pl-6 py-2">
+                                        "{{ selectedRecord.reason || 'No specific metadata captured for this historical interval.' }}"
+                                    </p>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
@@ -306,6 +361,16 @@
 .display-folders-item {
     animation: folder-in 0.3s ease-out forwards;
 }
+
+@keyframes new-blink {
+    0% { background-color: rgba(254, 242, 242, 0.7); opacity: 0.8; }
+    50% { background-color: rgba(254, 242, 242, 0.3); opacity: 1; }
+    100% { background-color: rgba(254, 242, 242, 0.7); opacity: 0.8; }
+}
+
+.animate-new-blink {
+    animation: new-blink 1.5s infinite ease-in-out;
+}
 </style>
 
 <script setup>
@@ -319,7 +384,7 @@ const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
 // Navigation State
-const archiveBaseStats = ref({ leaves: [], employees: { count: 0 } });
+const archiveBaseStats = ref({ leaves: [], total_new_leaves: 0, employees: { count: 0, new_count: 0 } });
 const selectedCategory = ref(null);
 const selectedYear = ref(null);
 const selectedMonth = ref(null);
@@ -333,6 +398,19 @@ const lastPage = ref(1);
 const totalRecords = ref(0);
 const searchQuery = ref('');
 const selectedRecord = ref(null);
+
+// Viewed State Logic
+const VIEWED_KEY = 'archive_viewed_folders';
+const viewedFolders = ref(JSON.parse(localStorage.getItem(VIEWED_KEY) || '[]'));
+
+const isViewed = (id) => viewedFolders.value.includes(id);
+
+const markViewed = (id) => {
+    if (!viewedFolders.value.includes(id)) {
+        viewedFolders.value.push(id);
+        localStorage.setItem(VIEWED_KEY, JSON.stringify(viewedFolders.value));
+    }
+};
 
 const currentViewTitle = computed(() => {
     if (selectedMonth.value) return selectedMonth.value.month_name;
@@ -348,20 +426,27 @@ const isListView = computed(() => {
 });
 
 const displayFolders = computed(() => {
-    // Stage 1: Root Categories
     if (!selectedCategory.value) {
         return [
             {
                 id: 'leaves',
+                view_id: 'cat:leaves',
                 label: 'Leave Requests',
                 sub: archiveBaseStats.value.leaves.reduce((acc, y) => acc + y.total, 0),
-                action: () => { selectedCategory.value = 'leaves'; }
+                new_count: archiveBaseStats.value.total_new_leaves || 0,
+                action: () => { 
+                    markViewed('cat:leaves');
+                    selectedCategory.value = 'leaves'; 
+                }
             },
             {
                 id: 'employees',
+                view_id: 'cat:employees',
                 label: 'Employee Records',
-                sub: archiveBaseStats.value.employees.count,
+                sub: archiveBaseStats.value.employees?.count || 0,
+                new_count: archiveBaseStats.value.employees?.new_count || 0,
                 action: () => { 
+                    markViewed('cat:employees');
                     selectedCategory.value = 'employees';
                     fetchArchivedEmployees();
                 }
@@ -373,9 +458,14 @@ const displayFolders = computed(() => {
     if (selectedCategory.value === 'leaves' && !selectedYear.value) {
         return archiveBaseStats.value.leaves.map(y => ({
             id: y.year,
+            view_id: `year:leaves:${y.year}`,
             label: y.year.toString(),
             sub: y.total,
-            action: () => selectYear(y)
+            new_count: y.new_total || 0,
+            action: () => {
+                markViewed(`year:leaves:${y.year}`);
+                selectYear(y);
+            }
         }));
     }
 
@@ -383,9 +473,14 @@ const displayFolders = computed(() => {
     if (selectedCategory.value === 'leaves' && selectedYear.value && !selectedMonth.value) {
         return selectedYear.value.months.map(m => ({
             id: m.month,
+            view_id: `month:leaves:${selectedYear.value.year}:${m.month}`,
             label: m.month_name,
             sub: m.count,
-            action: () => selectMonth(m)
+            new_count: m.new_count || 0,
+            action: () => {
+                markViewed(`month:leaves:${selectedYear.value.year}:${m.month}`);
+                selectMonth(m);
+            }
         }));
     }
 
@@ -514,8 +609,21 @@ const viewRecord = (req) => {
     selectedRecord.value = req;
 };
 
+const isNewRecord = (archivedAt) => {
+    if (!archivedAt) return false;
+    const archivedDate = new Date(archivedAt);
+    const now = new Date();
+    const diffInHours = (now - archivedDate) / (1000 * 60 * 60);
+    return diffInHours <= 24;
+};
+
 const getInitials = (name) => name ? name.match(/(\b\S)?/g).join("").match(/(^\S|\S$)?/g).join("").toUpperCase() : 'U';
 const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const formatFullDateTime = (d) => {
+    if (!d) return 'N/A';
+    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + 
+           ' ' + new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+};
 
 let debounceTimer = null;
 watch(searchQuery, () => {

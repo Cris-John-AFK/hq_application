@@ -103,6 +103,7 @@ const fetchStats = async () => {
             xaxis: {
                 categories: categories,
                 labels: {
+                    rotate: 0,
                     style: {
                         colors: '#9ca3af',
                         fontSize: '9px',

@@ -97,8 +97,11 @@ class AttendanceController extends Controller
             for ($i = 3; $i >= 0; $i--) {
                 $dt = now()->subWeeks($i);
                 $weekKey = $dt->format('o-W'); // ISO year and week
+                $start = $dt->copy()->startOfWeek();
+                $end = $dt->copy()->endOfWeek();
+
                 $data[] = [
-                    'label' => "Week " . $dt->format('W'),
+                    'label' => $dt->format('M') . " wk" . (int) $dt->format('W') . " " . (int) $start->format('d') . "-" . (int) $end->format('d'),
                     'count' => $results->get($weekKey, 0)
                 ];
             }

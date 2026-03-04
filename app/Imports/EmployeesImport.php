@@ -120,10 +120,10 @@ class EmployeesImport implements ToCollection, WithStartRow
                 // 1. Department
                 $department = Department::firstOrCreate(['name' => $deptName]);
 
-                // 2. Employee
-                $employee = Employee::updateOrCreate(
-                    ['employee_id' => $empId],
-                    [
+                // 2. Employee - Use finding first to better control flags
+                $employee = Employee::where('employee_id', $empId)->first();
+                if ($employee) {
+                    $employee->update([
                         'first_name' => $firstName,
                         'last_name' => $lastName,
                         'middle_name' => $middleName,
@@ -131,9 +131,23 @@ class EmployeesImport implements ToCollection, WithStartRow
                         'position' => $position,
                         'employment_status' => $status,
                         'date_hired' => $dateHired,
-                        'leave_credits' => 5,
-                    ]
-                );
+                        // DO NOT TOUCH is_archived or archived_at - Preserve user's registry state
+                        // DO NOT TOUCH leave_credits if it exists
+                    ]);
+                } else {
+                    $employee = Employee::create([
+                        'employee_id' => $empId,
+                        'first_name' => $firstName,
+                        'last_name' => $lastName,
+                        'middle_name' => $middleName,
+                        'department_id' => $department->id,
+                        'position' => $position,
+                        'employment_status' => $status,
+                        'date_hired' => $dateHired,
+                        'leave_credits' => 5, // Default for new hires only
+                        'is_archived' => false,
+                    ]);
+                }
 
                 // 3. Details - Now with Government IDs and Gender
                 $birthdate = $this->extractDate($rawBirth);
@@ -162,7 +176,7 @@ class EmployeesImport implements ToCollection, WithStartRow
                     ]
                 );
             } catch (\Exception $e) {
-                \Log::error('Row error: ' . $e->getMessage());
+                \Log::error('Row error for ID ' . ($empId ?? 'unknown') . ': ' . $e->getMessage());
                 continue;
             }
         }
