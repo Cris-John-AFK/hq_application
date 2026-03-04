@@ -21,6 +21,43 @@
                     </div>
                 </div>
 
+                <!-- Recent Activity Glance -->
+                <transition name="fade">
+                    <div v-if="lastLeave && activeTab === 'form'" class="mb-8 p-1 rounded-[22px] bg-gradient-to-r from-teal-500/20 via-purple-500/20 to-teal-500/20 animate-gradient-x">
+                        <div class="bg-white/80 backdrop-blur-xl rounded-[20px] p-4 flex items-center justify-between border border-white shadow-xl ring-1 ring-black/5">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center relative overflow-hidden group shadow-inner" 
+                                    :class="lastLeave.status === 'Approved' ? 'bg-emerald-50 text-emerald-600' : 
+                                            lastLeave.status === 'Pending' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'">
+                                    <div class="absolute inset-0 opacity-10 group-hover:scale-150 transition-transform duration-700"
+                                        :class="lastLeave.status === 'Approved' ? 'bg-emerald-400' : 'bg-amber-400'"></div>
+                                    <i class="pi text-xl relative z-10" :class="lastLeave.status === 'Approved' ? 'pi-check-circle' : 'pi-clock'"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Latest Record</span>
+                                        <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{{ formatDate(lastLeave.date_filed) }}</span>
+                                    </div>
+                                    <h4 class="text-sm font-black text-slate-800 uppercase tracking-tight">{{ lastLeave.leave_type }} <span class="text-slate-400 font-bold mx-1">—</span> {{ formatDate(lastLeave.from_date) }}</h4>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-end gap-1">
+                                <span :class="['px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border transition-all',
+                                    lastLeave.status === 'Approved' ? 'bg-emerald-500 text-white border-emerald-400' :
+                                    lastLeave.status === 'Pending' ? 'bg-amber-400 text-white border-amber-300' :
+                                    'bg-rose-500 text-white border-rose-400'
+                                ]">
+                                    {{ lastLeave.status }}
+                                </span>
+                                <button v-if="lastLeave.status === 'Pending'" @click="startEdit(lastLeave)" class="text-[9px] font-black text-purple-600 hover:text-purple-800 uppercase tracking-tighter flex items-center gap-1 mt-1 cursor-pointer">
+                                    <i class="pi pi-pencil text-[8px]"></i> Edit Entry
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
+
                 <transition name="fade" mode="out-in">
                     <div v-if="activeTab === 'form'" key="form">
                         <!-- Reusable Leave Request Component in "Portal Mode" -->
@@ -121,7 +158,7 @@
             </div>
             
             <!-- Right Side: Sidebar Navigation Tabs -->
-            <div :class="['w-full md:w-56 shrink-0 sticky top-10 self-start flex flex-col gap-3 group/sidebar transition-all duration-500 ease-out', isScrolling ? 'translate-z-10 -translate-y-2 scale-[1.02] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.15)]' : 'translate-y-0 scale-100 shadow-md']">
+            <div :class="['w-full md:w-56 shrink-0 sticky top-10 self-start flex flex-col gap-3 group/sidebar transition-all duration-500 ease-out', isScrolling ? 'translate-z-10 -translate-y-2 scale-[1.02]' : 'translate-y-0 scale-100']">
                 <!-- Cyberpunk Neon Neural Aura & Trails -->
                 <div class="absolute inset-0 -z-20 pointer-events-none transition-opacity duration-500" :class="isScrolling ? 'opacity-100' : 'opacity-0'">
                     <!-- If scrolling DOWN, trails shoot UP -->
@@ -147,7 +184,7 @@
                 </div>
                 
                 <!-- Profile Box -->
-                <div v-if="employee" class="bg-white rounded-xl shadow-md p-4 flex flex-col items-center text-center border border-gray-100 mb-2">
+                <div v-if="employee" class="bg-white/40 backdrop-blur-md rounded-xl shadow-sm p-4 flex flex-col items-center text-center border border-white/60 mb-2">
                     <div class="w-16 h-16 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 shadow-inner mb-3">
                         <i class="pi pi-user text-2xl"></i>
                     </div>
@@ -159,16 +196,16 @@
                     </div>
                 </div>
  
-                <button @click="openNewForm" :class="['w-full py-4 px-6 text-sm font-black uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer', activeTab === 'form' && !editData ? 'bg-[#673ab7] hover:bg-[#5e35b1] text-white active:scale-95' : 'bg-white text-[#673ab7] hover:bg-purple-50']">
+                <button @click="openNewForm" :class="['w-full py-4 px-6 text-sm font-black uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer', activeTab === 'form' && !editData ? 'bg-[#673ab7] hover:bg-[#5e35b1] text-white active:scale-95' : 'bg-white/40 backdrop-blur-md text-[#673ab7] hover:bg-purple-50/50 border border-white/60']">
                     NEW LEAVE FORM
                 </button>
-                <button @click="activeTab = 'history'" :class="['w-full py-4 px-6 text-sm font-black uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer', activeTab === 'history' ? 'bg-[#673ab7] hover:bg-[#5e35b1] text-white active:scale-95' : 'bg-white text-[#673ab7] hover:bg-purple-50']">
+                <button @click="activeTab = 'history'" :class="['w-full py-4 px-6 text-sm font-black uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer', activeTab === 'history' ? 'bg-[#673ab7] hover:bg-[#5e35b1] text-white active:scale-95' : 'bg-white/40 backdrop-blur-md text-[#673ab7] hover:bg-purple-50/50 border border-white/60']">
                     FORM HISTORY
                 </button>
                 
                 <div class="h-4"></div> <!-- visual separator -->
                 
-                <button @click="logout" class="w-full py-3 px-6 text-sm font-black uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer bg-white text-rose-500 hover:bg-rose-50 hover:text-rose-600 active:scale-95 border border-rose-100 mb-2">
+                <button @click="logout" class="w-full py-3 px-6 text-sm font-black uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer bg-rose-500/10 backdrop-blur-md text-rose-500 hover:bg-rose-500 hover:text-white active:scale-95 border border-rose-500/30 mb-2">
                     LOGOUT
                 </button>
                 
@@ -211,7 +248,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import axios from 'axios';
 import LeaveRequestModal from '@/components/common/LeaveRequestModal.vue';
 
@@ -233,6 +270,11 @@ let countdownInterval = null;
 const resetTimer = () => {
     timeLeft.value = SESSION_TIMEOUT;
 };
+
+const lastLeave = computed(() => {
+    if (!leaveHistory.value || leaveHistory.value.length === 0) return null;
+    return leaveHistory.value[0];
+});
 
 // Scroll Spark Logic
 const isScrolling = ref(false);
@@ -622,6 +664,16 @@ const confirmArchive = async () => {
 
 .animate-scanline {
     animation: scanline 12s linear infinite;
+}
+
+.animate-gradient-x {
+    background-size: 200% 200%;
+    animation: gradient-x 15s ease infinite;
+}
+
+@keyframes gradient-x {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
 }
 
 .delay-75 { animation-delay: 150ms; }

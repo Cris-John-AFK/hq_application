@@ -456,6 +456,29 @@
                                             <p v-else class="text-xs text-gray-400">No department info available.</p>
                                         </div>
 
+                                        <!-- Recent Request History (Admin View) -->
+                                        <div v-if="analysis.history?.length > 0" class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm relative overflow-hidden">
+                                            <div class="absolute top-0 right-0 w-24 h-24 bg-purple-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none opacity-50"></div>
+                                            <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                                <i class="pi pi-history text-purple-600"></i> Recent Employee History
+                                            </h4>
+                                            <div class="space-y-3">
+                                                <div v-for="h in analysis.history" :key="h.id" class="flex items-center justify-between p-2.5 rounded-lg bg-gray-50/50 border border-transparent hover:border-purple-100 hover:bg-white transition-all group">
+                                                    <div class="flex flex-col gap-0.5">
+                                                        <span class="text-xs font-black text-slate-700 uppercase tracking-tight group-hover:text-purple-700 transition-colors">{{ h.leave_type }}</span>
+                                                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{{ formatDate(h.from_date) }}</span>
+                                                    </div>
+                                                    <span :class="['px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border', 
+                                                        h.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                                                        h.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                                                        'bg-rose-50 text-rose-600 border-rose-100']">
+                                                        {{ h.status }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <p class="text-[9px] text-center text-gray-400 mt-4 font-bold uppercase tracking-widest opacity-60">Showing latest 5 records</p>
+                                        </div>
+
                                         <!-- Credit Forecast (Hidden) -->
                                         <div v-if="false" class="bg-blue-50/50 rounded-xl p-4 border border-blue-100">
                                             <h4 class="text-xs font-bold text-blue-800 uppercase tracking-widest mb-3">Credit Forecast</h4>

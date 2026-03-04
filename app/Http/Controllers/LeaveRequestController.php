@@ -265,6 +265,7 @@ class LeaveRequestController extends Controller
                 'status' => 'sometimes|in:Pending,Approved,Rejected,Cancelled',
                 'is_paid' => 'sometimes|boolean',
                 'days_paid' => 'nullable|numeric|min:0',
+                'hours_taken' => 'sometimes|numeric',
                 'admin_remarks' => 'nullable|string',
                 'justification' => 'sometimes|string|nullable',
                 'category' => 'nullable|string',
@@ -285,6 +286,7 @@ class LeaveRequestController extends Controller
                     'from_date' => 'sometimes|required|date',
                     'to_date' => 'nullable|date|after_or_equal:from_date',
                     'days_taken' => 'sometimes|required|numeric',
+                    'hours_taken' => 'sometimes|numeric',
                     'reason' => 'sometimes|required|string',
                     'additional_details' => 'nullable|array'
                 ]);
@@ -426,11 +428,26 @@ class LeaveRequestController extends Controller
         $compliance = $this->complianceService->validateRule($subject, $leaveRequest->leave_type, (float) $leaveRequest->days_taken);
         $forecast = $this->creditForecastingService->forecast($subject);
 
+        // Fetch Recent History (excluding current request and archived ones)
+        $history = LeaveRequest::where('is_archived', false)
+            ->where('id', '!=', $id)
+            ->where(function ($q) use ($leaveRequest) {
+                if ($leaveRequest->user_id) {
+                    $q->where('user_id', $leaveRequest->user_id);
+                } else {
+                    $q->where('employee_id', $leaveRequest->employee_id);
+                }
+            })
+            ->latest()
+            ->take(5)
+            ->get();
+
         return response()->json([
             'patterns' => $patterns,
             'impact' => $impact,
             'compliance' => $compliance,
             'forecast' => $forecast,
+            'history' => $history
         ]);
     }
 
