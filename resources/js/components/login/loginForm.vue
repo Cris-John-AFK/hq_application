@@ -126,13 +126,13 @@
                             </div>
 
                             <div class="space-y-3">
-                                <label class="block text-xs font-black uppercase text-slate-400 tracking-[0.3em] ml-1">Registry ID (ID Number)</label>
-                                <input v-model="empId" type="text" placeholder="Entry ID..." required class="w-full px-8 py-6 text-2xl font-black bg-slate-50 border-2 border-transparent focus:border-teal-500 focus:bg-white rounded-3xl outline-none transition-all placeholder:text-slate-200">
+                                <label class="block text-s font-black uppercase text-slate-400 tracking-[0.3em] ml-1">ID Number (Only numbers)</label>
+                                <input v-model="empId" type="text" placeholder="ID Number..." required class="w-full px-8 py-6 text-2xl font-black bg-slate-50 border-2 border-transparent focus:border-teal-500 focus:bg-white rounded-3xl outline-none transition-all placeholder:text-slate-200">
                             </div>
                             
                             <div class="space-y-3">
-                                <label class="block text-xs font-black uppercase text-slate-400 tracking-[0.3em] ml-1">Access PIN (Birthdate: MMDDYYYY)</label>
-                                <input :value="empDob" @input="handleDobInput" type="password" maxlength="8" placeholder="MMDDYYYY" required class="w-full px-8 py-6 text-3xl font-black bg-slate-50 border-2 border-transparent focus:border-teal-500 focus:bg-white rounded-3xl outline-none transition-all tracking-[0.4em] text-center placeholder:text-slate-200 placeholder:tracking-normal">
+                                <label class="block text-s font-black uppercase text-slate-400 tracking-[0.3em] ml-1">Access PIN (Birthdate: DD-MM-YYYY example: 01212003)</label>
+                                <input :value="empDob" @input="handleDobInput" type="password" maxlength="8" placeholder="DD-MM-YYYY" required class="w-full px-8 py-6 text-3xl font-black bg-slate-50 border-2 border-transparent focus:border-teal-500 focus:bg-white rounded-3xl outline-none transition-all tracking-[0.4em] text-center placeholder:text-slate-200 placeholder:tracking-normal">
                             </div>
 
                             <button type="submit" :disabled="empLoading" class="w-full mt-6 bg-teal-600 hover:bg-teal-700 text-white font-black py-8 rounded-[32px] shadow-2xl flex items-center justify-center gap-4 cursor-pointer text-xl uppercase tracking-widest disabled:opacity-50">

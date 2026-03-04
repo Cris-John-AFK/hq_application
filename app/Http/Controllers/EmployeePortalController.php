@@ -10,11 +10,11 @@ class EmployeePortalController extends Controller
 {
     private function verifyEmployee($id_input, $birthdate)
     {
-        // Find all candidates matching either the internal primary key ID
-        // or the human-readable employee_id column.
+        // Strictly use the human-readable employee_id column.
+        // We ignore the internal primary key 'id' to prevent confusion 
+        // with the masterlist row sequence number.
         $candidates = Employee::with('details')
-            ->where('id', $id_input)
-            ->orWhere('employee_id', $id_input)
+            ->where('employee_id', $id_input)
             ->get();
 
         foreach ($candidates as $employee) {
@@ -53,6 +53,7 @@ class EmployeePortalController extends Controller
         $employee = $this->verifyEmployee($request->employee_id, $request->birthdate);
 
         if (!$employee) {
+            \App\Utils\AuditLogger::log('Authentication', 'Failed Login (Portal)', "Unauthorized portal access attempt for ID: {$request->employee_id}. Incorrect ID or PIN.");
             return response()->json(['message' => 'Invalid ID number or birthdate.'], 401);
         }
 

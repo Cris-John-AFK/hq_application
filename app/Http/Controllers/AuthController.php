@@ -27,7 +27,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'Login successful', 'user' => $user]);
         }
 
-        \App\Utils\AuditLogger::log('Authentication', 'Failed Login', "Failed login attempt for email: {$credentials['email']}");
+        \App\Utils\AuditLogger::log('Authentication', 'Failed Login (Admin Console)', "Unauthorized admin access attempt for email: {$credentials['email']}. Sequence Blocked.");
 
         return response()->json([
             'message' => 'The provided credentials do not match our records.',

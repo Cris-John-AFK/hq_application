@@ -11,7 +11,7 @@
 </head>
 
 <body class="bg-gradient-to-br from-teal-400 to-blue-500 h-screen flex items-center justify-center p-4 overflow-hidden">
-    <div id="app" class="w-full max-w-6xl">
+    <div id="app" class="w-full max-w-7xl">
         <login-form></login-form>
     </div>
 </body>
