@@ -175,7 +175,7 @@
                             </select>
                             <select v-model="filters.department" class="cursor-pointer px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white min-w-[150px]">
                                 <option value="">All Departments</option>
-                                <option v-for="dept in departments" :key="dept" :value="dept">{{ dept }}</option>
+                                <option v-for="dept in departmentNames" :key="dept" :value="dept">{{ dept }}</option>
                             </select>
                              <select v-model="filters.request_type" class="cursor-pointer px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white min-w-[130px]">
                                 <option value="">All Categories</option>
@@ -739,7 +739,7 @@ import axios from 'axios';
 import { useAuthStore } from '../../stores/auth';
 import { useLeaveStore } from '../../stores/leaves';
 import { useEmployeeStore } from '../../stores/employees';
-import { useSettingsStore } from '../../stores/settings';
+import { useSettingsStore } from '@/stores/settings';
 import { storeToRefs } from 'pinia';
 import MainLayout from '../../layouts/MainLayout.vue';
 import LeaveRequestModal from '../common/LeaveRequestModal.vue';
@@ -751,7 +751,7 @@ const settingsStore = useSettingsStore();
 
 const { user } = storeToRefs(authStore);
 const { stats } = storeToRefs(leaveStore);
-const { departments } = storeToRefs(employeeStore);
+const departmentNames = computed(() => employeeStore.departmentNames);
 
 const showAdminApplyModal = ref(false);
 

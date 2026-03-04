@@ -262,6 +262,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useAuthStore } from '../../stores/auth';
+import { useEmployeeStore } from '../../stores/employees';
 import { storeToRefs } from 'pinia';
 import MainLayout from '../../layouts/MainLayout.vue';
 import EmployeeAttendanceModal from '../common/EmployeeAttendanceModal.vue';
@@ -269,6 +270,7 @@ import * as XLSX from 'xlsx';
 import axios from 'axios';
 
 const authStore = useAuthStore();
+const employeeStore = useEmployeeStore();
 const { user } = storeToRefs(authStore);
 
 // State
@@ -280,10 +282,11 @@ const fileInput = ref(null);
 const selectedEmployee = ref(null);
 const currentPage = ref(1);
 const itemsPerPage = 10;
-const employees = ref([]);
-const isLoadingEmployees = ref(false);
 const importProgress = ref(0);
 const importStatus = ref('');
+
+// Pinia refs
+const { departments: storeDepartments } = storeToRefs(employeeStore);
 
 // Filters
 const filters = ref({
@@ -309,16 +312,10 @@ const fetchAttendanceRecords = async () => {
         // for better consistency with the employee masterlist.
         const { data } = await axios.get('/api/attendance-records', { params });
         attendanceRecords.value = data.map(r => {
-            const emp = employees.value.find(e => 
-                String(e.employee_id) === String(r.employee_id_number) ||
-                String(e.name).toLowerCase() === String(r.employee_name).toLowerCase()
-            );
             return {
                 ...r,
-                employee_name: emp?.name || r.employee_name,
-                employee_id: emp?.employee_id || r.employee_id_number,
-                department: emp?.department || r.department, 
-                avatar: emp?.avatar
+                employee_id: r.employee_id_number,
+                // avatar is now provided directly by the optimized API join
             };
         });
     } catch (error) {
@@ -329,25 +326,13 @@ const fetchAttendanceRecords = async () => {
 };
 
 // Fetch employees from database
-const fetchEmployees = async () => {
-    isLoadingEmployees.value = true;
+// Fetch light data (departments) from store
+const fetchInitData = async () => {
     try {
-        const response = await axios.get('/api/employees?all=true'); // Fetch from masterlist
-        const empArray = response.data.data || response.data;
-        employees.value = empArray.map(emp => ({
-            id: emp.id,
-            name: `${emp.first_name} ${emp.last_name}`,
-            employee_id: emp.employee_id,
-            department: emp.department?.name || 'N/A',
-            avatar: emp.avatar
-        }));
-        
-        // Load real records
+        await employeeStore.fetchDepartments(); // Lightweight department fetch
         fetchAttendanceRecords();
     } catch (error) {
-        console.error('Failed to fetch employee masterlist:', error);
-    } finally {
-        isLoadingEmployees.value = false;
+        console.error('Failed to fetch initial data:', error);
     }
 };
 
@@ -356,8 +341,7 @@ watch(() => filters.value, () => {
 }, { deep: true });
 
 const departments = computed(() => {
-    const depts = [...new Set(employees.value.map(e => e.department))];
-    return depts.filter(d => d !== 'N/A');
+    return employeeStore.departmentNames;
 });
 
 // Computed
@@ -511,16 +495,13 @@ const importFile = async () => {
                     }
                 }
 
-                const matchedEmployee = employees.value.find(e => 
-                    String(e.employee_id).includes(group.id) || 
-                    e.name.toLowerCase().includes(group.name.toLowerCase())
-                );
-
+                // Since we don't have all employees locally anymore, we rely on the backend to match them
+                // But we can try to guess from store if it's already there (rarely)
                 return {
-                    employee_id_number: matchedEmployee?.employee_id || group.id,
-                    employee_name: matchedEmployee?.name || group.name,
+                    employee_id_number: group.id,
+                    employee_name: group.name,
                     date: group.date,
-                    department: matchedEmployee?.department || 'N/A',
+                    department: 'N/A', // Let backend fix or update via sync
                     time_in: timeIn,
                     time_out: timeOut,
                     hours_worked: hoursWorked,
@@ -558,18 +539,12 @@ const importFile = async () => {
 };
 
 const downloadTemplate = () => {
-    const sampleEmployee = employees.value.length > 0 ? employees.value[0] : {
-        name: 'John Doe',
-        employee_id: 'HQI-0001',
-        department: 'Production'
-    };
-    
     const template = [
         {
             'Date': '2026-01-20',
-            'Employee Name': sampleEmployee.name,
-            'Employee ID': sampleEmployee.employee_id,
-            'Department': sampleEmployee.department,
+            'Employee Name': 'John Doe',
+            'Employee ID': 'HQI-0001',
+            'Department': 'Production',
             'Time In': '08:00',
             'Time Out': '17:00',
             'Hours Worked': '8.0',
@@ -598,6 +573,6 @@ const prevPage = () => {
 
 onMounted(() => {
     authStore.fetchUser();
-    fetchEmployees();
+    fetchInitData();
 });
 </script>

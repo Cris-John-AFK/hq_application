@@ -13,6 +13,13 @@ export const useEmployeeStore = defineStore('employees', {
         fetchingStatsPromise: null
     }),
 
+    getters: {
+        // Helper to get just the names for analytics/filters that expect strings
+        departmentNames: (state) => {
+            return (state.departments || []).map(d => typeof d === 'string' ? d : d.name);
+        },
+    },
+
     actions: {
         async fetchEmployees(force = false) {
             // If already fetching, return the existing promise to prevent duplicate requests
@@ -74,12 +81,12 @@ export const useEmployeeStore = defineStore('employees', {
         },
 
         async fetchDepartments() {
-            if (this.departments.length > 0) return this.departments;
             try {
                 const response = await axios.get('/api/departments');
                 const deptData = response.data.data || response.data;
                 if (Array.isArray(deptData)) {
-                    this.departments = deptData.map(d => d.name);
+                    // Store objects for forms and full data needs
+                    this.departments = deptData.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
                 } else {
                     console.error('Expected array for departments, got:', response.data);
                     this.departments = [];

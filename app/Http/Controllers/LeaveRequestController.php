@@ -457,7 +457,7 @@ class LeaveRequestController extends Controller
         $status = $request->get('status', null);
         $type = $request->get('leave_type', null);
 
-        $base = LeaveRequest::where('is_archived', '!=', true)
+        $base = LeaveRequest::where('is_archived', false)
             ->whereYear('from_date', $year);
 
         if ($month)
@@ -495,7 +495,7 @@ class LeaveRequestController extends Controller
             ->leftJoin('departments as ed', 'employees.department_id', '=', 'ed.id')
             ->leftJoin('users', 'leave_requests.user_id', '=', 'users.id')
             ->leftJoin('departments as ud', 'users.department_id', '=', 'ud.id')
-            ->where('leave_requests.is_archived', '!=', true)
+            ->where('leave_requests.is_archived', false)
             ->whereYear('leave_requests.from_date', $year)
             ->when($month, fn($q) => $q->whereMonth('leave_requests.from_date', $month))
             ->when($week && $month, fn($q) => $q->whereRaw("floor((EXTRACT(DAY FROM leave_requests.from_date) - 1) / 7 + 1) = ?", [$week]))
@@ -517,7 +517,7 @@ class LeaveRequestController extends Controller
                 \DB::raw("SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled"),
                 \DB::raw('count(*) as total')
             )
-            ->where('is_archived', '!=', true)
+            ->where('is_archived', false)
             ->whereYear('from_date', $year)
             ->when($month, fn($q) => $q->whereMonth('from_date', $month))
             ->when($week && $month, fn($q) => $q->whereRaw("floor((EXTRACT(DAY FROM from_date) - 1) / 7 + 1) = ?", [$week]))
@@ -612,17 +612,17 @@ class LeaveRequestController extends Controller
 
         // Paid vs Unpaid (Approved)
         $approvedPaid = LeaveRequest::where('status', 'Approved')
-            ->where('is_archived', '!=', true)
+            ->where('is_archived', false)
             ->where('is_paid', true)
             ->count();
         $approvedUnpaid = LeaveRequest::where('status', 'Approved')
-            ->where('is_archived', '!=', true)
+            ->where('is_archived', false)
             ->where('is_paid', false)
             ->count();
 
         // By Leave Type
         $byType = LeaveRequest::select('leave_type as name', \DB::raw('count(*) as count'))
-            ->where('is_archived', '!=', true)
+            ->where('is_archived', false)
             ->groupBy('leave_type')
             ->orderBy(\DB::raw('count(*)'), 'desc')
             ->take(5)
@@ -634,7 +634,7 @@ class LeaveRequestController extends Controller
             ->leftJoin('departments as ed', 'employees.department_id', '=', 'ed.id')
             ->leftJoin('users', 'leave_requests.user_id', '=', 'users.id')
             ->leftJoin('departments as ud', 'users.department_id', '=', 'ud.id')
-            ->where('leave_requests.is_archived', '!=', true)
+            ->where('leave_requests.is_archived', false)
             ->select(\DB::raw('COALESCE(ed.name, ud.name, users.department, \'General\') as name'), \DB::raw('count(*) as count'))
             ->groupBy(\DB::raw('COALESCE(ed.name, ud.name, users.department, \'General\')'))
             ->orderBy(\DB::raw('count(*)'), 'desc')
@@ -648,7 +648,7 @@ class LeaveRequestController extends Controller
             'cancelled' => $cancelled,
             'approved_this_month' => $approvedThisMonth,
             'scheduled' => $scheduled,
-            'total_all_time' => LeaveRequest::count(),
+            'total_all_time' => LeaveRequest::where('is_archived', false)->count(),
             'total_employees' => \App\Models\Employee::count(),
             'recent' => $recent,
             'on_leave_today' => $onLeaveToday,
@@ -774,7 +774,7 @@ class LeaveRequestController extends Controller
         // 1. Fetch Approved, Non-Archived Leaves
         $leaveQuery = LeaveRequest::with(['user:id,name,avatar,department,position,id_number', 'employee.department'])
             ->where('status', 'Approved')
-            ->where('is_archived', '!=', true);
+            ->where('is_archived', false);
 
         if ($request->filled('month')) {
             $leaveQuery->whereMonth('from_date', $request->month);

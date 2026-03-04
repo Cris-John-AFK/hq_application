@@ -8,37 +8,39 @@ use Illuminate\Http\Request;
 
 class EmployeePortalController extends Controller
 {
-    private function verifyEmployee($employee_id, $birthdate)
+    private function verifyEmployee($id_input, $birthdate)
     {
-        // Try searching by Primary Key first (used during submitLeave)
-        $employee = Employee::with('details')->find($employee_id);
+        // Find all candidates matching either the internal primary key ID
+        // or the human-readable employee_id column.
+        $candidates = Employee::with('details')
+            ->where('id', $id_input)
+            ->orWhere('employee_id', $id_input)
+            ->get();
 
-        // Fallback to human-readable employee_id (used during login)
-        if (!$employee) {
-            $employee = Employee::with('details')->where('employee_id', $employee_id)->first();
+        foreach ($candidates as $employee) {
+            if (!$employee->details)
+                continue;
+
+            $dbDob = $employee->details->birthdate; // e.g., '1995-05-10'
+            $dbDobStr = ($dbDob instanceof \Carbon\Carbon) ? $dbDob->toDateString() : (string) $dbDob;
+
+            // Parse exactly 8 digits representing either MMDDYYYY or DDMMYYYY
+            // Example: 06272003
+            $part1 = substr($birthdate, 0, 2); // 06
+            $part2 = substr($birthdate, 2, 2); // 27
+            $year = substr($birthdate, 4, 4);  // 2003
+
+            // Check both possible permutations (Month/Day vs Day/Month) 
+            // to be flexible with user input regions.
+            $match1 = "$year-$part1-$part2" === $dbDobStr; // MMDDYYYY -> YYYY-MM-DD
+            $match2 = "$year-$part2-$part1" === $dbDobStr; // DDMMYYYY -> YYYY-MM-DD
+
+            if ($match1 || $match2) {
+                return $employee;
+            }
         }
 
-        if (!$employee || !$employee->details) {
-            return null;
-        }
-
-        $dbDob = $employee->details->birthdate; // e.g., '1995-05-10'
-        $dbDobStr = ($dbDob instanceof \Carbon\Carbon) ? $dbDob->toDateString() : (string) $dbDob;
-
-        // Parse exactly 8 digits representing either MMDDYYYY or DDMMYYYY
-        $part1 = substr($birthdate, 0, 2);
-        $part2 = substr($birthdate, 2, 2);
-        $year = substr($birthdate, 4, 4);
-
-        // Check both possible permutations
-        $match1 = "$year-$part1-$part2" === $dbDobStr; // MMDDYYYY
-        $match2 = "$year-$part2-$part1" === $dbDobStr; // DDMMYYYY
-
-        if (!$match1 && !$match2) {
-            return null;
-        }
-
-        return $employee;
+        return null;
     }
 
     public function login(Request $request)
@@ -59,6 +61,9 @@ class EmployeePortalController extends Controller
             ->where('is_archived', false)
             ->latest('created_at')
             ->get();
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('Authentication', 'Login (Portal)', "Employee {$employee->name} (#{$employee->employee_id}) accessed the portal.");
 
         return response()->json([
             'employee' => $employee,
@@ -123,6 +128,9 @@ class EmployeePortalController extends Controller
             'additional_details' => $details ?? []
         ]);
 
+        // Audit Log
+        \App\Utils\AuditLogger::log('Leaves', 'Created', "Employee {$employee->name} filed a new {$leave->leave_type} request for {$leave->days_taken} day(s).", null, $leave->toArray());
+
         return response()->json(['message' => 'Leave request submitted successfully.', 'leave' => $leave], 201);
     }
 
@@ -151,6 +159,7 @@ class EmployeePortalController extends Controller
         }
 
         $leave = LeaveRequest::where('employee_id', $employee->id)->findOrFail($id);
+        $oldData = $leave->toArray();
 
         if ($leave->status !== 'Pending') {
             return response()->json(['message' => 'Only pending leave requests can be edited.'], 403);
@@ -189,6 +198,10 @@ class EmployeePortalController extends Controller
             'additional_details' => $details ?? []
         ]);
 
+        $newData = $leave->refresh()->toArray();
+        // Audit Log
+        \App\Utils\AuditLogger::log('Leaves', 'Updated', "Employee {$employee->name} updated their pending {$leave->leave_type} request.", $oldData, $newData);
+
         return response()->json(['message' => 'Leave request updated successfully.', 'leave' => $leave], 200);
     }
 
@@ -206,6 +219,7 @@ class EmployeePortalController extends Controller
         }
 
         $leave = LeaveRequest::where('employee_id', $employee->id)->findOrFail($id);
+        $oldData = $leave->toArray();
 
         $updates = [
             'is_archived' => true,
@@ -214,11 +228,17 @@ class EmployeePortalController extends Controller
 
         // If they archive a pending action, it should formally cancel it.
         // Doing this ensures HR doesn't keep a ghost pending item.
+        $actionDesc = "archived";
         if ($leave->status === 'Pending') {
             $updates['status'] = 'Cancelled';
+            $actionDesc = "cancelled & archived";
         }
 
         $leave->update($updates);
+        $newData = $leave->refresh()->toArray();
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('Leaves', 'Archived', "Employee {$employee->name} {$actionDesc} their {$leave->leave_type} request.", $oldData, $newData);
 
         return response()->json(['message' => 'Leave request archived successfully.', 'leave' => $leave], 200);
     }

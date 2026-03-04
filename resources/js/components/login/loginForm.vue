@@ -8,12 +8,25 @@
 
         <!-- Form Content -->
         <div v-else class="animate-fade-in">
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center p-3 bg-teal-50 rounded-2xl mb-4 shadow-inner ring-1 ring-teal-100">
-                    <img src="/logo.png" alt="HQ Logo" class="w-16 h-16 object-contain">
+            <div class="text-center mb-8 relative pt-6">
+                <!-- Advanced Decorative Glows -->
+                <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-teal-400/20 rounded-full blur-[100px] pointer-events-none"></div>
+                
+                <!-- Logo as a Design Unit -->
+                <div class="relative inline-flex items-center justify-center mb-6">
+                    <div class="absolute inset-0 bg-white/50 blur-xl rounded-full scale-110 pointer-events-none"></div>
+                    <img src="/logo_v2.svg" alt="HQ Logo" class="relative w-24 h-auto object-contain transition-all duration-700 hover:scale-110 filter drop-shadow-[0_8px_8px_rgba(0,0,0,0.05)]">
                 </div>
-                <h2 class="text-3xl font-bold text-gray-800">{{ title }}</h2>
-                <p class="text-gray-500 mt-2 text-sm">Welcome back! Please enter your details.</p>
+                
+                <div class="relative space-y-1">
+                    <h2 class="text-4xl font-black text-slate-800 tracking-[-0.05em] leading-tight">{{ title }}</h2>
+                    <div class="flex justify-center items-center gap-1.5 font-bold">
+                        <div class="w-2 h-1 bg-teal-500/20 rounded-full"></div>
+                        <div class="w-8 h-1 bg-teal-500 rounded-full"></div>
+                        <div class="w-2 h-1 bg-teal-500/20 rounded-full"></div>
+                    </div>
+                </div>
+                <p class="text-[10px] font-black text-slate-400 mt-4 uppercase tracking-[0.3em] opacity-80">Welcome back</p>
             </div>
     
             <form class="space-y-6" @submit.prevent="submitForm">
@@ -52,19 +65,20 @@
     
                 <button 
                     type="submit" 
-                    class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex justify-center items-center"
+                    class="w-full bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-500 hover:to-teal-400 text-white font-black py-4 rounded-xl shadow-lg shadow-teal-500/20 hover:shadow-teal-400/30 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 cursor-pointer flex justify-center items-center uppercase tracking-widest text-sm"
                 >
-                    <span>Sign In</span>
+                    <span>Authenticate Account</span>
                 </button>
             </form>
 
-            <div class="mt-6 border-t border-gray-100 pt-6">
+            <div class="mt-10 pt-8 border-t border-slate-100 flex flex-col items-center gap-4">
+                <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">External Access</p>
                 <button 
                     @click="showEmployeeModal = true"
-                    class="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold py-3 rounded-lg shadow-sm hover:shadow transition-all duration-200 cursor-pointer flex justify-center items-center gap-2"
+                    class="w-full bg-slate-50 border border-slate-200 hover:bg-white hover:border-teal-400 hover:text-teal-600 text-slate-600 font-bold py-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer flex justify-center items-center gap-3 group"
                 >
-                    <i class="pi pi-users text-teal-600"></i>
-                    <span>Employee Self-Service Portal</span>
+                    <i class="pi pi-shield text-teal-500 group-hover:scale-110 transition-transform"></i>
+                    <span class="text-sm">Employee Self-Service Portal</span>
                 </button>
             </div>
         </div>

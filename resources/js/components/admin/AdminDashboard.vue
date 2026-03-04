@@ -383,17 +383,14 @@
     const recentAttendance = ref([]);
     const fetchRecentAttendance = async () => {
         try {
-            const { data } = await axios.get('/api/attendance-records');
-            recentAttendance.value = data.slice(0, 50).map(r => {
-                const emp = employees.value.find(e => 
-                    String(e.employee_id) === String(r.employee_id_number) ||
-                    String(e.name).toLowerCase() === String(r.employee_name).toLowerCase()
-                );
+            // Requesting only 50 records to minimize data transfer
+            const { data } = await axios.get('/api/attendance-records', { params: { limit: 50 } });
+            recentAttendance.value = data.map(r => {
                 return {
                     id: r.id,
-                    name: emp?.name || r.employee_name,
-                    initials: emp?.initials || getInitials(r.employee_name),
-                    avatar: emp?.avatar,
+                    name: r.employee_name,
+                    initials: getInitials(r.employee_name),
+                    avatar: r.employee_avatar, // Using optimized avatar from API join
                     date: new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
                     timeIn: r.time_in,
                     timeOut: r.time_out,
@@ -407,11 +404,12 @@
 
     onMounted(async () => {
         loading.value = true;
+        // Optimization: Removed employeeStore.fetchEmployees() to avoid loading 1000+ records just for avatars
+        // Using cache-friendly stat fetching
         await Promise.all([
-            employeeStore.fetchEmployees(),
-            leaveStore.fetchStats(true),
+            leaveStore.fetchStats(false),
+            fetchRecentAttendance()
         ]);
-        await fetchRecentAttendance();
         loading.value = false;
     });
 

@@ -9,7 +9,7 @@ class DepartmentController extends Controller
 {
     public function index()
     {
-        return response()->json(Department::orderBy('name')->get());
+        return response()->json(Department::orderBy('name', 'asc')->get());
     }
 
     public function store(Request $request)
@@ -20,6 +20,9 @@ class DepartmentController extends Controller
 
         $department = Department::create($validated);
 
+        // Invalidate cache
+        \Illuminate\Support\Facades\Cache::flush();
+
         // Audit Log
         \App\Utils\AuditLogger::log('Settings', 'Created', "Added new department: {$department->name}.");
 
@@ -28,10 +31,10 @@ class DepartmentController extends Controller
 
     public function getStats()
     {
-        $departments = Department::withCount(['users'])->orderBy('name')->get();
-        
-        $stats = $departments->map(function($dept) {
-            $headcount = $dept->users_count;
+        $departments = Department::withCount(['employees'])->orderBy('name')->get();
+
+        $stats = $departments->map(function ($dept) {
+            $headcount = $dept->employees_count;
             if ($headcount === 0) {
                 return [
                     'id' => $dept->id,
@@ -48,11 +51,11 @@ class DepartmentController extends Controller
             $totalPossibleDays = $headcount * 5;
             $actualPresentDays = rand(round($totalPossibleDays * 0.85), $totalPossibleDays);
             $totalAbsentDays = $totalPossibleDays - $actualPresentDays;
-            
+
             $avgPresent = round($actualPresentDays / 5, 1);
             $avgAbsent = round($totalAbsentDays / 5, 1);
             $avgOnLeave = round(rand(0, 5) / 5, 1);
-            
+
             $rate = ($totalPossibleDays > 0) ? round(($actualPresentDays / $totalPossibleDays) * 100, 1) : 0;
 
             return [

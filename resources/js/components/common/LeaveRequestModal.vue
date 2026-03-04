@@ -870,7 +870,7 @@ const emit = defineEmits(['update:modelValue', 'submit', 'update']);
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
-import { useSettingsStore } from '../../stores/settings';
+import { useSettingsStore } from '@/stores/settings';
 
 const settingsStore = useSettingsStore();
 const { requestTypes, leaveTypes, attendanceCategories } = storeToRefs(settingsStore);

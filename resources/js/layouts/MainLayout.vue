@@ -6,28 +6,33 @@
             :class="{ '-translate-x-full md:translate-x-0': !isSidebarOpen }"
         >
             <!-- Logo Area -->
-            <router-link to="/dashboard" class="h-16 flex items-center px-8 border-b border-slate-800 hover:bg-slate-800/30 transition-colors group">
-                <div class="relative w-10 h-10 mr-4 transform transition-transform group-hover:scale-105">
+            <router-link to="/dashboard" class="group flex items-center px-6 py-6 border-b border-slate-800 hover:bg-slate-800/10 transition-all duration-500">
+                <div class="relative w-14 h-14 mr-4 flex items-center justify-center">
+                    <!-- Subtle ambient glow for the logo -->
+                    <div class="absolute inset-0 bg-teal-500/10 blur-xl rounded-full opacity-40"></div>
                     <img 
-                        src="/logo.png" 
+                        src="/logo_v2.svg" 
                         alt="HQ Logo" 
-                        class="w-full h-full object-cover rounded-xl shadow-lg shadow-teal-500/20"
+                        class="relative w-full h-auto object-contain filter brightness-0 invert opacity-90 group-hover:opacity-100 transition-all duration-300 scale-110"
                     />
                 </div>
-                <div>
-                    <h1 class="text-xl font-bold text-white tracking-tight">HatQ Inc.</h1>
-                    <p class="text-[10px] font-semibold text-teal-500 uppercase tracking-widest leading-none mt-0.5">Leave Management</p>
+                <div class="relative">
+                    <h1 class="text-2xl font-black text-white tracking-[-0.05em] leading-[0.8]">HATQ</h1>
+                    <p class="text-[9px] font-black text-teal-500 uppercase tracking-[0.3em] mt-1.5 opacity-80 pl-0.5">Unified System</p>
                 </div>
             </router-link>
 
             <!-- Navigation -->
-            <div class="flex-1 relative overflow-hidden flex flex-col min-h-0">
+            <div class="flex-1 relative overflow-hidden flex flex-col min-h-0 bg-transparent">
                 <nav 
                     ref="navContainer"
                     class="flex-1 py-8 overflow-y-auto scrollbar-hide scroll-smooth"
                     @scroll="handleNavScroll"
                 >
-                    <div class="px-6 mb-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Main Menu</div>
+                    <div class="px-8 mb-6 flex flex-col gap-1">
+                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Navigator</div>
+                        <div class="w-8 h-1 bg-slate-800 rounded-full"></div>
+                    </div>
                     <ul class="space-y-2 px-4 pb-12">
                         <li v-for="item in menuItems" :key="item.label">
                             <router-link 

@@ -9,22 +9,36 @@ class AttendanceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = AttendanceRecord::query();
+        // Use a join to get the employee's avatar directly for performance
+        $query = AttendanceRecord::query()
+            ->leftJoin('employees', 'attendance_records.employee_id_number', '=', 'employees.employee_id')
+            ->select('attendance_records.*', 'employees.avatar as avatar');
 
         if ($request->has('start_date')) {
-            $query->where('date', '>=', $request->start_date);
+            $query->where('attendance_records.date', '>=', $request->start_date);
         }
         if ($request->has('end_date')) {
-            $query->where('date', '<=', $request->end_date);
+            $query->where('attendance_records.date', '<=', $request->end_date);
         }
         if ($request->has('department')) {
-            $query->where('department', $request->department);
+            $query->where('attendance_records.department', $request->department);
         }
         if ($request->has('status')) {
-            $query->where('status', $request->status);
+            $query->where('attendance_records.status', $request->status);
         }
 
-        return response()->json($query->orderBy('date', 'desc')->get());
+        // Add limit support for dashboard performance
+        $limit = $request->get('limit');
+        if ($limit) {
+            return response()->json($query->orderBy('attendance_records.date', 'desc')->take($limit)->get());
+        }
+
+        // If no filters and no limit, default to 100 to prevent massive payloads
+        if (!$request->hasAny(['start_date', 'end_date', 'department', 'status'])) {
+            return response()->json($query->orderBy('attendance_records.date', 'desc')->take(100)->get());
+        }
+
+        return response()->json($query->orderBy('attendance_records.date', 'desc')->get());
     }
 
     public function bulkStore(Request $request)
@@ -56,46 +70,53 @@ class AttendanceController extends Controller
         $data = [];
 
         if ($type === 'daily') {
+            $startDate = now()->subDays(6)->startOfDay();
+            $results = AttendanceRecord::where('date', '>=', $startDate)
+                ->where('status', '!=', 'Absent')
+                ->select(\DB::raw('date, count(*) as count'))
+                ->groupBy('date')
+                ->get()
+                ->pluck('count', 'date');
+
             for ($i = 6; $i >= 0; $i--) {
                 $date = now()->subDays($i)->toDateString();
-                $count = AttendanceRecord::where('date', $date)
-                    ->where('status', '!=', 'Absent')
-                    ->count();
-
                 $data[] = [
                     'label' => date('M d', strtotime($date)),
-                    'count' => $count
+                    'count' => $results->get($date, 0)
                 ];
             }
         } elseif ($type === 'weekly') {
+            $startDate = now()->subWeeks(3)->startOfWeek();
+            $results = AttendanceRecord::where('date', '>=', $startDate)
+                ->where('status', '!=', 'Absent')
+                ->select(\DB::raw("to_char(date, 'IYYY-IW') as week, count(*) as count"))
+                ->groupBy('week')
+                ->get()
+                ->pluck('count', 'week');
+
             for ($i = 3; $i >= 0; $i--) {
                 $dt = now()->subWeeks($i);
-                $start = $dt->copy()->startOfWeek()->toDateString();
-                $end = $dt->copy()->endOfWeek()->toDateString();
-
-                $count = AttendanceRecord::whereBetween('date', [$start, $end])
-                    ->where('status', '!=', 'Absent')
-                    ->count();
-
+                $weekKey = $dt->format('o-W'); // ISO year and week
                 $data[] = [
                     'label' => "Week " . $dt->format('W'),
-                    'count' => $count
+                    'count' => $results->get($weekKey, 0)
                 ];
             }
         } else {
+            $startDate = now()->subMonths(5)->startOfMonth();
+            $results = AttendanceRecord::where('date', '>=', $startDate)
+                ->where('status', '!=', 'Absent')
+                ->select(\DB::raw("to_char(date, 'YYYY-MM') as month, count(*) as count"))
+                ->groupBy('month')
+                ->get()
+                ->pluck('count', 'month');
+
             for ($i = 5; $i >= 0; $i--) {
                 $dt = now()->subMonths($i);
-                $month = $dt->month;
-                $year = $dt->year;
-
-                $count = AttendanceRecord::whereYear('date', $year)
-                    ->whereMonth('date', $month)
-                    ->where('status', '!=', 'Absent')
-                    ->count();
-
+                $monthKey = $dt->format('Y-m');
                 $data[] = [
                     'label' => $dt->format('M'),
-                    'count' => $count
+                    'count' => $results->get($monthKey, 0)
                 ];
             }
         }

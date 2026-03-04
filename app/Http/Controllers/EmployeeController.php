@@ -103,6 +103,7 @@ class EmployeeController extends Controller
             // Post-action cleanup
             Department::cleanup();
             AttendanceRecord::syncDepartments();
+            \Illuminate\Support\Facades\Cache::flush();
 
             return response()->json($employee->load('details', 'department'), 201);
         });
@@ -151,6 +152,7 @@ class EmployeeController extends Controller
             // Post-action cleanup
             Department::cleanup();
             AttendanceRecord::syncDepartments();
+            \Illuminate\Support\Facades\Cache::flush();
 
             return response()->json($employee);
         });
@@ -171,6 +173,7 @@ class EmployeeController extends Controller
         // Post-action cleanup
         Department::cleanup();
         AttendanceRecord::syncDepartments();
+        \Illuminate\Support\Facades\Cache::flush();
 
         return response()->json(['message' => 'Employee moved to archive']);
     }
@@ -194,6 +197,7 @@ class EmployeeController extends Controller
         // Post-action cleanup
         Department::cleanup();
         AttendanceRecord::syncDepartments();
+        \Illuminate\Support\Facades\Cache::flush();
 
         return response()->json(['message' => 'Employee restored from archive']);
     }
@@ -227,6 +231,9 @@ class EmployeeController extends Controller
 
             // Audit Log
             \App\Utils\AuditLogger::log('Masterlist', 'Imported', "Imported employees via Excel file.");
+
+            // Invalidate cache
+            \Illuminate\Support\Facades\Cache::flush();
 
             return response()->json(['message' => 'Import successful']);
         } catch (\Exception $e) {

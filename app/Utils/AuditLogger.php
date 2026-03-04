@@ -18,10 +18,11 @@ class AuditLogger
      * @param array|null $newData Data after change
      * @return void
      */
-    public static function log($module, $action, $description, $oldData = null, $newData = null)
+    public static function log($module, $action, $description, $oldData = null, $newData = null, $userId = null)
     {
         $userAgent = Request::header('User-Agent');
         $device = 'Unknown Device';
+        $finalUserId = $userId ?? Auth::id();
 
         if ($userAgent) {
             if (stripos($userAgent, 'mobi') !== false)
@@ -37,7 +38,7 @@ class AuditLogger
         }
 
         SystemLog::create([
-            'user_id' => Auth::id(),
+            'user_id' => $finalUserId,
             'module' => $module,
             'action' => $action,
             'description' => $description,

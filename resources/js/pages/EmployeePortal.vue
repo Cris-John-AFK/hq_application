@@ -6,9 +6,19 @@
             <!-- Left Side: Main Content (The Form or History) -->
             <div class="flex-1 w-full min-w-0 max-w-3xl">
                 
-                <div class="flex items-center gap-4 mb-6 px-2">
-                    <img src="/logo.png" alt="Logo" class="w-14 h-14 drop-shadow-sm">
-                    <h1 class="text-2xl font-black text-gray-800 tracking-tight">Employee Portal</h1>
+                <div class="mb-10 flex flex-col md:flex-row items-center gap-6 px-6 text-center md:text-left relative overflow-hidden py-4 rounded-2xl bg-white/40 border border-white/60 backdrop-blur-sm shadow-sm ring-1 ring-black/5">
+                    <div class="relative group">
+                        <!-- Advanced ambient glow -->
+                        <div class="absolute inset-0 bg-teal-400/10 blur-xl rounded-full scale-110 pointer-events-none transition-opacity duration-700 group-hover:opacity-40"></div>
+                        <img src="/logo_v2.svg" alt="Logo" class="relative w-20 h-auto object-contain transition-transform group-hover:scale-105 duration-1000 ease-in-out filter drop-shadow-[0_8px_15px_rgba(0,0,0,0.05)]">
+                    </div>
+                    <div class="relative pt-1">
+                        <div class="inline-block px-2.5 py-0.5 bg-teal-500/10 text-teal-600 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] mb-2 border border-teal-500/20">
+                            Service Portal
+                        </div>
+                        <h1 class="text-4xl font-black text-slate-800 tracking-[-0.05em] leading-tight mb-1 uppercase">Employee Portal</h1>
+                        <p class="text-[10px] font-bold text-slate-400 tracking-[0.4em] opacity-80 pl-1 uppercase">HQ Unified Leave System</p>
+                    </div>
                 </div>
 
                 <transition name="fade" mode="out-in">
@@ -55,7 +65,7 @@
                                     <i class="pi pi-trash text-sm"></i>
                                 </button>
 
-                                <div class="pr-8">
+                                <div class="pr-12">
                                     <div class="flex items-center gap-3 mb-2">
                                         <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest"
                                             :class="leave.status === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
@@ -73,7 +83,7 @@
                                         <i class="pi pi-pencil"></i> Click anywhere to edit this form
                                     </p>
                                 </div>
-                                <div class="text-left md:text-right overflow-hidden mt-1 md:mt-0 pt-3 md:pt-0 border-t border-gray-50 md:border-0">
+                                <div class="text-left md:text-right overflow-hidden mt-1 md:mt-0 pt-3 md:pt-0 border-t border-gray-50 md:border-0 md:pr-12">
                                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Duration</p>
                                     <p class="text-sm font-bold text-gray-800">{{ formatDate(leave.from_date) }}</p>
                                     <p class="text-xs font-bold text-[#673ab7] mt-1">{{ leave.days_taken }} Day(s)</p>
@@ -154,7 +164,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
-import LeaveRequestModal from '../components/common/LeaveRequestModal.vue';
+import LeaveRequestModal from '@/components/common/LeaveRequestModal.vue';
 
 const activeTab = ref('form');
 const employee = ref(null);

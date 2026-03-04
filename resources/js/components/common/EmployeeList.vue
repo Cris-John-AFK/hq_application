@@ -286,7 +286,7 @@ const selectedEmployee = ref(null);
 const fetchDepartments = async () => {
     try {
         const response = await axios.get('/api/departments'); // Returns [{id, name, ...}]
-        departments.value = response.data;
+        departments.value = response.data.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
     } catch (e) {
         console.error("Dept fetch error", e);
     }
