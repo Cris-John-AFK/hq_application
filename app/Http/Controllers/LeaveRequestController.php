@@ -184,8 +184,8 @@ class LeaveRequestController extends Controller
         })->first();
 
         if ($overlap) {
-            $existingFrom = $overlap->from_date->format('M d, Y');
-            $existingTo = $overlap->to_date ? $overlap->to_date->format('M d, Y') : $existingFrom;
+            $existingFrom = \Illuminate\Support\Carbon::parse($overlap->from_date)->format('M d, Y');
+            $existingTo = $overlap->to_date ? \Illuminate\Support\Carbon::parse($overlap->to_date)->format('M d, Y') : $existingFrom;
             $msgPart = $targetUserId ? "You already have" : "This employee already has";
 
             return response()->json([
@@ -209,6 +209,7 @@ class LeaveRequestController extends Controller
                 'employee_id' => $targetEmployeeId,
                 'status' => $status,
                 'attachment_path' => $attachmentPath,
+                'hours_taken' => $request->hours_taken ?? 0,
                 'additional_details' => $validated['additional_details'] ?? []
             ]
         ));
@@ -320,7 +321,7 @@ class LeaveRequestController extends Controller
                         \App\Models\Notification::create([
                             'user_id' => $leaveRequest->user_id,
                             'title' => 'Leave Request Update',
-                            'message' => "Your {$leaveRequest->leave_type} request for " . $leaveRequest->from_date->format('M d') . " has been marked as **{$validated['status']}**.",
+                            'message' => "Your {$leaveRequest->leave_type} request for " . \Illuminate\Support\Carbon::parse($leaveRequest->from_date)->format('M d') . " has been marked as **{$validated['status']}**.",
                             'type' => $validated['status'] === 'Approved' ? 'success' : ($validated['status'] === 'Rejected' ? 'urgent' : 'warning'),
                             'link' => '/leave-requests',
                         ]);
@@ -725,6 +726,7 @@ class LeaveRequestController extends Controller
             'From Date',
             'To Date',
             'Days Taken',
+            'Hours Taken',
             'Status',
             'Is Paid',
             'No. of Days Paid',
@@ -750,9 +752,10 @@ class LeaveRequestController extends Controller
                     $position,
                     $req->leave_type,
                     $req->request_type,
-                    $req->from_date ? $req->from_date->format('Y-m-d') : '',
-                    $req->to_date ? $req->to_date->format('Y-m-d') : ($req->from_date ? $req->from_date->format('Y-m-d') : ''),
+                    $req->from_date ? \Illuminate\Support\Carbon::parse($req->from_date)->format('Y-m-d') : '',
+                    $req->to_date ? \Illuminate\Support\Carbon::parse($req->to_date)->format('Y-m-d') : ($req->from_date ? \Illuminate\Support\Carbon::parse($req->from_date)->format('Y-m-d') : ''),
                     $req->days_taken,
+                    $req->hours_taken,
                     $req->status,
                     $req->is_paid ? 'YES' : 'NO',
                     $req->days_paid,
@@ -806,10 +809,11 @@ class LeaveRequestController extends Controller
                 'user_position' => $pos,
                 'avatar' => $avatar,
                 'leave_type' => $leave->leave_type,
-                'from_date' => $leave->from_date->format('Y-m-d'),
-                'to_date' => $leave->to_date ? $leave->to_date->format('Y-m-d') : $leave->from_date->format('Y-m-d'),
+                'from_date' => \Illuminate\Support\Carbon::parse($leave->from_date)->format('Y-m-d'),
+                'to_date' => $leave->to_date ? \Illuminate\Support\Carbon::parse($leave->to_date)->format('Y-m-d') : \Illuminate\Support\Carbon::parse($leave->from_date)->format('Y-m-d'),
                 'request_type' => $leave->request_type,
                 'days_taken' => $leave->days_taken,
+                'hours_taken' => $leave->hours_taken,
                 'title' => "{$name} on {$leave->leave_type}",
             ];
         })->filter();

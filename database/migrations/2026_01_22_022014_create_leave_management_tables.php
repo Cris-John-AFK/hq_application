@@ -25,8 +25,9 @@ return new class extends Migration {
             $table->date('from_date');
             $table->date('to_date')->nullable();
             $table->date('date_filed')->nullable();
-            $table->decimal('days_taken', 5, 2);
-            $table->decimal('days_paid', 5, 2)->default(0);
+            $table->decimal('days_taken', 8, 2);
+            $table->decimal('hours_taken', 8, 2)->default(0);
+            $table->decimal('days_paid', 8, 2)->default(0);
 
             // For Undertime/Halfday
             $table->time('start_time')->nullable();

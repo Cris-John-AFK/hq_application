@@ -6,7 +6,7 @@
             <!-- Left Side: Main Content (The Form or History) -->
             <div class="flex-1 w-full min-w-0 max-w-3xl">
                 
-                <div class="mb-10 flex flex-col md:flex-row items-center gap-6 px-6 text-center md:text-left relative overflow-hidden py-4 rounded-2xl bg-white/40 border border-white/60 backdrop-blur-sm shadow-sm ring-1 ring-black/5">
+                <div class="mb-10 flex flex-col md:flex-row items-center gap-6 px-12 text-center md:text-left relative overflow-hidden py-6 rounded-2xl bg-white/40 border border-white/60 backdrop-blur-sm shadow-sm ring-1 ring-black/5">
                     <div class="relative group">
                         <!-- Advanced ambient glow -->
                         <div class="absolute inset-0 bg-teal-400/10 blur-xl rounded-full scale-110 pointer-events-none transition-opacity duration-700 group-hover:opacity-40"></div>
@@ -24,13 +24,39 @@
                 <transition name="fade" mode="out-in">
                     <div v-if="activeTab === 'form'" key="form">
                         <!-- Reusable Leave Request Component in "Portal Mode" -->
-                        <div v-if="successMsg" class="mb-6 bg-emerald-50 border-emerald-200 border-2 text-emerald-700 px-4 py-3 rounded-xl flex shadow-sm items-center gap-3">
-                            <i class="pi pi-check-circle text-lg shrink-0"></i>
-                            <div>
-                                <p class="font-bold text-sm">Successfully Submitted</p>
-                                <p class="text-xs opacity-90">{{ successMsg }}</p>
+                        
+                        <!-- Full Screen Success Overlay Wizard -->
+                        <transition name="success-modal">
+                            <div v-if="successMsg" class="fixed inset-0 z-[200] flex items-center justify-center bg-white/90 backdrop-blur-md overflow-hidden" @click="successMsg = ''">
+                                <!-- Confetti Elements -->
+                                <div class="absolute inset-0 pointer-events-none flex justify-center items-center">
+                                    <div class="confetti-piece" v-for="n in 60" :key="n" :style="`--x: ${(Math.random() - 0.5) * 200}vw; --y: ${(Math.random() - 0.5) * 200}vh; --r: ${Math.random() * 1080}deg; --c: ${['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'][Math.floor(Math.random() * 5)]}; --d: ${Math.random() * 0.1}s;`"></div>
+                                </div>
+                                
+                                <div class="relative z-10 flex flex-col items-center bg-white p-12 rounded-[40px] shadow-2xl border border-emerald-100 max-w-lg w-full text-center mx-4" @click.stop>
+                                    
+                                    <!-- Animated Checkmark -->
+                                    <div class="success-animation mb-8 relative">
+                                        <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                                            <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                                            <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                                        </svg>
+                                        <div class="pulse-ring"></div>
+                                    </div>
+                                    
+                                    <h2 class="text-3xl lg:text-4xl font-black text-emerald-600 tracking-tight uppercase mb-3">Submitted Successfully</h2>
+                                    <p class="text-gray-500 font-bold tracking-widest uppercase text-sm mb-10">{{ successMsg }}</p>
+                                    
+                                    <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mb-6 relative">
+                                        <div class="absolute inset-0 bg-emerald-500 origin-left animate-progress-shrink"></div>
+                                    </div>
+
+                                    <button @click="successMsg = ''" class="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[24px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/30 transition-all hover:scale-105 active:scale-95 text-xl cursor-pointer">
+                                        Continue
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        </transition>
 
                         <LeaveRequestModal 
                             :modelValue="true" 
@@ -95,7 +121,30 @@
             </div>
             
             <!-- Right Side: Sidebar Navigation Tabs -->
-            <div class="w-full md:w-56 shrink-0 mt-[80px] flex flex-col gap-3">
+            <div :class="['w-full md:w-56 shrink-0 sticky top-10 self-start flex flex-col gap-3 group/sidebar transition-all duration-500 ease-out', isScrolling ? 'translate-z-10 -translate-y-2 scale-[1.02] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.15)]' : 'translate-y-0 scale-100 shadow-md']">
+                <!-- Cyberpunk Neon Neural Aura & Trails -->
+                <div class="absolute inset-0 -z-20 pointer-events-none transition-opacity duration-500" :class="isScrolling ? 'opacity-100' : 'opacity-0'">
+                    <!-- If scrolling DOWN, trails shoot UP -->
+                    <template v-if="scrollDirection === 'down'">
+                        <div class="neon-trail neon-trail-cyan-up"></div>
+                        <div class="neon-trail neon-trail-magenta-up delay-75"></div>
+                    </template>
+                    <!-- If scrolling UP, trails shoot DOWN -->
+                    <template v-if="scrollDirection === 'up'">
+                        <div class="neon-trail neon-trail-cyan-down"></div>
+                        <div class="neon-trail neon-trail-magenta-down delay-100"></div>
+                    </template>
+                    
+                    <!-- Smoother Neural Aura -->
+                    <div class="absolute -inset-4 rounded-[40px] bg-[radial-gradient(circle_at_center,rgba(0,243,255,0.08)_0%,rgba(255,0,255,0.03)_50%,transparent_80%)] blur-2xl animate-neural-pulse"></div>
+                </div>
+
+                <!-- Neural Smoke Dispersion (On Stop) -->
+                <div v-if="showSmoke" class="absolute inset-x-0 bottom-0 -z-10 pointer-events-none">
+                    <div class="smoke-particle smoke-1"></div>
+                    <div class="smoke-particle smoke-2"></div>
+                    <div class="smoke-particle smoke-3"></div>
+                </div>
                 
                 <!-- Profile Box -->
                 <div v-if="employee" class="bg-white rounded-xl shadow-md p-4 flex flex-col items-center text-center border border-gray-100 mb-2">
@@ -185,6 +234,34 @@ const resetTimer = () => {
     timeLeft.value = SESSION_TIMEOUT;
 };
 
+// Scroll Spark Logic
+const isScrolling = ref(false);
+const showSmoke = ref(false);
+const scrollDirection = ref('down'); // 'up' or 'down'
+let scrollStopTimeout = null;
+let lastScrollTop = 0;
+
+const handleScrollEffect = () => {
+    isScrolling.value = true;
+    showSmoke.value = false;
+    
+    const st = window.pageYOffset || document.documentElement.scrollTop;
+    if (st > lastScrollTop) {
+        scrollDirection.value = 'down';
+    } else {
+        scrollDirection.value = 'up';
+    }
+    lastScrollTop = st <= 0 ? 0 : st;
+
+    if (scrollStopTimeout) clearTimeout(scrollStopTimeout);
+    scrollStopTimeout = setTimeout(() => {
+        isScrolling.value = false;
+        showSmoke.value = true;
+        // Turn off smoke after it dissipates
+        setTimeout(() => { showSmoke.value = false; }, 1000);
+    }, 150);
+};
+
 onMounted(async () => {
     const activeEmp = localStorage.getItem('hq_employee_portal_id');
     const bdCheck = localStorage.getItem('hq_employee_portal_bd');
@@ -214,6 +291,7 @@ onMounted(async () => {
         document.addEventListener('keydown', resetTimer);
         document.addEventListener('click', resetTimer);
         document.addEventListener('scroll', resetTimer);
+        window.addEventListener('scroll', handleScrollEffect, { passive: true });
     } catch (e) {
         logout(); // Kick out if tampering
     }
@@ -225,6 +303,7 @@ onUnmounted(() => {
     document.removeEventListener('keydown', resetTimer);
     document.removeEventListener('click', resetTimer);
     document.removeEventListener('scroll', resetTimer);
+    window.removeEventListener('scroll', handleScrollEffect);
 });
 
 const startCountdown = () => {
@@ -306,7 +385,12 @@ const handleFormSubmit = async (payload, resolve, reject) => {
         leaveHistory.value.unshift(data.leave); // Update history live
         
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        setTimeout(() => { successMsg.value = ''; }, 5000);
+        
+        setTimeout(() => { 
+            if (successMsg.value === 'Your leave request has been sent to the HR successfully.') {
+                successMsg.value = ''; 
+            }
+        }, 10000);
         
         resolve(); // Tells the modal to clear its loading state and reset
     } catch (error) {
@@ -350,7 +434,12 @@ const handleFormUpdate = async (payload, resolve, reject) => {
         
         editData.value = null;
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        setTimeout(() => { successMsg.value = ''; }, 5000);
+        
+        setTimeout(() => { 
+            if (successMsg.value === 'Your leave request has been successfully updated.') {
+                successMsg.value = ''; 
+            }
+        }, 10000);
         
         resolve(); // Tells the modal to clear its loading state and reset
     } catch (error) {
@@ -389,5 +478,180 @@ const confirmArchive = async () => {
 .fade-enter-from, .fade-leave-to {
     opacity: 0;
     transform: translateY(5px);
+}
+
+/* Success Modal Transition */
+.success-modal-enter-active, .success-modal-leave-active {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.success-modal-enter-from, .success-modal-leave-to {
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+/* Checkmark Animation */
+.success-animation {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+}
+.checkmark {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 4;
+    stroke: #10b981;
+    stroke-miterlimit: 10;
+    box-shadow: inset 0px 0px 0px #10b981;
+    animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+}
+.checkmark-circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 4;
+    stroke-miterlimit: 10;
+    stroke: #10b981;
+    fill: none;
+    animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+.checkmark-check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    stroke: #fff;
+    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+@keyframes stroke {
+    100% { stroke-dashoffset: 0; }
+}
+@keyframes scale {
+    0%, 100% { transform: none; }
+    50% { transform: scale3d(1.1, 1.1, 1); }
+}
+@keyframes fill {
+    100% { box-shadow: inset 0px 0px 0px 60px #10b981; }
+}
+
+/* Pulse Ring */
+.pulse-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120px;
+    height: 120px;
+    background: transparent;
+    border: 4px solid #10b981;
+    border-radius: 50%;
+    z-index: -1;
+    animation: pulse 1s ease-out 0.4s forwards;
+}
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+}
+
+/* Confetti CSS Explosion */
+.confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 20px;
+    background-color: var(--c);
+    top: 50%;
+    left: 50%;
+    opacity: 0;
+    border-radius: 2px;
+    animation: explode 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    animation-delay: var(--d);
+}
+@keyframes explode {
+    0% { transform: translate(0, 0) rotate(0deg) scale(0); opacity: 1; }
+    30% { opacity: 1; }
+    100% { transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(1.2); opacity: 0; }
+}
+
+.animate-progress-shrink {
+    animation: shrink 10s linear forwards;
+}
+
+@keyframes shrink {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+}
+
+/* Cyberpunk Neon Neural Trails & Aura */
+.neon-trail {
+    position: absolute;
+    width: 1px;
+    height: 100px;
+    border-radius: 100px;
+    filter: blur(1px);
+    opacity: 0.6;
+}
+
+.neon-trail-cyan-up { right: 8px; top: -60px; background: linear-gradient(to top, transparent, #00f3ff, #fff); animation: neural-up 0.6s infinite ease-out; }
+.neon-trail-magenta-up { left: 8px; top: -80px; background: linear-gradient(to top, transparent, #ff00ff, #fff); animation: neural-up 0.5s infinite ease-out; }
+.neon-trail-cyan-down { left: 12px; bottom: -60px; background: linear-gradient(to bottom, transparent, #00f3ff, #fff); animation: neural-down 0.6s infinite ease-out; }
+.neon-trail-magenta-down { right: 12px; bottom: -80px; background: linear-gradient(to bottom, transparent, #ff00ff, #fff); animation: neural-down 0.5s infinite ease-out; }
+
+@keyframes neural-up {
+    0% { transform: translateY(0) scaleY(1); opacity: 0; }
+    20% { opacity: 0.8; }
+    100% { transform: translateY(-120px) scaleY(1.5); opacity: 0; }
+}
+@keyframes neural-down {
+    0% { transform: translateY(0) scaleY(1); opacity: 0; }
+    20% { opacity: 0.8; }
+    100% { transform: translateY(120px) scaleY(1.5); opacity: 0; }
+}
+
+@keyframes neural-pulse {
+    from { transform: scale(0.95); opacity: 0.4; }
+    to { transform: scale(1.05); opacity: 0.7; }
+}
+
+.animate-neural-pulse {
+    animation: neural-pulse 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes scanline {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(100%); }
+}
+
+.animate-scanline {
+    animation: scanline 12s linear infinite;
+}
+
+.delay-75 { animation-delay: 150ms; }
+.delay-100 { animation-delay: 200ms; }
+
+/* Neural Smoke exhaust */
+.smoke-particle {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle, rgba(0, 243, 255, 0.2) 0%, transparent 70%);
+    border-radius: 100%;
+    filter: blur(15px);
+    opacity: 0;
+    animation: smoke-dissipate 1s ease-out forwards;
+}
+
+.smoke-1 { animation-delay: 0s; width: 60px; height: 60px; left: 30%; }
+.smoke-2 { animation-delay: 0.1s; width: 80px; height: 80px; left: 50%; }
+.smoke-3 { animation-delay: 0.2s; width: 50px; height: 50px; left: 70%; }
+
+@keyframes smoke-dissipate {
+    0% { transform: translate(-50%, 0) scale(0.5); opacity: 0.8; }
+    100% { transform: translate(-50%, -40px) scale(2); opacity: 0; }
+}
+
+.shadow-2xl {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 </style>

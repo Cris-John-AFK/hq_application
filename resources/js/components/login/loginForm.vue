@@ -138,7 +138,7 @@
                             <button type="submit" :disabled="empLoading" class="w-full mt-6 bg-teal-600 hover:bg-teal-700 text-white font-black py-8 rounded-[32px] shadow-2xl flex items-center justify-center gap-4 cursor-pointer text-xl uppercase tracking-widest disabled:opacity-50">
                                 <i class="pi pi-unlock text-2xl" v-if="!empLoading"></i>
                                 <i class="pi pi-spinner animate-spin text-2xl" v-else></i>
-                                <span>{{ empLoading ? 'Handshaking...' : 'Unlock Portal' }}</span>
+                                <span>{{ empLoading ? 'Loading...' : 'Unlock Portal' }}</span>
                             </button>
                         </form>
                     </div>

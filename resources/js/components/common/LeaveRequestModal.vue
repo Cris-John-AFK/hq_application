@@ -504,27 +504,95 @@
                                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">From Date <span class="text-red-500">*</span></label>
                                     <input type="date" v-model="form.fromDate" :min="today" :class="['w-full p-2 border rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all', showErrors && !form.fromDate ? 'border-red-500 bg-red-50' : 'border-gray-300']">
                                 </div>
-                                <div>
+                                <div v-if="form.requestType !== 'Halfday' && form.requestType !== 'Undertime'">
                                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">To Date <span class="text-red-500">*</span></label>
                                     <input type="date" v-model="form.toDate" :min="form.fromDate || today" :class="['w-full p-2 border rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all', showErrors && !form.toDate ? 'border-red-500 bg-red-50' : 'border-gray-300']">
+                                </div>
+                                <div v-else class="bg-blue-50/50 p-3 rounded-lg border border-blue-100 flex items-center gap-2">
+                                    <i class="pi pi-info-circle text-blue-500"></i>
+                                    <span class="text-[10px] font-bold text-blue-600 uppercase tracking-tighter">Single Day Request: To Date is locked to From Date.</span>
                                 </div>
                             </div>
 
                             <!-- Duration Metrics -->
                             <div class="space-y-4">
                                 <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">No. of Days</label>
-                                    <div class="flex items-center gap-2">
-                                        <input readonly type="number" step="0.5" v-model="form.numberOfDays" class="w-24 p-2 border border-gray-300 rounded font-bold text-gray-800 text-center focus:ring-purple-500 outline-none">
-                                        <span class="text-sm text-gray-500">days</span>
-                                    </div>
-                                    
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1 mt-3">No. of Hours</label>
-                                    <div class="flex items-center gap-2">
-                                        <input type="number" step="0.5" v-model="form.numberOfHours" class="w-24 p-2 border border-gray-300 rounded font-bold text-gray-800 text-center focus:ring-purple-500 outline-none">
-                                        <span class="text-sm text-gray-500">hours</span>
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">No. of Days</label>
+                                            <div class="flex items-center gap-2">
+                                                <input readonly type="number" step="0.5" v-model="form.numberOfDays" class="w-24 p-2 border border-gray-300 rounded font-bold text-gray-800 text-center focus:ring-purple-500 outline-none bg-gray-50">
+                                                <span class="text-sm text-gray-500">days</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">No. of Hours</label>
+                                            <div class="flex items-center gap-2">
+                                                <input :readonly="form.requestType === 'Halfday' || form.requestType === 'Undertime'" type="number" step="0.5" v-model="form.numberOfHours" class="w-24 p-2 border border-blue-200 rounded font-bold text-blue-700 text-center focus:ring-blue-500 outline-none" :class="form.requestType === 'Undertime' || form.requestType === 'Halfday' ? 'bg-blue-50' : ''">
+                                                <span class="text-sm text-gray-500">{{ (form.requestType === 'Undertime' || form.requestType === 'Halfday') ? 'calculated hours' : 'hours' }}</span>
+                                            </div>
+                                            <p v-if="form.requestType === 'Undertime' || form.requestType === 'Halfday'" class="text-[10px] text-blue-500 font-bold mt-1 uppercase italic tracking-tighter">* Auto-calculated for {{ form.requestType }}</p>
+                                        </div>
                                     </div>
                                 </div>
+
+                                <!-- Time Configuration for Undertime -->
+                                <transition name="slide-down">
+                                    <div v-if="form.requestType === 'Undertime'" class="bg-amber-50 p-5 rounded-2xl border border-amber-100 animate-in fade-in">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <label class="block text-[10px] font-black text-amber-700 uppercase tracking-widest">Undertime Schedule</label>
+                                            <div class="px-2 py-0.5 bg-amber-200/40 text-amber-700 text-[8px] font-black uppercase rounded tracking-tighter">12-Hour Range</div>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-6">
+                                            <!-- Start Time Dial -->
+                                            <div class="space-y-2">
+                                                <label class="block text-[9px] font-black text-amber-600 uppercase tracking-tight">Start Time</label>
+                                                <div class="flex items-center justify-between p-2 bg-white border-2 border-amber-100 rounded-xl shadow-sm hover:border-amber-300 transition-all">
+                                                    <div class="flex items-center gap-2">
+                                                        <div class="flex flex-col items-center">
+                                                            <button @click.stop="adjustTime('start', 'h', 1)" class="text-amber-400 hover:text-amber-600 active:scale-90 p-1"><i class="pi pi-chevron-up text-[10px]"></i></button>
+                                                            <span class="text-lg font-black text-amber-900 tabular-nums leading-none">{{ String(timeParts.start.h).padStart(2, '0') }}</span>
+                                                            <button @click.stop="adjustTime('start', 'h', -1)" class="text-amber-400 hover:text-amber-600 active:scale-90 p-1"><i class="pi pi-chevron-down text-[10px]"></i></button>
+                                                        </div>
+                                                        <span class="text-lg font-black text-amber-200">:</span>
+                                                        <div class="flex flex-col items-center">
+                                                            <button @click.stop="adjustTime('start', 'm', 5)" class="text-amber-400 hover:text-amber-600 active:scale-90 p-1"><i class="pi pi-chevron-up text-[10px]"></i></button>
+                                                            <span class="text-lg font-black text-amber-900 tabular-nums leading-none">{{ String(timeParts.start.m).padStart(2, '0') }}</span>
+                                                            <button @click.stop="adjustTime('start', 'm', -5)" class="text-amber-400 hover:text-amber-600 active:scale-90 p-1"><i class="pi pi-chevron-down text-[10px]"></i></button>
+                                                        </div>
+                                                    </div>
+                                                    <button @click.stop="togglePeriod('start')" class="ml-2 px-3 py-2 bg-amber-50 rounded-lg text-amber-700 text-[10px] font-black uppercase tracking-tighter hover:bg-amber-100 transition-all border border-amber-100/50">
+                                                        {{ timeParts.start.p }}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- End Time Dial -->
+                                            <div class="space-y-2">
+                                                <label class="block text-[9px] font-black text-amber-600 uppercase tracking-tight">End Time</label>
+                                                <div class="flex items-center justify-between p-2 bg-white border-2 border-amber-100 rounded-xl shadow-sm hover:border-amber-300 transition-all">
+                                                    <div class="flex items-center gap-2">
+                                                        <div class="flex flex-col items-center">
+                                                            <button @click.stop="adjustTime('end', 'h', 1)" class="text-amber-400 hover:text-amber-600 active:scale-90 p-1"><i class="pi pi-chevron-up text-[10px]"></i></button>
+                                                            <span class="text-lg font-black text-amber-900 tabular-nums leading-none">{{ String(timeParts.end.h).padStart(2, '0') }}</span>
+                                                            <button @click.stop="adjustTime('end', 'h', -1)" class="text-amber-400 hover:text-amber-600 active:scale-90 p-1"><i class="pi pi-chevron-down text-[10px]"></i></button>
+                                                        </div>
+                                                        <span class="text-lg font-black text-amber-200">:</span>
+                                                        <div class="flex flex-col items-center">
+                                                            <button @click.stop="adjustTime('end', 'm', 5)" class="text-amber-400 hover:text-amber-600 active:scale-90 p-1"><i class="pi pi-chevron-up text-[10px]"></i></button>
+                                                            <span class="text-lg font-black text-amber-900 tabular-nums leading-none">{{ String(timeParts.end.m).padStart(2, '0') }}</span>
+                                                            <button @click.stop="adjustTime('end', 'm', -5)" class="text-amber-400 hover:text-amber-600 active:scale-90 p-1"><i class="pi pi-chevron-down text-[10px]"></i></button>
+                                                        </div>
+                                                    </div>
+                                                    <button @click.stop="togglePeriod('end')" class="ml-2 px-3 py-2 bg-amber-50 rounded-lg text-amber-700 text-[10px] font-black uppercase tracking-tighter hover:bg-amber-100 transition-all border border-amber-100/50">
+                                                        {{ timeParts.end.p }}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </transition>
 
                                 <!-- Pay Configuration -->
                                 <div class="bg-teal-50/50 p-4 rounded-lg border border-teal-100 animate-in fade-in transition-all">
@@ -1071,6 +1139,55 @@ const setError = (msg) => {
 const editingSectionId = ref(null);
 const sectionForm = ref({ title: '', description: '', visible: true });
 
+// Time Picker Logic
+const timeParts = ref({
+    start: { h: 8, m: 0, p: 'AM' },
+    end: { h: 5, m: 0, p: 'PM' }
+});
+
+const syncTimeStrings = () => {
+    // START
+    let h_start = parseInt(timeParts.value.start.h);
+    if (timeParts.value.start.p === 'PM' && h_start < 12) h_start += 12;
+    if (timeParts.value.start.p === 'AM' && h_start === 12) h_start = 0;
+    form.value.startTime = `${h_start.toString().padStart(2, '0')}:${timeParts.value.start.m.toString().padStart(2, '0')}`;
+    
+    // END
+    let h_end = parseInt(timeParts.value.end.h);
+    if (timeParts.value.end.p === 'PM' && h_end < 12) h_end += 12;
+    if (timeParts.value.end.p === 'AM' && h_end === 12) h_end = 0;
+    form.value.endTime = `${h_end.toString().padStart(2, '0')}:${timeParts.value.end.m.toString().padStart(2, '0')}`;
+};
+
+const parseTimeToParts = (timeStr, target) => {
+    if (!timeStr) return;
+    const [h24, m] = timeStr.split(':').map(Number);
+    let p = h24 >= 12 ? 'PM' : 'AM';
+    let h12 = h24 % 12;
+    if (h12 === 0) h12 = 12;
+    timeParts.value[target] = { h: h12, m: m, p: p };
+};
+
+const adjustTime = (target, part, amount) => {
+    let current = timeParts.value[target][part];
+    if (part === 'h') {
+        current += amount;
+        if (current > 12) current = 1;
+        if (current < 1) current = 12;
+    } else if (part === 'm') {
+        current += amount;
+        if (current >= 60) current = 0;
+        if (current < 0) current = 55;
+    }
+    timeParts.value[target][part] = current;
+    syncTimeStrings();
+};
+
+const togglePeriod = (target) => {
+    timeParts.value[target].p = timeParts.value[target].p === 'AM' ? 'PM' : 'AM';
+    syncTimeStrings();
+};
+
 const resetForm = () => {
     form.value = {
         dateFiled: new Date().toISOString().split('T')[0],
@@ -1082,13 +1199,17 @@ const resetForm = () => {
         toDate: '',
         numberOfDays: 1,
         numberOfHours: 0,
-        startTime: '',
-        endTime: '',
+        startTime: '08:00',
+        endTime: '17:00',
         reason: '',
         isPaid: false,
         daysPaid: 0,
         attachment: null,
         additionalDetails: {}
+    };
+    timeParts.value = {
+        start: { h: 8, m: 0, p: 'AM' },
+        end: { h: 5, m: 0, p: 'PM' }
     };
     attachmentName.value = '';
     formError.value = '';
@@ -1121,14 +1242,17 @@ const initFormFromProps = () => {
                 toDate: data.to_date || data.from_date,
                 numberOfDays: data.days_taken,
                 numberOfHours: data.numberOfHours || 0,
-                startTime: data.start_time || '',
-                endTime: data.end_time || '',
+                startTime: data.start_time || '08:00',
+                endTime: data.end_time || '17:00',
                 reason: data.reason,
                 attachment: null,
                 isPaid: !!data.is_paid,
                 daysPaid: data.days_paid || 0,
                 additionalDetails: data.additional_details || {}
             };
+            // Populate Time Parts
+            parseTimeToParts(form.value.startTime, 'start');
+            parseTimeToParts(form.value.endTime, 'end');
         } else {
             resetForm();
             if (props.isAdminMode) {
@@ -1264,6 +1388,7 @@ const submitForm = async () => {
         from_date: form.value.fromDate,
         to_date: form.value.toDate || form.value.fromDate,
         days_taken: form.value.numberOfDays,
+        hours_taken: form.value.numberOfHours,
         start_time: form.value.startTime,
         end_time: form.value.endTime,
         reason: form.value.reason,
@@ -1304,7 +1429,7 @@ watch(() => form.value.fromDate, (val) => {
     }
 });
 
-watch([() => form.value.fromDate, () => form.value.toDate, () => form.value.requestType], ([start, end, type]) => {
+watch([() => form.value.fromDate, () => form.value.toDate, () => form.value.requestType, () => form.value.startTime, () => form.value.endTime], ([start, end, type]) => {
     if (start && end) {
         const s = new Date(start);
         const e = new Date(end);
@@ -1326,9 +1451,25 @@ watch([() => form.value.fromDate, () => form.value.toDate, () => form.value.requ
             cur.setDate(cur.getDate() + 1);
         }
         
-        if (type === 'Halfday') form.value.numberOfDays = 0.5;
-        else if (type === 'Undertime') form.value.numberOfDays = 0;
-        else form.value.numberOfDays = diffDays;
+        if (type === 'Halfday') {
+            form.value.numberOfDays = 0.5;
+            form.value.numberOfHours = 4;
+        } else if (type === 'Undertime') {
+            form.value.numberOfDays = 0;
+            // Calculate hours based on start/end time if available
+            if (form.value.startTime && form.value.endTime) {
+                const [h1, m1] = form.value.startTime.split(':').map(Number);
+                const [h2, m2] = form.value.endTime.split(':').map(Number);
+                let diffInMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
+                if (diffInMinutes < 0) diffInMinutes += 1440; // Overnight
+                form.value.numberOfHours = parseFloat((diffInMinutes / 60).toFixed(2));
+            } else {
+                form.value.numberOfHours = 0;
+            }
+        } else {
+            form.value.numberOfDays = diffDays;
+            form.value.numberOfHours = diffDays * 8; // Default to 8 hrs per day for standard leave
+        }
 
         if (form.value.isPaid) form.value.daysPaid = form.value.numberOfDays;
     }
