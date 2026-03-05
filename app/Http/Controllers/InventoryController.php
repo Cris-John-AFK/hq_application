@@ -126,4 +126,75 @@ class InventoryController extends Controller
             return response()->json(['message' => 'Import failed: ' . $e->getMessage()], 422);
         }
     }
+
+    public function export(Request $request)
+    {
+        $query = InventoryItem::orderBy('created_at', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                    ->orWhere('asset_tag', 'ilike', "%{$search}%")
+                    ->orWhere('serial_number', 'ilike', "%{$search}%")
+                    ->orWhere('department', 'ilike', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        $items = $query->get();
+
+        $headers = [
+            'Content-type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename=organization_inventory_' . now()->format('Y-m-d_His') . '.csv',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        $columns = [
+            'Asset Tag',
+            'Serial Number',
+            'Type',
+            'Nomenclature (Name)',
+            'Brand',
+            'Model',
+            'Color',
+            'Department',
+            'Location',
+            'Status',
+            'Quantity',
+            'Added Date'
+        ];
+
+        $callback = function () use ($items, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($items as $item) {
+                fputcsv($file, [
+                    $item->asset_tag ?? '--',
+                    $item->serial_number ?? '--',
+                    $item->type ?? '--',
+                    $item->name ?? '--',
+                    $item->brand ?? '--',
+                    $item->model_name ?? '--',
+                    $item->color ?? '--',
+                    $item->department ?? '--',
+                    $item->location ?? '--',
+                    $item->status ?? '--',
+                    $item->quantity ?? '1',
+                    \Illuminate\Support\Carbon::parse($item->created_at)->format('Y-m-d')
+                ]);
+            }
+            fclose($file);
+        };
+
+        AuditLogger::log('Inventory', 'Exported', "Exported organization inventory to CSV.");
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

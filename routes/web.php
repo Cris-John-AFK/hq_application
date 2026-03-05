@@ -52,6 +52,7 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
         Route::put('/api/users/{id}/password', [\App\Http\Controllers\UserController::class, 'changeUserPassword']);
         Route::post('/api/users/bulk-credits', [\App\Http\Controllers\UserController::class, 'bulkAddCredits']);
         Route::post('/api/users/reset-all-credits', [\App\Http\Controllers\UserController::class, 'resetAllCredits']);
+        Route::post('/api/users/create-from-employee', [\App\Http\Controllers\UserController::class, 'createFromEmployee']);
 
         Route::post('/api/employees/import', [\App\Http\Controllers\EmployeeController::class, 'import']);
         Route::post('/api/employees', [\App\Http\Controllers\EmployeeController::class, 'store']);
@@ -85,6 +86,9 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
         Route::get('/api/attendance-records', [\App\Http\Controllers\AttendanceController::class, 'index']);
         Route::get('/api/attendance-stats/graph', [\App\Http\Controllers\AttendanceController::class, 'stats']);
         Route::post('/api/attendance-records/bulk', [\App\Http\Controllers\AttendanceController::class, 'bulkStore']);
+        Route::get('/api/attendance-roster', [\App\Http\Controllers\AttendanceController::class, 'roster']);
+        Route::get('/api/attendance-anomalies', [\App\Http\Controllers\AttendanceController::class, 'anomalies']);
+        Route::get('/api/attendance-summary', [\App\Http\Controllers\AttendanceController::class, 'summary']);
     });
 });
 
@@ -109,6 +113,8 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     Route::get('/api/leave-stats', [\App\Http\Controllers\LeaveRequestController::class, 'stats']);
     Route::get('/api/leave-analytics', [\App\Http\Controllers\LeaveRequestController::class, 'analyticsData']);
     Route::get('/api/leave-analytics/export', [\App\Http\Controllers\LeaveRequestController::class, 'analyticsExport']);
+    Route::get('/api/dept-head/report', [\App\Http\Controllers\LeaveRequestController::class, 'deptHeadReport']);
+    Route::get('/api/dept-head/report/export', [\App\Http\Controllers\LeaveRequestController::class, 'deptHeadReportExport']);
 
     Route::get('/api/leave-requests/{id}/analysis', [\App\Http\Controllers\LeaveRequestController::class, 'getAnalysis']);
     Route::get('/api/users/{id}/forecast', [\App\Http\Controllers\LeaveRequestController::class, 'getUserForecast']);
@@ -122,6 +128,7 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     Route::put('/api/leave-requests/{leaveRequest}', [\App\Http\Controllers\LeaveRequestController::class, 'update']);
     Route::get('/api/users/{id}/leave-history', [\App\Http\Controllers\LeaveRequestController::class, 'userHistory']);
 
+    Route::get('/api/inventory/export', [\App\Http\Controllers\InventoryController::class, 'export']);
     Route::get('/api/inventory', [\App\Http\Controllers\InventoryController::class, 'index']);
     Route::get('/api/inventory/{id}', [\App\Http\Controllers\InventoryController::class, 'show']);
 

@@ -1,207 +1,362 @@
 <template>
-    <div class="max-w-4xl mx-auto space-y-6">
-        <BulletinBoard />
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div class="p-8">
-                <div v-if="loading">
-                    <!-- Profile Skeleton -->
-                    <div class="flex items-center gap-6 mb-8 animate-pulse">
-                        <div class="w-24 h-24 rounded-full bg-gray-100 shadow-lg border-2 border-white"></div>
-                        <div class="space-y-3 flex-1">
-                            <div class="h-8 w-1/3 bg-gray-100 rounded"></div>
-                            <div class="h-4 w-1/4 bg-gray-100 rounded"></div>
-                        </div>
-                    </div>
+    <div class="max-w-5xl mx-auto space-y-6 py-2">
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div v-for="i in 4" :key="i" class="bg-gray-50 p-6 rounded-xl border border-gray-100 animate-pulse h-32 flex flex-col justify-end">
-                            <div class="h-3 w-1/4 bg-gray-200 rounded mb-4"></div>
-                            <div class="h-6 w-1/2 bg-gray-200 rounded"></div>
+        <!-- ══ SUMMARY CHIPS ══════════════════════════════════════════════════════ -->
+        <div v-if="user?.role === 'dept_head'">
+
+            <!-- Header -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h1 class="text-2xl font-black text-gray-800 flex items-center gap-2">
+                        <i class="pi pi-sitemap text-teal-600"></i>
+                        Department Leave Management
+                    </h1>
+                    <p class="text-xs text-gray-400 mt-0.5 font-bold uppercase tracking-widest">
+                        Review and process your team's leave requests
+                    </p>
+                </div>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <div class="flex items-center gap-2 bg-white rounded-xl border border-gray-200 px-3 py-2 shadow-sm">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Month</label>
+                        <input type="month" v-model="reportMonth" @change="fetchReport"
+                            class="text-sm font-bold text-gray-700 bg-transparent border-none outline-none cursor-pointer">
+                    </div>
+                    <button @click="exportReport()"
+                        class="flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm active:scale-95">
+                        <i class="pi pi-download"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary Stat Chips -->
+            <div v-if="report" class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+                <div class="bg-amber-50 border border-amber-100 rounded-2xl p-4 text-center shadow-sm">
+                    <p class="text-3xl font-black text-amber-600">{{ report.summary.pending }}</p>
+                    <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mt-1">Pending</p>
+                </div>
+                <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-center shadow-sm">
+                    <p class="text-3xl font-black text-blue-600">{{ report.summary.dept_approved }}</p>
+                    <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mt-1">Sent to HR</p>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-center shadow-sm">
+                    <p class="text-3xl font-black text-emerald-600">{{ report.summary.approved }}</p>
+                    <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-1">Approved</p>
+                </div>
+                <div class="bg-rose-50 border border-rose-100 rounded-2xl p-4 text-center shadow-sm">
+                    <p class="text-3xl font-black text-rose-600">{{ report.summary.rejected }}</p>
+                    <p class="text-[10px] font-black text-rose-500 uppercase tracking-widest mt-1">Rejected</p>
+                </div>
+                <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-center shadow-sm">
+                    <p class="text-3xl font-black text-gray-500">{{ report.summary.cancelled }}</p>
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Cancelled</p>
+                </div>
+            </div>
+            <!-- skeleton -->
+            <div v-else class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+                <div v-for="i in 5" :key="i" class="h-24 bg-gray-100 animate-pulse rounded-2xl"></div>
+            </div>
+
+            <!-- ▶ TOP: PENDING — ACTION REQUIRED -->
+            <div class="bg-white rounded-2xl shadow-md border border-amber-100 overflow-hidden mb-6">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-amber-100 bg-amber-50">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                        <h2 class="text-sm font-black text-amber-700 uppercase tracking-widest">Pending Requests — Action Required</h2>
+                    </div>
+                    <span class="px-3 py-1 bg-amber-200 text-amber-800 text-[10px] font-black rounded-full uppercase tracking-widest">
+                        {{ report ? report.pending.length : '…' }} Pending
+                    </span>
+                </div>
+
+                <div v-if="loadingReport" class="p-6 space-y-3">
+                    <div v-for="i in 3" :key="i" class="h-24 bg-gray-50 animate-pulse rounded-xl"></div>
+                </div>
+                <div v-else-if="!report || report.pending.length === 0" class="p-12 text-center">
+                    <i class="pi pi-check-circle text-5xl text-emerald-200 block mb-3"></i>
+                    <p class="text-sm font-black text-gray-400 uppercase tracking-widest">All Clear!</p>
+                    <p class="text-xs text-gray-400 mt-1">No pending requests from your team this month.</p>
+                </div>
+                <div v-else class="divide-y divide-gray-50">
+                    <div v-for="req in report.pending" :key="req.id" class="p-5 hover:bg-amber-50/30 transition-all group">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div class="flex items-start gap-4">
+                                <div class="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-black text-sm border border-teal-200 shrink-0 group-hover:scale-105 transition-transform">
+                                    {{ getInitials(req.employee_name) }}
+                                </div>
+                                <div>
+                                    <p class="font-black text-gray-800">{{ req.employee_name }}</p>
+                                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{{ req.position }}</p>
+                                    <p class="text-xs text-teal-700 font-black mt-1">{{ req.leave_type }} • {{ req.days_taken }} Day(s)</p>
+                                    <p class="text-[10px] text-gray-500 mt-0.5">
+                                        {{ formatDate(req.from_date) }}
+                                        <template v-if="req.to_date && req.to_date !== req.from_date"> → {{ formatDate(req.to_date) }}</template>
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- Action -->
+                            <div class="flex flex-col gap-2 min-w-[220px]">
+                                <input v-model="remarksMap[req.id]" type="text" placeholder="Remarks (optional)"
+                                    class="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-teal-300 bg-gray-50 placeholder-gray-400">
+                                <div class="flex gap-2">
+                                    <button @click="processRequest(req, 'Dept Approved')"
+                                        class="flex-1 px-3 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm flex items-center justify-center gap-1">
+                                        <i class="pi pi-arrow-right text-[10px]"></i> Forward to HR
+                                    </button>
+                                    <button @click="processRequest(req, 'Rejected')"
+                                        class="flex-1 px-3 py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border border-rose-200 flex items-center justify-center gap-1">
+                                        <i class="pi pi-times text-[10px]"></i> Reject
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3 p-3 bg-gray-50 rounded-xl border border-gray-100 text-xs text-gray-600 italic">
+                            <span class="font-black text-gray-400 uppercase tracking-widest not-italic text-[10px]">Reason: </span>"{{ req.reason }}"
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div v-else-if="user">
-                    <div class="flex items-center gap-6 mb-8">
-                        <div v-if="user.avatar_url" class="w-24 h-24 rounded-full overflow-hidden shadow-lg border-2 border-white">
-                            <img :src="user.avatar_url" alt="Profile Photo" class="w-full h-full object-cover">
+            <!-- ▶ BOTTOM: Approved (left) + Rejected (right) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- APPROVED PANEL -->
+                <div class="bg-white rounded-2xl shadow-md border border-emerald-100 overflow-hidden flex flex-col">
+                    <div class="flex items-center justify-between px-5 py-4 bg-emerald-50 border-b border-emerald-100">
+                        <div class="flex items-center gap-2">
+                            <i class="pi pi-verified text-emerald-600"></i>
+                            <span class="text-xs font-black text-emerald-700 uppercase tracking-widest">Officially Approved</span>
                         </div>
-                        <div v-else class="w-24 h-24 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-3xl shadow-lg border-2 border-white">
-                            {{ authStore.getInitials(user.name) }}
-                        </div>
-                        <div>
-                            <h2 class="text-2xl font-bold text-gray-800">{{ user.name }}</h2>
-                            <p class="text-gray-500">{{ user.email }}</p>
+                        <div class="flex gap-1.5 items-center">
+                            <span class="px-2 py-0.5 bg-emerald-200 text-emerald-800 text-[10px] font-black rounded-full">
+                                {{ report ? report.approved.length : '…' }}
+                            </span>
+                            <button @click="exportReport('Approved')"
+                                class="px-2 py-0.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-[10px] font-black rounded-lg transition-all border border-emerald-200">
+                                <i class="pi pi-download text-[9px]"></i>
+                            </button>
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 transition-all hover:bg-white hover:shadow-md">
-                            <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Role</h3>
-                            <div class="flex">
-                                <span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border border-blue-100">
-                                    {{ user.role }}
-                                </span>
-                            </div>
+                    <div class="flex-1 overflow-y-auto max-h-96">
+                        <div v-if="loadingReport" class="p-4 space-y-2">
+                            <div v-for="i in 3" :key="i" class="h-16 bg-gray-50 animate-pulse rounded-lg"></div>
                         </div>
-
-                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 transition-all hover:bg-white hover:shadow-md">
-                            <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Position</h3>
-                            <p class="text-sm font-bold text-gray-800 tracking-tight">{{ user.position || 'Not Assigned' }}</p>
+                        <div v-else-if="!report || report.approved.length === 0" class="flex flex-col items-center justify-center h-40 text-center p-4">
+                            <i class="pi pi-inbox text-3xl text-gray-200 mb-2"></i>
+                            <p class="text-xs text-gray-400 font-bold uppercase tracking-widest">No approved requests</p>
                         </div>
-
-                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 transition-all hover:bg-white hover:shadow-md">
-                            <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">ID Number</h3>
-                            <p class="text-sm font-black text-gray-800 tracking-wider font-mono uppercase">{{ user.id_number || 'N/A' }}</p>
-                        </div>
-                        
-                        <!-- User Specific Card -->
-                            <div class="bg-teal-50 p-6 rounded-xl border border-teal-100 transition-all hover:bg-white hover:shadow-md h-full flex flex-col">
-                                <h3 class="text-xs font-black text-teal-600 uppercase tracking-widest mb-3">Latest Leave Request Status</h3>
-                                <div class="flex-1">
-                                    <div v-if="latestRequest">
-                                        <p class="text-sm font-bold text-gray-800">{{ formatDate(latestRequest.date_filed) }}</p>
-                                        <p class="text-xs text-gray-500 mt-1 truncate">{{ latestRequest.leave_type }}</p>
-                                        <span class="inline-flex mt-3 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest shadow-sm"
-                                              :class="{
-                                                'bg-yellow-50 text-yellow-700 border border-yellow-200': (latestRequest.status || 'Pending') === 'Pending',
-                                                'bg-emerald-50 text-emerald-700 border border-emerald-200': latestRequest.status === 'Approved',
-                                                'bg-rose-50 text-rose-700 border border-rose-200': latestRequest.status === 'Rejected',
-                                                'bg-gray-50 text-gray-500 border border-gray-200': latestRequest.status === 'Cancelled'
-                                              }">
-                                            {{ latestRequest.status || 'Pending' }}
-                                        </span>
+                        <div v-else class="divide-y divide-gray-50">
+                            <div v-for="req in report.approved" :key="req.id" class="px-5 py-3.5 hover:bg-emerald-50/30 transition-all">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <div class="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-black text-xs border border-emerald-200 shrink-0">
+                                            {{ getInitials(req.employee_name) }}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p class="font-black text-gray-800 text-xs truncate">{{ req.employee_name }}</p>
+                                            <p class="text-[10px] text-gray-500 mt-0.5">{{ req.leave_type }} • {{ req.days_taken }}d</p>
+                                            <p class="text-[10px] text-emerald-600 font-bold">{{ formatDate(req.from_date) }}</p>
+                                        </div>
                                     </div>
-                                    <div v-else class="flex flex-col items-center justify-center py-2">
-                                        <p class="text-gray-400 italic text-[10px] font-bold uppercase tracking-widest">No recent requests</p>
+                                    <div class="text-right shrink-0">
+                                        <p class="text-[9px] text-gray-400 font-bold uppercase">HR Approved By</p>
+                                        <p class="text-[10px] font-black text-emerald-700">{{ req.hr_approver_name || '—' }}</p>
+                                        <p class="text-[9px] text-gray-400 mt-0.5">{{ formatShortDT(req.hr_approved_at) }}</p>
                                     </div>
                                 </div>
-                            
-                            <!-- From Uiverse.io by adamgiebl --> 
-                            <button 
-                                class="cssbuttons-io-button mt-5"
-                                @click="openLeaveRequest"
-                                >
-                            Status
-                            <div class="icon">
-                                <svg
-                                height="24"
-                                width="24"
-                                viewBox="0 0 24 24"
-                                xmlns="http://www.w3.org/2000/svg"
-                                >
-                                <path d="M0 0h24v24H0z" fill="none"></path>
-                                <path
-                                    d="M16.172 11l-5.364-5.364 1.414-1.414L20 12l-7.778 7.778-1.414-1.414L16.172 13H4v-2z"
-                                    fill="currentColor"
-                                ></path>
-                                </svg>
+                                <div v-if="req.dept_head_name" class="mt-1.5 flex items-center gap-1 text-[9px] text-gray-400 font-bold">
+                                    <i class="pi pi-user text-[8px] text-teal-400"></i>
+                                    Dept Head: <span class="text-teal-600 ml-0.5">{{ req.dept_head_name }}</span>
+                                    <span v-if="req.dept_head_remarks" class="text-gray-400 ml-1">— "{{ req.dept_head_remarks }}"</span>
+                                </div>
                             </div>
-                            </button>
-
                         </div>
                     </div>
                 </div>
+
+                <!-- REJECTED PANEL -->
+                <div class="bg-white rounded-2xl shadow-md border border-rose-100 overflow-hidden flex flex-col">
+                    <div class="flex items-center justify-between px-5 py-4 bg-rose-50 border-b border-rose-100">
+                        <div class="flex items-center gap-2">
+                            <i class="pi pi-times-circle text-rose-500"></i>
+                            <span class="text-xs font-black text-rose-700 uppercase tracking-widest">Rejected</span>
+                        </div>
+                        <div class="flex gap-1.5 items-center">
+                            <span class="px-2 py-0.5 bg-rose-200 text-rose-800 text-[10px] font-black rounded-full">
+                                {{ report ? report.rejected.length : '…' }}
+                            </span>
+                            <button @click="exportReport('Rejected')"
+                                class="px-2 py-0.5 bg-rose-100 hover:bg-rose-200 text-rose-700 text-[10px] font-black rounded-lg transition-all border border-rose-200">
+                                <i class="pi pi-download text-[9px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto max-h-96">
+                        <div v-if="loadingReport" class="p-4 space-y-2">
+                            <div v-for="i in 3" :key="i" class="h-16 bg-gray-50 animate-pulse rounded-lg"></div>
+                        </div>
+                        <div v-else-if="!report || report.rejected.length === 0" class="flex flex-col items-center justify-center h-40 text-center p-4">
+                            <i class="pi pi-inbox text-3xl text-gray-200 mb-2"></i>
+                            <p class="text-xs text-gray-400 font-bold uppercase tracking-widest">No rejected requests</p>
+                        </div>
+                        <div v-else class="divide-y divide-gray-50">
+                            <div v-for="req in report.rejected" :key="req.id" class="px-5 py-3.5 hover:bg-rose-50/30 transition-all">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <div class="w-9 h-9 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 font-black text-xs border border-rose-200 shrink-0">
+                                            {{ getInitials(req.employee_name) }}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p class="font-black text-gray-800 text-xs truncate">{{ req.employee_name }}</p>
+                                            <p class="text-[10px] text-gray-500 mt-0.5">{{ req.leave_type }} • {{ req.days_taken }}d</p>
+                                            <p class="text-[10px] text-rose-600 font-bold">{{ formatDate(req.from_date) }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right shrink-0">
+                                        <p class="text-[9px] text-gray-400 font-bold uppercase">Rejected By</p>
+                                        <p class="text-[10px] font-black text-rose-600">{{ req.dept_head_name || req.hr_approver_name || '—' }}</p>
+                                        <p class="text-[9px] text-gray-400 mt-0.5">{{ formatShortDT(req.dept_reviewed_at || req.hr_approved_at) }}</p>
+                                    </div>
+                                </div>
+                                <div v-if="req.dept_head_remarks || req.hr_remarks" class="mt-2 p-2 bg-rose-50 rounded-lg text-[10px] text-rose-700 italic border border-rose-100 line-clamp-2">
+                                    "{{ req.dept_head_remarks || req.hr_remarks }}"
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CANCELLED — collapsible -->
+            <details class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden group">
+                <summary class="flex items-center justify-between px-6 py-4 cursor-pointer bg-gray-50 hover:bg-gray-100 transition-all list-none">
+                    <div class="flex items-center gap-2">
+                        <i class="pi pi-ban text-gray-400"></i>
+                        <span class="text-xs font-black text-gray-500 uppercase tracking-widest">Cancelled This Month</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] font-black rounded-full">{{ report ? report.cancelled.length : '…' }}</span>
+                        <button @click.prevent="exportReport('Cancelled')" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-500 text-[10px] font-black rounded-lg transition-all border border-gray-200">
+                            <i class="pi pi-download text-[9px]"></i>
+                        </button>
+                        <i class="pi pi-chevron-down text-gray-400 group-open:rotate-180 transition-transform text-xs"></i>
+                    </div>
+                </summary>
+                <div class="divide-y divide-gray-50">
+                    <div v-if="!report || report.cancelled.length === 0" class="p-8 text-center">
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-widest">No cancelled requests this month</p>
+                    </div>
+                    <div v-for="req in (report?.cancelled ?? [])" :key="req.id" class="px-6 py-4 hover:bg-gray-50 transition-all flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-black text-xs border border-gray-200">
+                                {{ getInitials(req.employee_name) }}
+                            </div>
+                            <div>
+                                <p class="font-black text-gray-700 text-xs">{{ req.employee_name }}</p>
+                                <p class="text-[10px] text-gray-400 mt-0.5">{{ req.leave_type }} • {{ formatDate(req.from_date) }}</p>
+                            </div>
+                        </div>
+                        <span class="text-[9px] text-gray-400 font-bold">Filed {{ formatDate(req.filed_on) }}</span>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <!-- For regular users (non dept_head): show their own leave summary only -->
+        <div v-else-if="user" class="space-y-4">
+            <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-8 text-center">
+                <i class="pi pi-calendar-times text-5xl text-teal-200 mb-4 block"></i>
+                <h2 class="text-lg font-black text-gray-700">Your Leave Dashboard</h2>
+                <p class="text-sm text-gray-400 mt-1 mb-6">View and manage your leave requests from the Leave Requests page.</p>
+                <button @click="$router.push('/leave-requests')"
+                    class="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-lg shadow-teal-100 active:scale-95">
+                    <i class="pi pi-arrow-right mr-2"></i> Go to Leave Requests
+                </button>
+            </div>
+        </div>
+
+        <div v-else class="flex items-center justify-center h-64">
+            <div class="text-center">
+                <i class="pi pi-spin pi-spinner text-3xl text-teal-400 mb-3 block"></i>
+                <p class="text-sm text-gray-400 font-bold">Loading…</p>
             </div>
         </div>
     </div>
 </template>
 
 <script setup>
-    import { useAuthStore } from '../../stores/auth';
-    import { storeToRefs } from 'pinia';
-    import { ref, onMounted } from 'vue';
-    import BulletinBoard from '../common/BulletinBoard.vue';
-    import axios from 'axios';
+import { useAuthStore } from '../../stores/auth';
+import { storeToRefs } from 'pinia';
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
 
-    const authStore = useAuthStore();
-    const { user } = storeToRefs(authStore);
-    const latestRequest = ref(null);
-    const loading = ref(true);
+const authStore = useAuthStore();
+const { user } = storeToRefs(authStore);
 
-    const openLeaveRequest = () => {
-        window.location.href = '/leave-requests';
-    };
+const report        = ref(null);
+const loadingReport = ref(false);
+const remarksMap    = ref({});
 
-    const formatDate = (date) => {
-        if(!date) return '';
-        return new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    };
+const now = new Date();
+const reportMonth = ref(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
 
-    onMounted(async () => {
-        loading.value = true;
-        if (!user.value) {
-           await authStore.fetchUser();
-        }
-        
-        try {
-            const response = await axios.get('/api/leave-requests');
-            if(response.data.data && response.data.data.length > 0) {
-                latestRequest.value = response.data.data[0];
-            }
-        } catch (error) {
-            console.error('Failed to fetch latest request', error);
-        } finally {
-            loading.value = false;
-        }
-    });
+const getInitials = (name) => {
+    if (!name) return '??';
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().substring(0, 2);
+};
+
+const formatDate = (d) => {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const formatShortDT = (d) => {
+    if (!d) return '—';
+    return new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
+const fetchReport = async () => {
+    if (!user.value || user.value.role !== 'dept_head') return;
+    loadingReport.value = true;
+    try {
+        const [y, m] = reportMonth.value.split('-');
+        const res = await axios.get('/api/dept-head/report', { params: { year: y, month: m } });
+        report.value = res.data;
+    } catch (e) {
+        console.error('Failed to fetch dept report', e);
+    } finally {
+        loadingReport.value = false;
+    }
+};
+
+const processRequest = async (req, status) => {
+    const label = status === 'Dept Approved' ? 'forward to HR for final approval' : 'reject';
+    if (!confirm(`Are you sure you want to ${label} the request from ${req.employee_name}?`)) return;
+    try {
+        await axios.put(`/api/leave-requests/${req.id}`, {
+            status,
+            remarks: remarksMap.value[req.id] || '',
+        });
+        remarksMap.value[req.id] = '';
+        await fetchReport();
+    } catch (e) {
+        console.error('Failed to process request', e);
+        alert('Action failed. Please try again.');
+    }
+};
+
+const exportReport = (statusFilter = null) => {
+    const [y, m] = reportMonth.value.split('-');
+    const params = new URLSearchParams({ year: y, month: m });
+    if (statusFilter) params.set('status', statusFilter);
+    window.open(`/api/dept-head/report/export?${params.toString()}`, '_blank');
+};
+
+onMounted(async () => {
+    if (!user.value) await authStore.fetchUser();
+    if (user.value?.role === 'dept_head') await fetchReport();
+});
 </script>
 
-<style>
-    /* From Uiverse.io by adamgiebl */ 
-.cssbuttons-io-button {
-  background: #81f070;
-  color: white;
-  font-family: inherit;
-  padding: 0.35em;
-  padding-top: 0.35em;
-  padding-left: 1.2em;
-  font-size: 17px;
-  font-weight: 500;
-  border-radius: 0.9em;
-  border: none;
-  letter-spacing: 0.05em;
-  display: flex;
-  align-items: center;
-  box-shadow: inset 0 0 1.6em -0.6em #714da6;
-  overflow: hidden;
-  position: relative;
-  height: 2.8em;
-  padding-right: 3.3em;
-  cursor: pointer;
-}
-
-.cssbuttons-io-button .icon {
-  background: white;
-  margin-left: 1em;
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 2.2em;
-  width: 2.2em;
-  border-radius: 0.7em;
-  box-shadow: 0.1em 0.1em 0.6em 0.2em #57b952;
-  right: 0.3em;
-  transition: all 0.3s;
-}
-
-.cssbuttons-io-button:hover .icon {
-  width: calc(100% - 0.6em);
-}
-
-.cssbuttons-io-button .icon svg {
-  width: 1.1em;
-  transition: transform 0.3s;
-  color: #52b952;
-}
-
-.cssbuttons-io-button:hover .icon svg {
-  transform: translateX(0.1em);
-}
-
-.cssbuttons-io-button:active .icon {
-  transform: scale(0.95);
-}
-
+<style scoped>
+details summary::-webkit-details-marker { display: none; }
 </style>

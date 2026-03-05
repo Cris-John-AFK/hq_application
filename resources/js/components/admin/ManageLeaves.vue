@@ -166,10 +166,11 @@
                             >
                         </div>
                         <div class="flex flex-wrap gap-3">
-                            <select v-model="filters.status" class="cursor-pointer px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white min-w-[130px]">
+                            <select v-model="filters.status" class="cursor-pointer px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white min-w-[160px]">
                                 <option value="">All Statuses</option>
                                 <option value="Pending">Pending</option>
-                                <option value="Approved">Approved</option>
+                                <option value="Dept Approved">Dept Approved (→ HR)</option>
+                                <option value="Approved">Approved (Official)</option>
                                 <option value="Rejected">Rejected</option>
                                 <option value="Cancelled">Cancelled</option>
                             </select>
@@ -304,16 +305,41 @@
                                         </span>
                                     </td>
                                     <td class="p-4">
-                                        <span :class="[
-                                            'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide',
-                                            request.status === 'Approved' ? 'bg-green-100 text-green-700' :
-                                            request.status === 'Pending' ? 'bg-orange-100 text-orange-700' :
-                                            'bg-red-100 text-red-700'
-                                        ]">
-                                            {{ request.status }}
-                                        </span>
+                                        <!-- Status Badge -->
+                                        <div>
+                                            <span :class="[
+                                                'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide',
+                                                request.status === 'Approved'      ? 'bg-emerald-100 text-emerald-700' :
+                                                request.status === 'Dept Approved' ? 'bg-blue-100 text-blue-700':
+                                                request.status === 'Pending'       ? 'bg-orange-100 text-orange-700' :
+                                                request.status === 'Cancelled'     ? 'bg-gray-100 text-gray-500' :
+                                                'bg-red-100 text-red-700'
+                                            ]">
+                                                {{ request.status === 'Dept Approved' ? '→ Forwarded to HR' : request.status }}
+                                            </span>
+
+                                            <!-- Pending: Awaiting dept head -->
+                                            <div v-if="request.status === 'Pending'" class="mt-1.5 flex items-center gap-1 text-[9px] text-amber-600 font-bold">
+                                                <i class="pi pi-hourglass text-[8px]"></i> Awaiting Dept Head
+                                            </div>
+
+                                            <!-- Dept Approved: show who forwarded + dept + remarks -->
+                                            <div v-if="request.status === 'Dept Approved' && request.dept_head" class="mt-1.5 space-y-0.5">
+                                                <div class="flex items-center gap-1 text-[9px] text-blue-600 font-bold">
+                                                    <i class="pi pi-user text-[8px]"></i> {{ request.dept_head.name }}
+                                                </div>
+                                                <div v-if="request.dept_head_remarks" class="text-[9px] text-gray-400 italic truncate max-w-[160px]" :title="request.dept_head_remarks">
+                                                    "{{ request.dept_head_remarks }}"
+                                                </div>
+                                            </div>
+
+                                            <!-- HR Approver indicator -->
+                                            <div v-if="request.hr_approver" class="mt-1 flex items-center gap-1 text-[9px] text-emerald-600 font-bold">
+                                                <i class="pi pi-verified text-[8px]"></i> {{ request.hr_approver.name }}
+                                            </div>
+                                        </div>
                                     </td>
-                                     <td class="p-4">
+                                    <td class="p-4">
                                         <span v-if="request.is_paid" class="text-green-600 text-xs font-bold flex items-center gap-1">
                                             <i class="pi pi-check-circle"></i> With Pay
                                         </span>
@@ -518,13 +544,103 @@
                                             </div>
                                             <div :class="[
                                                 'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border',
-                                                selectedRequest.status === 'Approved' ? 'bg-green-50 text-green-700 border-green-200' :
-                                                selectedRequest.status === 'Pending' ? 'bg-orange-50 text-orange-700 border-orange-200' :
-                                                'bg-red-50 text-red-700 border-red-200'
+                                                selectedRequest.status === 'Approved'      ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                                selectedRequest.status === 'Dept Approved' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                                selectedRequest.status === 'Pending'       ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                                selectedRequest.status === 'Cancelled'     ? 'bg-gray-50 text-gray-500 border-gray-200' :
+                                                'bg-rose-50 text-rose-700 border-rose-200'
                                             ]">
                                                 {{ selectedRequest.status }}
                                             </div>
                                         </div>
+
+                                        <!-- ── Approval Timeline ────────────────────────────────── -->
+                                        <div class="mb-4 p-4 bg-gradient-to-br from-slate-50 to-teal-50/40 rounded-xl border border-slate-200">
+                                            <h4 class="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4 flex items-center gap-1.5">
+                                                <i class="pi pi-list-check text-teal-500"></i> Approval Trail
+                                            </h4>
+                                            <div class="relative pl-5">
+                                                <!-- Vertical connector line -->
+                                                <div class="absolute left-[7px] top-2 bottom-2 w-0.5 bg-gray-200 rounded-full"></div>
+
+                                                <!-- Step 1: Employee filed -->
+                                                <div class="relative mb-4">
+                                                    <div class="absolute -left-5 top-0.5 w-3.5 h-3.5 rounded-full bg-indigo-500 border-2 border-white shadow-sm"></div>
+                                                    <div class="bg-white rounded-lg border border-gray-100 p-3 shadow-sm">
+                                                        <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Filed by Employee</p>
+                                                        <p class="text-xs font-bold text-gray-700 mt-0.5">
+                                                            {{ selectedRequest.user?.name || (selectedRequest.employee?.last_name + ', ' + selectedRequest.employee?.first_name) }}
+                                                        </p>
+                                                        <p class="text-[10px] text-gray-400 mt-0.5">
+                                                            {{ selectedRequest.user?.department || selectedRequest.employee?.department?.name || '—' }}
+                                                        </p>
+                                                        <p class="text-[9px] text-gray-400 mt-1">{{ selectedRequest.date_filed ? new Date(selectedRequest.date_filed).toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'}) : '—' }}</p>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Step 2: Dept Head -->
+                                                <div class="relative mb-4">
+                                                    <div class="absolute -left-5 top-0.5 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm"
+                                                        :class="selectedRequest.dept_head ? 'bg-teal-500' : 'bg-amber-300'"></div>
+                                                    <div class="bg-white rounded-lg border p-3 shadow-sm"
+                                                        :class="selectedRequest.dept_head ? 'border-teal-100' : 'border-amber-100'">
+                                                        <p class="text-[10px] font-black uppercase tracking-widest"
+                                                            :class="selectedRequest.dept_head ? 'text-teal-600' : 'text-amber-500'">
+                                                            {{ selectedRequest.dept_head ? 'Dept Head Reviewed' : 'Awaiting Dept Head Review' }}
+                                                        </p>
+                                                        <template v-if="selectedRequest.dept_head">
+                                                            <p class="text-xs font-bold text-gray-700 mt-0.5">{{ selectedRequest.dept_head.name }}</p>
+                                                            <p class="text-[10px] text-gray-400">
+                                                                {{ ['Dept Approved', 'Approved'].includes(selectedRequest.status) ? 'Forwarded to HR for final approval' : 'Request was Rejected at dept level' }}
+                                                            </p>
+                                                            <p v-if="selectedRequest.dept_head_remarks" class="text-[10px] text-gray-500 italic mt-1 border-l-2 border-teal-200 pl-2">
+                                                                "{{ selectedRequest.dept_head_remarks }}"
+                                                            </p>
+                                                            <p v-if="selectedRequest.dept_reviewed_at" class="text-[9px] text-gray-400 mt-1">
+                                                                {{ new Date(selectedRequest.dept_reviewed_at).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}) }}
+                                                            </p>
+                                                        </template>
+                                                        <template v-else>
+                                                            <p class="text-[10px] text-amber-500 mt-0.5 animate-pulse">Pending review by department head</p>
+                                                        </template>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Step 3: HR/Admin Final -->
+                                                <div class="relative">
+                                                    <div class="absolute -left-5 top-0.5 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm"
+                                                        :class="selectedRequest.hr_approver ? 'bg-emerald-500' : (selectedRequest.status === 'Dept Approved' ? 'bg-blue-400 animate-pulse' : 'bg-gray-200')"></div>
+                                                    <div class="bg-white rounded-lg border p-3 shadow-sm"
+                                                        :class="selectedRequest.hr_approver ? 'border-emerald-100' : (selectedRequest.status === 'Dept Approved' ? 'border-blue-200' : 'border-gray-100')">
+                                                        <p class="text-[10px] font-black uppercase tracking-widest"
+                                                            :class="selectedRequest.hr_approver ? 'text-emerald-600' : (selectedRequest.status === 'Dept Approved' ? 'text-blue-500' : 'text-gray-400')">
+                                                            {{ selectedRequest.hr_approver ? 'HR / Admin Final Decision' : (selectedRequest.status === 'Dept Approved' ? 'Ready for HR Final Approval' : 'Awaiting HR / Admin') }}
+                                                        </p>
+                                                        <template v-if="selectedRequest.hr_approver">
+                                                            <p class="text-xs font-bold text-gray-700 mt-0.5">{{ selectedRequest.hr_approver.name }}</p>
+                                                            <p class="text-[10px] font-bold mt-0.5"
+                                                                :class="selectedRequest.status === 'Approved' ? 'text-emerald-600' : 'text-rose-600'">
+                                                                {{ selectedRequest.status === 'Approved' ? 'Officially Approved ✓' : 'Rejected ✗' }}
+                                                            </p>
+                                                            <p v-if="selectedRequest.hr_remarks" class="text-[10px] text-gray-500 italic mt-1 border-l-2 border-emerald-200 pl-2">
+                                                                "{{ selectedRequest.hr_remarks }}"
+                                                            </p>
+                                                            <p v-if="selectedRequest.hr_approved_at" class="text-[9px] text-gray-400 mt-1">
+                                                                {{ new Date(selectedRequest.hr_approved_at).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}) }}
+                                                            </p>
+                                                        </template>
+                                                        <template v-else-if="selectedRequest.status === 'Dept Approved'">
+                                                            <p class="text-[10px] text-blue-500 mt-0.5 animate-pulse">Forwarded — awaiting final HR decision</p>
+                                                        </template>
+                                                        <template v-else>
+                                                            <p class="text-[10px] text-gray-400 mt-0.5">Not yet reached this stage</p>
+                                                        </template>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                        <!-- ── END Approval Timeline ────────────────────────────── -->
 
                                         <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
                                             <p class="text-xs text-gray-400 uppercase font-bold mb-2">Employee Reason</p>
@@ -636,21 +752,34 @@
                                                 Update Configuration
                                             </button>
 
+                                            <!-- For Dept Approved (waiting for HR sign-off) -->
                                             <button 
                                                 @click="handleAction('Approved')" 
-                                                class="cursor-pointer flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0"
+                                                class="cursor-pointer flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0"
+                                                v-if="selectedRequest.status === 'Dept Approved'"
+                                                :disabled="processing"
+                                            >
+                                                <i class="pi pi-verified" v-if="!processing"></i>
+                                                <i class="pi pi-spin pi-spinner" v-else></i>
+                                                Final HR Approval
+                                            </button>
+
+                                            <!-- For Pending (fallback admin override) -->
+                                            <button 
+                                                @click="handleAction('Approved')" 
+                                                class="cursor-pointer flex-1 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold shadow-lg shadow-teal-200 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0"
                                                 v-if="selectedRequest.status === 'Pending'"
                                                 :disabled="processing"
                                             >
                                                 <i class="pi pi-check" v-if="!processing"></i>
                                                 <i class="pi pi-spin pi-spinner" v-else></i>
-                                                Approve Request
+                                                Approve (Override)
                                             </button>
                                             
                                             <button 
                                                 @click="handleAction('Rejected')"
-                                                class="cursor-pointer flex-1 py-3 bg-white border-2 border-red-100 text-red-600 hover:bg-red-50 hover:border-red-200 rounded-lg font-bold transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0"
-                                                v-if="selectedRequest.status === 'Pending' || selectedRequest.status === 'Cancelled'"
+                                                class="cursor-pointer flex-1 py-3 bg-white border-2 border-rose-100 text-rose-600 hover:bg-rose-50 hover:border-rose-200 rounded-lg font-bold transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0"
+                                                v-if="['Pending', 'Dept Approved', 'Cancelled'].includes(selectedRequest.status)"
                                                 :disabled="processing"
                                             >
                                                 <i class="pi pi-times" v-if="!processing"></i>
@@ -795,7 +924,7 @@ const adminRemarks = ref(''); // Keep for backward compat or merge
 
 const filters = ref({
     search: '',
-    status: '',
+    status: 'Dept Approved',
     type: '',
     request_type: '',
     department: '',

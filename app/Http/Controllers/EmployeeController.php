@@ -14,7 +14,7 @@ class EmployeeController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Employee::with(['department', 'details']);
+        $query = Employee::with(['department', 'details', 'user']);
 
         // Default: only show non-archived
         if ($request->boolean('archived', false)) {
@@ -111,7 +111,7 @@ class EmployeeController extends Controller
 
     public function show($id)
     {
-        return response()->json(Employee::with('details', 'department')->findOrFail($id));
+        return response()->json(Employee::with('details', 'department', 'user')->findOrFail($id));
     }
 
     public function update(Request $request, $id)
@@ -144,6 +144,12 @@ class EmployeeController extends Controller
                     ['employee_id' => $employee->id],
                     $request->input('details')
                 );
+            }
+
+            // Sync User role if provided
+            if ($request->has('role') && $employee->user) {
+                $employee->user->update(['role' => $request->role]);
+                \App\Utils\AuditLogger::log('Security', 'Updated', "Changed system role for {$employee->name} to {$request->role}.", null, ['role' => $request->role]);
             }
 
             $employee->refresh();

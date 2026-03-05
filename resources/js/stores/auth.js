@@ -54,5 +54,14 @@ export const useAuthStore = defineStore('auth', {
                 throw error;
             }
         },
+        getInitials(name) {
+            if (!name) return '??';
+            return name
+                .split(' ')
+                .map(word => word[0])
+                .join('')
+                .toUpperCase()
+                .substring(0, 2);
+        }
     },
 });

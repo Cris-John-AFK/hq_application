@@ -25,16 +25,31 @@ class AuditLogger
         $finalUserId = $userId ?? Auth::id();
 
         if ($userAgent) {
-            if (stripos($userAgent, 'mobi') !== false)
-                $device = 'Mobile Device';
-            elseif (stripos($userAgent, 'tablet') !== false)
-                $device = 'Tablet';
-            elseif (stripos($userAgent, 'windows') !== false)
-                $device = 'Windows PC';
-            elseif (stripos($userAgent, 'macintosh') !== false)
-                $device = 'Mac';
+            $os = 'Unknown OS';
+            if (stripos($userAgent, 'windows') !== false)
+                $os = 'Windows PC';
+            elseif (stripos($userAgent, 'macintosh') !== false || stripos($userAgent, 'mac os x') !== false)
+                $os = 'Mac';
+            elseif (stripos($userAgent, 'android') !== false)
+                $os = 'Android';
+            elseif (stripos($userAgent, 'iphone') !== false || stripos($userAgent, 'ipad') !== false)
+                $os = 'iOS Device';
             elseif (stripos($userAgent, 'linux') !== false)
-                $device = 'Linux PC';
+                $os = 'Linux PC';
+
+            $browser = 'Unknown Browser';
+            if (stripos($userAgent, 'edg') !== false)
+                $browser = 'Edge';
+            elseif (stripos($userAgent, 'chrome') !== false)
+                $browser = 'Chrome';
+            elseif (stripos($userAgent, 'safari') !== false)
+                $browser = 'Safari';
+            elseif (stripos($userAgent, 'firefox') !== false)
+                $browser = 'Firefox';
+            elseif (stripos($userAgent, 'opr') !== false || stripos($userAgent, 'opera') !== false)
+                $browser = 'Opera';
+
+            $device = "{$os} ({$browser})";
         }
 
         SystemLog::create([
@@ -47,7 +62,7 @@ class AuditLogger
             'ip_address' => Request::ip(),
             'user_agent' => $userAgent,
             'device' => $device,
-            'location' => 'PH (Local Network)' // Placeholder for location since we are in local dev
+            'location' => 'Local Network Access'
         ]);
     }
 }

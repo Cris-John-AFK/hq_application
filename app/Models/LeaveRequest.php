@@ -28,7 +28,14 @@ class LeaveRequest extends Model
         'attachment_path',
         'is_archived',
         'archived_at',
-        'additional_details'
+        'additional_details',
+        // Two-stage approval
+        'dept_head_id',
+        'dept_head_remarks',
+        'dept_reviewed_at',
+        'hr_approved_by',
+        'hr_remarks',
+        'hr_approved_at',
     ];
 
     protected $casts = [
@@ -41,6 +48,8 @@ class LeaveRequest extends Model
         'days_paid' => 'decimal:2',
         'is_archived' => 'boolean',
         'archived_at' => 'datetime',
+        'dept_reviewed_at' => 'datetime',
+        'hr_approved_at' => 'datetime',
         'additional_details' => 'array',
     ];
 
@@ -52,5 +61,22 @@ class LeaveRequest extends Model
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    /** The Dept Head who reviewed this request */
+    public function deptHead()
+    {
+        return $this->belongsTo(User::class, 'dept_head_id');
+    }
+
+    /** The HR/Admin who gave the final approval */
+    public function hrApprover()
+    {
+        return $this->belongsTo(User::class, 'hr_approved_by');
+    }
+
+    public function actionLogs()
+    {
+        return $this->hasMany(LeaveActionLog::class);
     }
 }

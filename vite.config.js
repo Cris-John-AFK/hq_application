@@ -26,29 +26,31 @@ export default defineConfig({
         },
     },
     server: {
+        host: true, // Listen on all network interfaces
+        hmr: {
+            host: '10.10.10.8',
+        },
         proxy: {
             '/api': {
-                target: 'http://localhost:8000',
+                target: 'http://10.10.10.8:8000',
                 changeOrigin: true,
             },
             '/login': {
-                target: 'http://localhost:8000',
+                target: 'http://10.10.10.8:8000',
                 changeOrigin: true,
             },
             '/logout': {
-                target: 'http://localhost:8000',
+                target: 'http://10.10.10.8:8000',
                 changeOrigin: true,
             },
             '/sanctum': {
-                target: 'http://localhost:8000',
+                target: 'http://10.10.10.8:8000',
                 changeOrigin: true,
             },
             '/vue': {
-                target: 'http://localhost:8000',
+                target: 'http://10.10.10.8:8000',
                 changeOrigin: true,
             },
-            // We can also proxy the root if needed, but be careful with Vite's own assets
-            // Let's stick to these for now and see if it fixes the login.
         }
     }
 });

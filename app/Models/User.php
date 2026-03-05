@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 class User extends Authenticatable
 {
@@ -45,6 +46,11 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class);
     }
 
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class, 'id_number', 'employee_id');
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -75,7 +81,7 @@ class User extends Authenticatable
     protected function avatarUrl(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
         return \Illuminate\Database\Eloquent\Casts\Attribute::make(
-            get: fn () => $this->avatar ? Storage::disk('public')->url($this->avatar) : null,
+            get: fn() => $this->avatar ? URL::to('/storage/' . $this->avatar) : null,
         );
     }
 }

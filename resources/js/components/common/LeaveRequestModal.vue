@@ -529,10 +529,10 @@
                                         <div>
                                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">No. of Hours</label>
                                             <div class="flex items-center gap-2">
-                                                <input :readonly="form.requestType === 'Halfday' || form.requestType === 'Undertime'" type="number" step="0.5" v-model="form.numberOfHours" class="w-24 p-2 border border-blue-200 rounded font-bold text-blue-700 text-center focus:ring-blue-500 outline-none" :class="form.requestType === 'Undertime' || form.requestType === 'Halfday' ? 'bg-blue-50' : ''">
-                                                <span class="text-sm text-gray-500">{{ (form.requestType === 'Undertime' || form.requestType === 'Halfday') ? 'calculated hours' : 'hours' }}</span>
+                                                <input type="number" step="0.5" v-model="form.numberOfHours" class="w-24 p-2 border rounded font-bold text-center outline-none transition-colors" :class="form.requestType === 'Undertime' || form.requestType === 'Halfday' ? 'bg-blue-50/50 border-blue-200 text-blue-700 hover:border-blue-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100' : 'bg-white border-gray-300 text-gray-800 hover:border-gray-400 focus:border-purple-400 focus:ring-2 focus:ring-purple-100'">
+                                                <span class="text-sm font-bold text-gray-500 uppercase tracking-widest text-[10px] mt-1">hours</span>
                                             </div>
-                                            <p v-if="form.requestType === 'Undertime' || form.requestType === 'Halfday'" class="text-[10px] text-blue-500 font-bold mt-1 uppercase italic tracking-tighter">* Auto-calculated for {{ form.requestType }}</p>
+                                            <p v-if="form.requestType === 'Undertime' || form.requestType === 'Halfday'" class="text-[10px] text-blue-500 font-bold mt-2 uppercase italic tracking-tighter flex items-center gap-1"><i class="pi pi-pencil text-[8px]"></i> </p>
                                         </div>
                                     </div>
                                 </div>

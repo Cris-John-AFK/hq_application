@@ -10,9 +10,32 @@
                     </div>
 
                     <div class="flex items-center gap-3">
-                         <button 
+                         <div class="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-sm">
+                            <button 
+                                @click="calendarView = 'leaves'"
+                                :class="[
+                                    'cursor-pointer px-4 py-2 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-2',
+                                    calendarView === 'leaves' ? 'bg-teal-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-700'
+                                ]"
+                            >
+                                <i class="pi pi-calendar-times"></i>
+                                Leaves
+                            </button>
+                            <button 
+                                @click="calendarView = 'attendance'"
+                                :class="[
+                                    'cursor-pointer px-4 py-2 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-2',
+                                    calendarView === 'attendance' ? 'bg-teal-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-700'
+                                ]"
+                            >
+                                <i class="pi pi-clock"></i>
+                                Attendance
+                            </button>
+                        </div>
+
+                        <button 
                             @click="isAddEventOpen = true"
-                            class="cursor-pointer flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors font-medium text-sm shadow-sm"
+                            class="cursor-pointer flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-all font-black text-xs uppercase shadow-md"
                         >
                             <i class="pi pi-plus"></i>
                             Add Event
@@ -54,23 +77,42 @@
                 </div>
 
                 <!-- Legend -->
-                <div class="flex flex-wrap gap-4 mb-6">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-violet-100 border border-violet-400"></span>
-                        <span class="text-xs font-semibold text-gray-700">Leave</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-rose-100 border border-rose-400"></span>
-                        <span class="text-xs font-semibold text-gray-700">Holiday</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-sky-100 border border-sky-400"></span>
-                        <span class="text-xs font-semibold text-gray-700">Event</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-amber-100 border border-amber-400"></span>
-                        <span class="text-xs font-semibold text-gray-700">Special Non-Working</span>
-                    </div>
+                <div class="flex flex-wrap gap-6 mb-6">
+                    <template v-if="calendarView === 'leaves'">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-violet-100 border border-violet-400"></span>
+                            <span class="text-xs font-semibold text-gray-700">Leave</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-rose-100 border border-rose-400"></span>
+                            <span class="text-xs font-semibold text-gray-700">Holiday</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-sky-100 border border-sky-400"></span>
+                            <span class="text-xs font-semibold text-gray-700">Event</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-amber-100 border border-amber-400"></span>
+                            <span class="text-xs font-semibold text-gray-700">Special Non-Working</span>
+                        </div>
+                    </template>
+                    <template v-else>
+                        <div class="flex items-center gap-2 text-emerald-600">
+                            <span class="w-3 h-3 rounded-sm bg-emerald-500 shadow-sm shadow-emerald-200"></span>
+                            <span class="text-xs font-black uppercase tracking-widest">Present</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-rose-600">
+                            <span class="w-3 h-3 rounded-sm bg-rose-500 shadow-sm shadow-rose-200"></span>
+                            <span class="text-xs font-black uppercase tracking-widest">Absent</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-orange-600">
+                            <span class="w-3 h-3 rounded-sm bg-orange-500 shadow-sm shadow-orange-200"></span>
+                            <span class="text-xs font-black uppercase tracking-widest">Late</span>
+                        </div>
+                        <div class="ml-auto text-[10px] text-gray-400 font-bold uppercase italic tracking-widest">
+                            * Values shown are counts per day
+                        </div>
+                    </template>
                 </div>
 
                 <!-- Calendar Content -->
@@ -88,8 +130,12 @@
                             v-for="(date, index) in calendarDays" 
                             :key="index" 
                             @click="openDayDetails(date)"
-                            class="min-h-[120px] bg-white relative group hover:bg-gray-50/50 transition-colors cursor-pointer border-r border-b border-gray-200"
-                            :class="{'bg-gray-50/30 text-gray-400': date.isPadding, 'bg-blue-50/30': date.isToday}"
+                            class="bg-white relative group hover:bg-gray-50/50 transition-all cursor-pointer border-r border-b border-gray-200"
+                            :class="[
+                                date.isPadding ? 'bg-gray-50/30 text-gray-400' : '',
+                                date.isToday ? 'bg-blue-50/30' : '',
+                                calendarView === 'attendance' ? 'min-h-[160px]' : 'min-h-[140px]'
+                            ]"
                         >
                             <div class="p-2 flex justify-between items-start mb-1">
                                 <span :class="[
@@ -100,43 +146,72 @@
                                 </span>
                             </div>
 
-                            <div class="space-y-1 overflow-y-auto max-h-[85px] custom-scrollbar pb-2">
-                                <div v-for="evt in date.customEvents" :key="evt.id || evt.name" 
-                                    :class="[
-                                        'px-2 py-0.5 text-[10px] font-semibold border-y truncate transition-all',
-                                        getEventClass(evt),
-                                        {
-                                            'rounded-l ml-1 border-l': isEventStart(evt, date.fullDate),
-                                            'rounded-r mr-1 border-r': isEventEnd(evt, date.fullDate),
-                                            'border-l-0': !isEventStart(evt, date.fullDate),
-                                            'border-r-0': !isEventEnd(evt, date.fullDate),
-                                            'mb-0.5 shadow-sm': isEventStart(evt, date.fullDate) || isEventEnd(evt, date.fullDate)
-                                        }
-                                    ]"
-                                    :title="evt.title || evt.name"
-                                >
-                                    <template v-if="isEventStart(evt, date.fullDate) || isFirstDayOfWeek(date.fullDate)">
-                                        <span v-if="evt.type === 'holiday' || evt.type === 'Regular Holiday' || evt.type === 'Special Non-Working'">🎉</span>
-                                        <span v-else>📅</span>
-                                        {{ evt.title || evt.name }}
-                                    </template>
-                                    <span v-else>&nbsp;</span>
-                                </div>
+                            <div 
+                                :class="[
+                                    'space-y-1 px-1 pb-2',
+                                    calendarView === 'leaves' ? 'overflow-y-auto max-h-[100px] custom-scrollbar' : 'overflow-visible'
+                                ]"
+                            >
+                                <template v-if="calendarView === 'leaves'">
+                                    <div v-for="evt in date.customEvents" :key="evt.id || evt.name" 
+                                        :class="[
+                                            'px-2 py-0.5 text-[10px] font-semibold border-y truncate transition-all',
+                                            getEventClass(evt),
+                                            {
+                                                'rounded-l ml-1 border-l': isEventStart(evt, date.fullDate),
+                                                'rounded-r mr-1 border-r': isEventEnd(evt, date.fullDate),
+                                                'border-l-0': !isEventStart(evt, date.fullDate),
+                                                'border-r-0': !isEventEnd(evt, date.fullDate),
+                                                'mb-0.5 shadow-sm': isEventStart(evt, date.fullDate) || isEventEnd(evt, date.fullDate)
+                                            }
+                                        ]"
+                                        :title="evt.title || evt.name"
+                                    >
+                                        <template v-if="isEventStart(evt, date.fullDate) || isFirstDayOfWeek(date.fullDate)">
+                                            <span v-if="evt.type === 'holiday' || evt.type === 'Regular Holiday' || evt.type === 'Special Non-Working'">🎉</span>
+                                            <span v-else>📅</span>
+                                            {{ evt.title || evt.name }}
+                                        </template>
+                                        <span v-else>&nbsp;</span>
+                                    </div>
 
-                                <div v-for="event in date.events.slice(0, 2)" :key="event.id" 
-                                    class="px-2 py-1 rounded text-[10px] font-bold bg-violet-100 text-violet-900 border border-violet-200 truncate hover:bg-violet-200 transition-colors"
-                                    :title="`${event.user_name} - ${event.leave_type}`"
-                                >
-                                    <template v-if="isEventStart(event, date.fullDate) || isFirstDayOfWeek(date.fullDate)">
-                                        👤 {{ event.user_name }}
-                                    </template>
-                                    <span v-else>&nbsp;</span>
-                                </div>
-                                <div v-if="date.events.length > 2" 
-                                    class="px-2 py-0.5 text-[10px] font-black text-violet-400 text-center uppercase tracking-widest italic"
-                                >
-                                    + {{ date.events.length - 2 }} more on leave
-                                </div>
+                                    <div v-for="event in date.events.slice(0, 2)" :key="event.id" 
+                                        class="px-2 py-1 rounded text-[10px] font-bold bg-violet-100 text-violet-900 border border-violet-200 truncate hover:bg-violet-200 transition-colors"
+                                        :title="`${event.user_name} - ${event.leave_type}`"
+                                    >
+                                        <template v-if="isEventStart(event, date.fullDate) || isFirstDayOfWeek(date.fullDate)">
+                                            👤 {{ event.user_name }}
+                                        </template>
+                                        <span v-else>&nbsp;</span>
+                                    </div>
+                                    <div v-if="date.events.length > 2" 
+                                        class="px-2 py-0.5 text-[10px] font-black text-violet-400 text-center uppercase tracking-widest italic"
+                                    >
+                                        + {{ date.events.length - 2 }} more
+                                    </div>
+                                </template>
+
+                                <!-- Attendance Mode HEATMAP Grid - 2x2 COMPACT GRID -->
+                                <template v-else-if="date.attendance && !date.isPadding">
+                                    <div class="grid grid-cols-2 gap-1 pt-1">
+                                        <div v-if="date.attendance.Present" class="flex flex-col items-center justify-center p-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100 shadow-sm animate-in zoom-in duration-300">
+                                            <span class="text-[7px] font-black uppercase tracking-widest opacity-60">Present</span>
+                                            <span class="text-lg font-black tabular-nums leading-none mt-1">{{ date.attendance.Present }}</span>
+                                        </div>
+                                        <div v-if="date.attendance.Absent" class="flex flex-col items-center justify-center p-1.5 bg-rose-50 text-rose-700 rounded-lg border border-rose-100 shadow-sm animate-in zoom-in duration-300">
+                                            <span class="text-[7px] font-black uppercase tracking-widest opacity-60">Absent</span>
+                                            <span class="text-lg font-black tabular-nums leading-none mt-1">{{ date.attendance.Absent }}</span>
+                                        </div>
+                                        <div v-if="date.attendance.Late" class="flex flex-col items-center justify-center p-1.5 bg-orange-50 text-orange-700 rounded-lg border border-orange-100 shadow-sm animate-in zoom-in duration-300">
+                                            <span class="text-[7px] font-black uppercase tracking-widest opacity-60">Late</span>
+                                            <span class="text-lg font-black tabular-nums leading-none mt-1">{{ date.attendance.Late }}</span>
+                                        </div>
+                                        <div v-if="date.attendance['Half Day']" class="flex flex-col items-center justify-center p-1.5 bg-amber-50 text-amber-700 rounded-lg border border-amber-100 shadow-sm animate-in zoom-in duration-300">
+                                            <span class="text-[7px] font-black uppercase tracking-widest opacity-60">Half</span>
+                                            <span class="text-lg font-black tabular-nums leading-none mt-1">{{ date.attendance['Half Day'] }}</span>
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </div>
@@ -199,7 +274,12 @@
 
             <!-- Modals -->
             <AddEventModal v-model="isAddEventOpen" @success="refreshCalendar" />
-            <DayDetailsModal v-model="isDayDetailsOpen" :date="selectedDate" @delete="refreshCalendar" />
+            <DayDetailsModal 
+                v-model="isDayDetailsOpen" 
+                :date="selectedDate" 
+                :view-mode="calendarView"
+                @delete="refreshCalendar" 
+            />
         </MainLayout>
     </div>
 </template>
@@ -224,9 +304,15 @@
     const isDayDetailsOpen = ref(false);
     const selectedDate = ref(null);
     const viewMode = ref('calendar'); // 'calendar' or 'list'
+    const calendarView = ref('leaves'); // 'leaves' or 'attendance'
+    const attendanceSummary = ref([]);
 
     const listDays = computed(() => {
-        return calendarDays.value.filter(day => !day.isPadding && (day.events.length > 0 || day.customEvents.length > 0));
+        return calendarDays.value.filter(day => !day.isPadding && (
+            day.events.length > 0 || 
+            day.customEvents.length > 0 || 
+            (calendarView.value === 'attendance' && day.attendance)
+        ));
     });
 
     const getDayName = (dateStr) => {
@@ -249,7 +335,38 @@
     // Unified fetch using store
     const refreshCalendar = async () => {
         await calendarStore.fetchEvents(true);
+        if (calendarView.value === 'attendance') {
+            fetchAttendanceSummary();
+        }
     };
+
+    const fetchAttendanceSummary = async () => {
+        const year = currentYear.value;
+        const month = currentMonth.value + 1;
+        const start = `${year}-${String(month).padStart(2, '0')}-01`;
+        const end = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
+        
+        try {
+            const { data } = await axios.get('/api/attendance-summary', {
+                params: { start_date: start, end_date: end }
+            });
+            attendanceSummary.value = data;
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    watch(calendarView, (newVal) => {
+        if (newVal === 'attendance' && attendanceSummary.value.length === 0) {
+            fetchAttendanceSummary();
+        }
+    });
+
+    watch(currentDate, () => {
+        if (calendarView.value === 'attendance') {
+            fetchAttendanceSummary();
+        }
+    });
 
     const getEventClass = (evt) => {
         // Handle both PH holidays (static) and Custom Events (dynamic)
@@ -309,19 +426,27 @@
             
             dayLeaves.sort((a, b) => (a.user_name || '').localeCompare(b.user_name || ''));
 
-            const isToday = 
-                i === today.getDate() && 
-                month === today.getMonth() && 
-                year === today.getFullYear();
+                const isToday = 
+                    i === today.getDate() && 
+                    month === today.getMonth() && 
+                    year === today.getFullYear();
 
-            days.push({
-                day: i,
-                isPadding: false,
-                isToday: isToday,
-                events: dayLeaves,
-                customEvents: mergedEvents,
-                fullDate: dateStr
-            });
+                const dailyAttendance = attendanceSummary.value
+                    .filter(a => a.date === dateStr)
+                    .reduce((acc, curr) => {
+                        acc[curr.status] = curr.count;
+                        return acc;
+                    }, {});
+
+                days.push({
+                    day: i,
+                    isPadding: false,
+                    isToday: isToday,
+                    events: dayLeaves,
+                    customEvents: mergedEvents,
+                    attendance: Object.keys(dailyAttendance).length > 0 ? dailyAttendance : null,
+                    fullDate: dateStr
+                });
         }
         
         // Next month padding

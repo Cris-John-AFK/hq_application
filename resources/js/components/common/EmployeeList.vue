@@ -178,9 +178,24 @@
                         <td class="px-6 py-4 text-sm text-gray-600">{{ employee.department?.name || 'N/A' }}</td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ employee.position }}</td>
                         <td class="px-6 py-4">
-                            <span :class="getStatusClass(employee.employment_status)" class="px-2 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider">
-                                {{ employee.employment_status }}
-                            </span>
+                            <div class="flex flex-col gap-1">
+                                <span :class="getStatusClass(employee.employment_status)" class="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-wider w-fit">
+                                    {{ employee.employment_status }}
+                                </span>
+                                <div v-if="employee.user" class="flex items-center gap-1 mt-1">
+                                    <span :class="getRoleClass(employee.user.role)" class="px-2 py-0.5 rounded-full text-[8px] uppercase font-black tracking-widest border border-current shadow-sm">
+                                        {{ employee.user.role }}
+                                    </span>
+                                </div>
+                                <button 
+                                    v-else 
+                                    @click="openAccountModal(employee)"
+                                    class="mt-1 text-[9px] font-black uppercase text-teal-600 hover:text-teal-700 flex items-center gap-1 cursor-pointer transition-colors"
+                                >
+                                    <i class="pi pi-user-plus"></i>
+                                    Create Account
+                                </button>
+                            </div>
                         </td>
                          <td class="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{{ formatDate(employee.date_hired) }}</td>
                         <td class="px-6 py-4 text-right">
@@ -244,6 +259,61 @@
             :loading="isEditing"
             @submit="handleUpdate"
         />
+
+        <!-- Account Creation Modal -->
+        <div v-if="showAccountModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" @click.self="showAccountModal = false">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div class="p-6 border-b border-gray-100">
+                    <h3 class="text-lg font-black text-gray-800 uppercase tracking-tight">System Account Access</h3>
+                    <p class="text-[11px] text-gray-500 font-bold uppercase mt-1">Promote employee to system user</p>
+                </div>
+                
+                <div class="p-6 space-y-4">
+                    <div class="flex items-center gap-3 p-3 bg-teal-50 rounded-xl border border-teal-100 text-teal-700">
+                        <i class="pi pi-user text-xl"></i>
+                        <div>
+                            <p class="text-xs font-black uppercase">{{ selectedEmployeeForAccount?.first_name }} {{ selectedEmployeeForAccount?.last_name }}</p>
+                            <p class="text-[10px] opacity-75 font-bold uppercase">{{ selectedEmployeeForAccount?.employee_id }}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Access Privilege / Role</label>
+                        <div class="grid grid-cols-1 gap-2">
+                            <button 
+                                v-for="role in ['user', 'dept_head', 'admin']" 
+                                :key="role"
+                                @click="accountRole = role"
+                                :class="accountRole === role ? 'border-teal-600 bg-teal-600 text-white shadow-lg shadow-teal-100 scale-[1.02]' : 'border-gray-100 bg-gray-50 text-gray-500 hover:bg-gray-100'"
+                                class="flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer"
+                            >
+                                <span class="text-xs font-black uppercase tracking-wider">{{ role.replace('_', ' ') }}</span>
+                                <i v-if="accountRole === role" class="pi pi-check-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50 rounded-xl p-3 border border-amber-100">
+                        <p class="text-[9px] text-amber-600 font-bold leading-relaxed">
+                            <i class="pi pi-info-circle mr-1"></i>
+                            An initial email (name.surname@hq.app) and default password ("password") will be generated for the user.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-gray-50 border-t border-gray-100 flex gap-3">
+                    <button @click="showAccountModal = false" class="flex-1 px-4 py-2 text-xs font-black uppercase text-gray-400 hover:text-gray-600 transition-colors">Cancel</button>
+                    <button 
+                        @click="handleCreateAccount" 
+                        :disabled="isCreatingAccount"
+                        class="flex-1 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-teal-200 transition-all flex items-center justify-center gap-2"
+                    >
+                        <i v-if="isCreatingAccount" class="pi pi-spin pi-spinner"></i>
+                        <span>Confirm Access</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -281,6 +351,37 @@ const showEditModal = ref(false);
 const isCreating = ref(false);
 const isEditing = ref(false);
 const selectedEmployee = ref(null);
+const selectedEmployeeForAccount = ref(null);
+const showAccountModal = ref(false);
+const accountRole = ref('user');
+const isCreatingAccount = ref(false);
+
+const openAccountModal = (emp) => {
+    selectedEmployeeForAccount.value = emp;
+    accountRole.value = 'user';
+    showAccountModal.value = true;
+};
+
+const handleCreateAccount = async () => {
+    if (!selectedEmployeeForAccount.value) return;
+    
+    isCreatingAccount.value = true;
+    try {
+        const response = await axios.post('/api/users/create-from-employee', {
+            employee_id: selectedEmployeeForAccount.value.id,
+            role: accountRole.value
+        });
+        
+        alert(`Account created!\nEmail: ${response.data.email}\nPassword: ${response.data.password}`);
+        showAccountModal.value = false;
+        fetchEmployees(currentPage.value);
+    } catch (e) {
+        console.error(e);
+        alert(e.response?.data?.message || 'Failed to create account');
+    } finally {
+        isCreatingAccount.value = false;
+    }
+};
 
 // Fetch Data
 const fetchDepartments = async () => {
@@ -347,6 +448,14 @@ const getStatusClass = (status) => {
         case 'Resigned': return 'bg-gray-100 text-gray-500';
         case 'Terminated': return 'bg-red-100 text-red-700';
         default: return 'bg-slate-100 text-slate-700';
+    }
+};
+
+const getRoleClass = (role) => {
+    switch(role) {
+        case 'admin': return 'bg-rose-50 text-rose-600 border-rose-200';
+        case 'dept_head': return 'bg-purple-50 text-purple-600 border-purple-200';
+        default: return 'bg-slate-50 text-slate-500 border-slate-200';
     }
 };
 

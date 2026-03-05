@@ -45,6 +45,11 @@ class Employee extends Model
         return $this->belongsTo(Department::class);
     }
 
+    public function user()
+    {
+        return $this->hasOne(User::class, 'id_number', 'employee_id');
+    }
+
     // Accessors
     public function getNameAttribute()
     {

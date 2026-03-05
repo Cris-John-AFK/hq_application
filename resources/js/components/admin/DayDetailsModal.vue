@@ -89,21 +89,158 @@
                     </div>
                 </div>
 
+                <!-- Attendance Details (Heatmap Click View) -->
+                <div v-if="viewMode === 'attendance'">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                            <i class="pi pi-id-card"></i> Daily Attendance Records
+                        </h4>
+                        
+                        <div class="flex items-center gap-2">
+                            <!-- Search -->
+                            <div class="relative group">
+                                <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] group-focus-within:text-teal-500 transition-colors"></i>
+                                <input 
+                                    v-model="searchQuery"
+                                    type="text" 
+                                    placeholder="Search staff..." 
+                                    class="w-40 bg-gray-50 border-none rounded-lg py-1.5 pl-8 pr-3 text-[10px] font-bold focus:ring-2 focus:ring-teal-500/20 transition-all outline-none"
+                                >
+                            </div>
+
+                            <!-- Status Filter -->
+                            <select 
+                                v-model="statusFilter"
+                                class="bg-gray-50 border-none rounded-lg py-1.5 px-3 text-[10px] font-bold focus:ring-2 focus:ring-teal-500/20 transition-all outline-none cursor-pointer"
+                            >
+                                <option value="all">All Status</option>
+                                <option value="Present">Present</option>
+                                <option value="Absent">Absent</option>
+                                <option value="Late">Late</option>
+                                <option value="Half Day">Half Day</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div v-if="loadingAttendance" class="space-y-3">
+                        <div v-for="i in 3" :key="i" class="h-16 bg-gray-50 animate-pulse rounded-xl"></div>
+                    </div>
+                    
+                    <div v-else-if="filteredAttendance.length === 0" class="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                        <i class="pi pi-info-circle text-2xl text-gray-300 mb-2 block"></i>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-widest">No matching records found</p>
+                    </div>
+
+                    <div v-else class="space-y-2">
+                        <div v-for="record in filteredAttendance" :key="record.id" 
+                            class="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-xl hover:shadow-md transition-all group"
+                        >
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 font-black text-xs border border-teal-100 uppercase overflow-hidden ring-2 ring-white shadow-sm group-hover:scale-105 transition-transform">
+                                    <img v-if="record.avatar" :src="record.avatar" class="w-full h-full object-cover">
+                                    <span v-else>{{ getInitials(record.employee_name) }}</span>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-sm font-black text-gray-800 leading-none mb-1 truncate">{{ record.employee_name }}</p>
+                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{{ record.department }}</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-4">
+                                <div class="text-right">
+                                    <div class="flex items-center gap-1.5 text-[10px] font-black text-gray-700">
+                                        <i class="pi pi-sign-in text-emerald-500"></i>
+                                        {{ record.time_in }}
+                                    </div>
+                                    <div class="flex items-center gap-1.5 text-[10px] font-black text-gray-700 mt-1">
+                                        <i class="pi pi-sign-out text-rose-500"></i>
+                                        {{ record.time_out }}
+                                    </div>
+                                </div>
+                                <span :class="[
+                                    'px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter border min-w-[60px] text-center',
+                                    {
+                                        'bg-emerald-50 text-emerald-600 border-emerald-100': record.status === 'Present',
+                                        'bg-rose-50 text-rose-600 border-rose-100': record.status === 'Absent',
+                                        'bg-orange-50 text-orange-600 border-orange-100': record.status === 'Late',
+                                        'bg-amber-50 text-amber-600 border-amber-100': record.status === 'Half Day'
+                                    }
+                                ]">{{ record.status }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import axios from 'axios';
 
-const props = defineProps(['modelValue', 'date']);
+const props = defineProps(['modelValue', 'date', 'viewMode']);
 const emit = defineEmits(['update:modelValue', 'delete']);
+
+const dailyAttendanceRecords = ref([]);
+const loadingAttendance = ref(false);
+const searchQuery = ref('');
+const statusFilter = ref('all');
+
+const filteredAttendance = computed(() => {
+    return dailyAttendanceRecords.value.filter(record => {
+        const matchesSearch = !searchQuery.value || 
+            record.employee_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+            record.department.toLowerCase().includes(searchQuery.value.toLowerCase());
+        
+        const matchesStatus = statusFilter.value === 'all' || record.status === statusFilter.value;
+        
+        return matchesSearch && matchesStatus;
+    });
+});
 
 const close = () => emit('update:modelValue', false);
 
+const fetchDailyAttendance = async () => {
+    if (!props.date?.fullDate || props.viewMode !== 'attendance') return;
+    
+    loadingAttendance.value = true;
+    try {
+        const { data } = await axios.get('/api/attendance-records', {
+            params: { 
+                start_date: props.date.fullDate,
+                end_date: props.date.fullDate
+            }
+        });
+        dailyAttendanceRecords.value = data.map(r => ({
+            ...r,
+            department: r.employee_department || r.department || '--'
+        }));
+    } catch (e) {
+        console.error(e);
+    } finally {
+        loadingAttendance.value = false;
+    }
+};
+
+watch(() => props.modelValue, (newVal) => {
+    if (newVal && props.viewMode === 'attendance') {
+        fetchDailyAttendance();
+    } else {
+        dailyAttendanceRecords.value = [];
+        searchQuery.value = '';
+        statusFilter.value = 'all';
+    }
+});
+
+const getInitials = (name) => {
+    if (!name) return '??';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+};
+
 const hasAnyEvents = computed(() => {
+    if (props.viewMode === 'attendance') return true; // Always show or empty state
     return (props.date?.customEvents?.length > 0) || (props.date?.events?.length > 0);
 });
 

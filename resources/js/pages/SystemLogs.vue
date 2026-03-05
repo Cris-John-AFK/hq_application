@@ -59,13 +59,17 @@
                                      </td>
                                     <td class="px-6 py-4">
                                          <div class="flex flex-col gap-1">
-                                             <div class="flex items-center gap-1.5">
-                                                 <i :class="['pi', getDeviceIcon(log.device)]" class="text-gray-400 text-[10px]"></i>
-                                                 <span class="text-[10px] font-black text-gray-500 uppercase tracking-tighter">{{ log.device || 'Unknown PC' }}</span>
+                                             <div class="flex items-center gap-1.5 text-gray-800">
+                                                 <i :class="['pi', getDeviceIcon(log.device)]" class="text-[11px]"></i>
+                                                 <span class="text-[11px] font-bold uppercase tracking-tight">{{ log.device || 'Unidentified Device' }}</span>
                                              </div>
                                              <div class="flex items-center gap-1.5">
-                                                 <i class="pi pi-map-marker text-emerald-500 text-[10px]"></i>
-                                                 <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">{{ log.location || 'PH (Local)' }}</span>
+                                                 <i class="pi pi-directions text-slate-400 text-[10px]"></i>
+                                                 <span class="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-tighter">IP: {{ log.ip_address || '0.0.0.0' }}</span>
+                                             </div>
+                                             <div class="flex items-center gap-1.5 opacity-60">
+                                                 <i class="pi pi-map-marker text-emerald-500 text-[9px]"></i>
+                                                 <span class="text-[9px] font-bold text-emerald-600 uppercase tracking-tighter">{{ log.location || 'Local Network' }}</span>
                                              </div>
                                          </div>
                                      </td>

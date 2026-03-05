@@ -61,6 +61,42 @@
                         </div>
                     </div>
 
+                    <!-- Section 2: System Access (Promote/Demote) -->
+                    <div v-if="form.role">
+                        <h4 class="text-sm font-bold text-rose-700 uppercase tracking-widest mb-4 border-b border-rose-100 pb-2 flex items-center gap-2">
+                             <i class="pi pi-shield"></i>
+                             System Access & Permissions
+                        </h4>
+                        <div class="p-4 bg-rose-50 rounded-2xl border border-rose-100">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                                <div>
+                                    <label class="block text-xs font-bold text-rose-900 uppercase tracking-wider mb-2">System Role (Privilege)</label>
+                                    <select v-model="form.role" class="w-full px-4 py-2 bg-white border border-rose-200 rounded-xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-rose-500 outline-none appearance-none cursor-pointer">
+                                        <option value="user">Regular Employee (Self Service)</option>
+                                        <option value="dept_head">Department Head (Manager)</option>
+                                        <option value="admin">System Administrator (Full Access)</option>
+                                    </select>
+                                    <p class="text-[10px] text-rose-600 mt-2 font-medium">
+                                        Changing this will immediately update their access level. Promote to "Dept Head" if they need to manage leave for their department.
+                                    </p>
+                                </div>
+                                <div class="hidden md:flex items-center gap-3 text-rose-700">
+                                    <i class="pi pi-info-circle text-2xl"></i>
+                                    <p class="text-[11px] font-medium leading-relaxed">
+                                        Promoting an employee to **Admin** gives them full control over the system. 
+                                        **Dept Heads** can only approve/reject leaves within their own department.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else>
+                         <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center gap-3">
+                             <i class="pi pi-user-plus text-gray-400"></i>
+                             <p class="text-[11px] text-gray-500 font-medium">This employee does not have a system account yet. Create one from the masterlist to manage their access roles.</p>
+                         </div>
+                    </div>
+
 
 
                     <!-- Section 3: Personal Information -->
@@ -184,6 +220,7 @@ const form = reactive({
     employment_status: '',
     date_hired: '',
     email: '',
+    role: '',
     leave_credits: 0,
     
     // Personal
@@ -208,20 +245,28 @@ const fetchDetails = async (id) => {
         const data = response.data;
         const details = data.details || {};
         
+        // Helper to format date for input type="date"
+        const formatForInput = (dateStr) => {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            return d.toISOString().split('T')[0];
+        };
+        
         // Populate core
         form.employee_id = data.employee_id;
         form.department_id = data.department_id;
         form.position = data.position;
         form.employment_status = data.employment_status;
-        form.date_hired = data.date_hired;
+        form.date_hired = formatForInput(data.date_hired);
         form.email = data.email;
         form.leave_credits = data.leave_credits || 0;
         form.last_name = data.last_name;
         form.first_name = data.first_name;
         form.middle_name = data.middle_name;
+        form.role = data.user ? data.user.role : '';
 
         // Populate details
-        form.birthdate = details.birthdate;
+        form.birthdate = formatForInput(details.birthdate);
         form.gender = details.gender;
         form.civil_status = details.civil_status;
         form.sss_number = details.sss_number;
@@ -258,6 +303,7 @@ const handleSubmit = () => {
         position: form.position,
         employment_status: form.employment_status,
         date_hired: form.date_hired,
+        role: form.role,
         
         details: {
             birthdate: form.birthdate,

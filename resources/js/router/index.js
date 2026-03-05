@@ -15,8 +15,6 @@ import EmployeePortal from '../pages/EmployeePortal.vue';
 
 // User Components
 import UserDashboard from '../components/user/UserDashboard.vue';
-import UserProfile from '../components/user/Profile.vue';
-import UserAttendance from '../components/user/Attendance.vue';
 import UserLeaveRequests from '../components/user/LeaveRequests.vue';
 
 const routes = [
@@ -89,16 +87,16 @@ const routes = [
     },
     // User Routes
     {
-        path: '/profile',
-        name: 'Profile',
-        component: UserProfile,
-        meta: { title: 'HQ Inc. - My Profile', requiresAuth: true }
+        path: '/leave-requests',
+        name: 'LeaveRequests',
+        component: UserLeaveRequests,
+        meta: { title: 'HQ Inc. - My Leave Requests', requiresAuth: true }
     },
     {
-        path: '/my-attendance',
-        name: 'MyAttendance',
-        component: UserAttendance,
-        meta: { title: 'HQ Inc. - My Attendance', requiresAuth: true }
+        path: '/dept-analytics',
+        name: 'DeptAnalytics',
+        component: () => import('../components/user/DeptAnalytics.vue'),
+        meta: { title: 'HQ Inc. - Department Analytics', requiresAuth: true }
     }
 ];
 

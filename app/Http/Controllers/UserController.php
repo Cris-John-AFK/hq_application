@@ -23,7 +23,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'department' => 'required|string|max:255',
-            'role' => 'required|string|in:admin,user',
+            'role' => 'required|string|in:admin,user,dept_head',
             'position' => 'nullable|string|max:255',
             'id_number' => 'required|string|unique:users,id_number|max:20',
             'employment_status' => 'required|string|in:Probationary,Regular',
@@ -64,6 +64,62 @@ class UserController extends Controller
         ], 201);
     }
 
+    public function createFromEmployee(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'role' => 'required|string|in:admin,user,dept_head',
+        ]);
+
+        $employee = \App\Models\Employee::with('department')->findOrFail($request->employee_id);
+
+        // Check if user already exists
+        if (User::where('id_number', $employee->employee_id)->exists()) {
+            return response()->json(['message' => 'User account already exists for this employee.'], 422);
+        }
+
+        // Generate Name
+        $name = "{$employee->first_name} {$employee->last_name}";
+
+        // Generate Email: first.last@hq.app
+        $email = Str::lower($employee->first_name) . '.' . Str::lower($employee->last_name) . '@hq.app';
+
+        // Ensure email is unique
+        $count = 0;
+        while (User::where('email', $email)->exists()) {
+            $count++;
+            $email = Str::lower($employee->first_name) . '.' . Str::lower($employee->last_name) . $count . '@hq.app';
+        }
+
+        $user = User::create([
+            'name' => $name,
+            'email' => $email,
+            'password' => Hash::make('password'),
+            'role' => $request->role,
+            'id_number' => $employee->employee_id,
+            'position' => $employee->position,
+            'department' => $employee->department?->name,
+            'department_id' => $employee->department_id,
+            'employment_status' => $employee->employment_status,
+            'leave_credits' => $employee->leave_credits,
+            'status' => 'Available',
+        ]);
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('Security', 'Created', "Generated system account for employee: {$name} (#{$employee->employee_id}) as {$request->role}.", null, $user->toArray());
+
+        return response()->json([
+            'message' => 'Account created successfully',
+            'user' => $user,
+            'email' => $email,
+            'password' => 'password'
+        ]);
+    }
+
     public function updateEmployee(Request $request, $id)
     {
         if (Auth::user()->role !== 'admin') {
@@ -77,7 +133,7 @@ class UserController extends Controller
             'department' => 'sometimes|string',
             'position' => 'sometimes|string',
             'employment_status' => 'sometimes|string|in:Probationary,Regular',
-            'role' => 'sometimes|string|in:admin,user',
+            'role' => 'sometimes|string|in:admin,user,dept_head',
             'id_number' => 'sometimes|string|max:20|unique:users,id_number,' . $id,
             'leave_credits' => 'sometimes|numeric|min:0',
         ]);

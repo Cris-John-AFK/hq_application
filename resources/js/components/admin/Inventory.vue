@@ -20,6 +20,15 @@
                             <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Assets</span>
                             <span class="text-2xl font-black text-gray-900">{{ totalItems }}</span>
                         </div>
+                        <button 
+                            @click="exportData"
+                            :disabled="exporting"
+                            class="px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-2xl transition-all duration-300 font-bold text-sm shadow-sm flex items-center gap-2 group/btn cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <i v-if="exporting" class="pi pi-spinner pi-spin text-teal-600"></i>
+                            <i v-else class="pi pi-download text-gray-400 group-hover/btn:text-teal-600 transition-colors"></i>
+                            <span :class="{'text-gray-400': exporting}">{{ exporting ? 'Exporting...' : 'Export Data' }}</span>
+                        </button>
                         <label class="px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-2xl transition-all duration-300 font-bold text-sm shadow-sm flex items-center gap-2 group/btn cursor-pointer">
                             <i class="pi pi-upload text-gray-400 group-hover/btn:text-teal-600 transition-colors"></i>
                             <span :class="{'text-gray-400': importing}">{{ importing ? 'Importing...' : 'Import Data' }}</span>
@@ -309,6 +318,7 @@ const items = ref([]);
 const loading = ref(true);
 const saving = ref(false);
 const importing = ref(false);
+const exporting = ref(false);
 const showModal = ref(false);
 const editingItem = ref(null);
 
@@ -484,6 +494,34 @@ const handleImport = async (event) => {
     } finally {
         importing.value = false;
         event.target.value = ''; // Reset input
+    }
+};
+
+const exportData = async () => {
+    exporting.value = true;
+    try {
+        const response = await axios.get('/api/inventory/export', {
+            params: {
+                search: searchQuery.value,
+                type: typeFilter.value
+            },
+            responseType: 'blob'
+        });
+        
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        const filename = 'organization_inventory_' + new Date().toISOString().split('T')[0] + '.csv';
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (e) {
+        console.error("Export failed", e);
+        alert('Failed to export inventory data.');
+    } finally {
+        exporting.value = false;
     }
 };
 

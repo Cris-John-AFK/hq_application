@@ -315,7 +315,8 @@ const fetchAttendanceRecords = async () => {
             return {
                 ...r,
                 employee_id: r.employee_id_number,
-                // avatar is now provided directly by the optimized API join
+                department: r.employee_department || r.department || '--',
+                position: r.employee_position || r.position || '--',
             };
         });
     } catch (error) {

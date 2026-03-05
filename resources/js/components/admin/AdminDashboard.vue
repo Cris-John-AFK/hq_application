@@ -272,71 +272,153 @@
         </div>
 
         <!-- 3. Leave Analytics Section -->
+        <!-- 3. Attendance Roster & Watchlist Section -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Top Leave Reasons -->
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-                <div class="flex items-center justify-between mb-6">
+            <!-- Employee Attendance Roster -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col p-6 min-h-[400px]">
+                <div class="flex items-center justify-between mb-4">
                     <div>
                         <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                            Top Leave Reasons
+                            <span class="w-1.5 h-1.5 rounded-full bg-teal-500"></span>
+                            Employee Roster
                         </h3>
-                        <p class="text-[9px] font-bold text-indigo-500/60 uppercase tracking-widest pl-3.5 italic">As of {{ new Date().getFullYear() }}</p>
+                        <p class="text-[9px] font-bold text-teal-500/60 uppercase tracking-widest pl-3.5 italic">Attendance Directory</p>
                     </div>
-                    <i class="pi pi-chart-pie text-gray-300"></i>
                 </div>
-                <div v-if="loading" class="space-y-4">
-                    <div v-for="i in 3" :key="i" class="h-12 bg-gray-50 animate-pulse rounded-xl"></div>
+
+                <div class="relative mb-4">
+                    <input 
+                        v-model="rosterSearch"
+                        @input="debounceRosterSearch"
+                        type="text" 
+                        placeholder="Search employee name or ID..." 
+                        class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all"
+                    >
+                    <i class="pi pi-search absolute left-3.5 top-2.5 text-gray-400 text-sm"></i>
                 </div>
-                <div v-else class="space-y-4">
-                    <div v-for="(item, idx) in leaveStats.by_type" :key="idx" class="relative">
-                        <div class="flex justify-between items-center mb-1 text-xs">
-                            <span class="font-bold text-gray-700">{{ item.name }}</span>
-                            <span class="font-black text-indigo-600 px-2 py-0.5 bg-indigo-50 rounded">{{ item.count }}</span>
-                        </div>
-                        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden border border-gray-50">
-                            <div 
-                                class="h-full bg-indigo-500 rounded-full transition-all duration-1000 shadow-sm"
-                                :style="{ width: (leaveStats.total_all_time > 0 ? (item.count / leaveStats.total_all_time * 100) : 0) + '%' }"
-                            ></div>
+                
+                <div v-if="loadingRoster" class="flex-1 flex flex-col gap-3">
+                    <div v-for="i in 5" :key="i" class="h-12 bg-gray-50 animate-pulse rounded-xl"></div>
+                </div>
+                <div v-else class="flex-1 flex flex-col justify-between overflow-hidden">
+                    <div class="space-y-3 overflow-y-auto custom-scrollbar pr-2 max-h-[300px]">
+                        <div 
+                            v-for="emp in dashboardEmployees" 
+                            :key="emp.id" 
+                            @click="openEmployeeAttendance(emp)"
+                            class="flex items-center justify-between p-3 bg-gray-50/50 rounded-xl border border-gray-100 hover:border-teal-200 transition-all hover:bg-white hover:shadow-sm cursor-pointer group"
+                        >
+                            <div class="flex items-center gap-3">
+                                <div class="shrink-0 w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center overflow-hidden border border-teal-100 text-[10px] font-black text-teal-600 uppercase">
+                                    <img v-if="emp.avatar" :src="emp.avatar" class="w-full h-full object-cover">
+                                    <span v-else>{{ getInitials(emp.name) }}</span>
+                                </div>
+                                <div class="flex flex-col min-w-0">
+                                    <span class="text-xs font-black text-gray-800 group-hover:text-teal-600 transition-colors truncate">{{ emp.name }}</span>
+                                    <span class="text-[9px] text-gray-400 font-bold tracking-widest truncate">{{ emp.employee_id }}</span>
+                                </div>
+                            </div>
+                            <i class="pi pi-angle-right text-gray-300 group-hover:text-teal-400 transition-colors"></i>
                         </div>
                     </div>
-                    <p v-if="!leaveStats.by_type?.length" class="text-center text-xs text-gray-400 py-10 italic">No leave data captured yet</p>
+                    
+                    <!-- Pagination -->
+                    <div class="flex justify-center flex-wrap items-center gap-4 mt-4 pt-3 border-t border-gray-100">
+                        <button @click="fetchDashboardEmployees(empPage - 1)" :disabled="empPage === 1" class="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 cursor-pointer text-gray-500 transition-colors">
+                            <i class="pi pi-chevron-left text-[10px]"></i>
+                        </button>
+                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Page {{ empPage }} of {{ totalEmpPages }}</span>
+                        <button @click="fetchDashboardEmployees(empPage + 1)" :disabled="empPage === totalEmpPages" class="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 cursor-pointer text-gray-500 transition-colors">
+                            <i class="pi pi-chevron-right text-[10px]"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Most Leave by Department -->
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-                <div class="flex items-center justify-between mb-6">
+            <!-- Attendance Anomalies Watchlist -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col min-h-[400px]">
+                <div class="flex items-center justify-between mb-4">
                     <div>
                         <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                            Department Volume
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                            Attendance Watchlist
                         </h3>
-                        <p class="text-[9px] font-bold text-emerald-500/60 uppercase tracking-widest pl-3.5 italic">As of {{ new Date().getFullYear() }}</p>
+                        <p class="text-[9px] font-bold text-rose-500/60 uppercase tracking-widest pl-3.5 italic">Recent Lates & Absences</p>
                     </div>
-                    <i class="pi pi-building text-gray-300"></i>
                 </div>
-                <div v-if="loading" class="space-y-4">
-                    <div v-for="i in 3" :key="i" class="h-12 bg-gray-50 animate-pulse rounded-xl"></div>
+
+                <div class="flex gap-2 mb-4">
+                    <div class="relative flex-1">
+                        <input 
+                            v-model="anomalySearch"
+                            @input="debounceAnomalySearch"
+                            type="text" 
+                            placeholder="Search anomalies..." 
+                            class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none transition-all"
+                        >
+                        <i class="pi pi-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+                    </div>
+                     <select 
+                        v-model="anomalyFilter"
+                        @change="fetchAnomalies"
+                        class="px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none text-gray-600 cursor-pointer bg-white"
+                    >
+                        <option value="all">All Status</option>
+                        <option value="Late">Late</option>
+                        <option value="Absent">Absent</option>
+                        <option value="Half Day">Half Day</option>
+                    </select>
                 </div>
-                <div v-else class="space-y-3">
-                    <div v-for="(dept, idx) in leaveStats.by_department" :key="idx" class="flex items-center justify-between p-3.5 bg-gray-50/50 rounded-xl border border-gray-100 hover:border-emerald-200 transition-all hover:bg-white hover:shadow-sm">
-                        <div class="flex items-center gap-3">
-                            <div :class="[
-                                'w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black border transition-all',
-                                idx === 0 ? 'bg-emerald-500 text-white border-emerald-400 shadow-sm' : 'bg-white text-gray-400 border-gray-200'
-                            ]">
-                                {{ idx + 1 }}
+                
+                <div v-if="loadingAnomalies" class="flex-1 space-y-3">
+                    <div v-for="i in 5" :key="i" class="h-12 bg-gray-50 animate-pulse rounded-xl"></div>
+                </div>
+                <div v-else class="flex-1 flex flex-col justify-start">
+                    <div class="space-y-3 overflow-y-auto custom-scrollbar pr-2 max-h-[300px]">
+                        <div v-for="record in recentAnomalies" :key="record.id" class="flex items-center justify-between p-3 bg-gray-50/50 rounded-xl border border-gray-100 hover:border-gray-300 transition-all hover:bg-white">
+                            <div class="flex items-center gap-3">
+                                <div :class="[
+                                    'shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black border transition-all',
+                                    record.status === 'Late' ? 'bg-orange-50 text-orange-600 border-orange-200' : 
+                                    record.status === 'Half Day' ? 'bg-yellow-50 text-yellow-600 border-yellow-200' : 
+                                    'bg-rose-50 text-rose-600 border-rose-200'
+                                ]">
+                                    <i class="pi" :class="
+                                        record.status === 'Late' ? 'pi-clock' : 
+                                        record.status === 'Half Day' ? 'pi-calendar-minus' : 
+                                        'pi-times-circle'
+                                    "></i>
+                                </div>
+                                <div class="flex flex-col min-w-0">
+                                    <span class="text-xs font-bold text-gray-700 truncate">{{ record.name }}</span>
+                                    <span class="text-[9px] text-gray-400 font-bold tracking-widest truncate">{{ record.date }}</span>
+                                </div>
                             </div>
-                            <span class="text-xs font-bold text-gray-700">{{ dept.name }}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">{{ dept.count }}</span>
-                            <span class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">Filings</span>
+                            <div class="flex items-stretch shrink-0 bg-gray-50 rounded-lg border border-gray-100 w-[160px] shadow-sm overflow-hidden">
+                                <div class="flex-1 flex flex-col items-start p-1.5 border-r border-gray-200/60 bg-white/50">
+                                    <span class="text-[7px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Time In</span>
+                                    <span class="text-[10px] font-bold text-gray-700 leading-none whitespace-nowrap">{{ record.timeIn }}</span>
+                                </div>
+                                <div class="flex-1 flex flex-col items-start p-1.5 bg-white/30">
+                                    <span class="text-[7px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Time Out</span>
+                                    <span class="text-[10px] font-bold text-gray-700 leading-none whitespace-nowrap">{{ record.timeOut }}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <span :class="[
+                                    'text-[10px] font-black px-2 py-0.5 rounded border uppercase tracking-widest text-center min-w-[60px]',
+                                    record.status === 'Late' ? 'text-orange-600 bg-orange-50 border-orange-100' : 
+                                    record.status === 'Half Day' ? 'text-yellow-600 bg-yellow-50 border-yellow-100' : 
+                                    'text-rose-600 bg-rose-50 border-rose-100'
+                                ]">{{ record.status }}</span>
+                            </div>
                         </div>
                     </div>
-                    <p v-if="!leaveStats.by_department?.length" class="text-center text-xs text-gray-400 py-10 italic text-[10px] uppercase">No department data available</p>
+                    <div v-if="recentAnomalies.length === 0" class="flex flex-col items-center justify-center h-full text-center py-10">
+                        <i class="pi pi-check-circle text-4xl text-emerald-200 mb-3"></i>
+                        <p class="text-xs text-emerald-600 font-bold uppercase tracking-widest">No recent anomalies detected</p>
+                        <p class="text-[10px] text-gray-400 mt-1">Everyone is on track!</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -344,6 +426,13 @@
         <div class="w-full pt-4">
             <LeaveAnalytics />
         </div>
+
+        <EmployeeAttendanceModal 
+            v-model="showEmployeeModal" 
+            :employee="selectedEmployee" 
+            :records="employeeRecords"
+            :loading="loadingEmployeeRecords" 
+        />
     </div>
 </template>
 
@@ -357,6 +446,8 @@
     import BulletinBoard from '../common/BulletinBoard.vue';
     import LeaveAnalytics from './LeaveAnalytics.vue';
     import AttendanceGraph from './AttendanceGraph.vue';
+    import EmployeeAttendanceModal from '../common/EmployeeAttendanceModal.vue';
+    import axios from 'axios';
 
     const authStore = useAuthStore();
     const leaveStore = useLeaveStore();
@@ -367,6 +458,65 @@
     
     const loading = ref(true);
     const getInitials = (name) => employeeStore.getInitials(name);
+
+    // Attendance Roster variables
+    const showEmployeeModal = ref(false);
+    const selectedEmployee = ref(null);
+    const employeeRecords = ref([]);
+    const empPage = ref(1);
+    const totalEmpPages = ref(1);
+    const dashboardEmployees = ref([]);
+    const loadingRoster = ref(true);
+    const loadingEmployeeRecords = ref(false);
+    const rosterSearch = ref('');
+    let rosterSearchTimeout = null;
+
+    const debounceRosterSearch = () => {
+        clearTimeout(rosterSearchTimeout);
+        rosterSearchTimeout = setTimeout(() => {
+            empPage.value = 1; // Reset to page 1 on new search
+            fetchDashboardEmployees(1);
+        }, 500);
+    };
+
+    const fetchDashboardEmployees = async (page = 1) => {
+        loadingRoster.value = true;
+        try {
+            const { data } = await axios.get('/api/attendance-roster', { 
+                params: { 
+                    page,
+                    search: rosterSearch.value 
+                } 
+            });
+            dashboardEmployees.value = data.data;
+            empPage.value = data.current_page;
+            totalEmpPages.value = data.last_page;
+        } catch (e) {
+            console.error(e);
+        } finally {
+            loadingRoster.value = false;
+        }
+    };
+
+    const openEmployeeAttendance = async (emp) => {
+        selectedEmployee.value = {
+            employee_name: emp.name,
+            employee_id: emp.employee_id,
+            department: emp.department?.name || '--'
+        };
+        employeeRecords.value = []; // Clear old data
+        showEmployeeModal.value = true;
+        loadingEmployeeRecords.value = true;
+        
+        try {
+            const { data } = await axios.get('/api/attendance-records', { params: { employee_id: emp.employee_id } });
+            employeeRecords.value = data;
+        } catch (e) {
+            console.error(e);
+        } finally {
+            loadingEmployeeRecords.value = false;
+        }
+    };
 
     // Live date labels for stat card context
     const now = new Date();
@@ -408,7 +558,9 @@
         // Using cache-friendly stat fetching
         await Promise.all([
             leaveStore.fetchStats(false),
-            fetchRecentAttendance()
+            fetchRecentAttendance(),
+            fetchDashboardEmployees(),
+            fetchAnomalies()
         ]);
         loading.value = false;
     });
@@ -420,6 +572,55 @@
         const end = start + pageSize.value;
         return recentAttendance.value.slice(start, end);
     });
+
+    const loadingAnomalies = ref(true);
+    const recentAnomalies = ref([]);
+    const anomalySearch = ref('');
+    const anomalyFilter = ref('all');
+    let anomalySearchTimeout = null;
+
+    const debounceAnomalySearch = () => {
+        clearTimeout(anomalySearchTimeout);
+        anomalySearchTimeout = setTimeout(() => {
+            fetchAnomalies();
+        }, 500);
+    };
+
+    const fetchAnomalies = async () => {
+        loadingAnomalies.value = true;
+        try {
+            const { data } = await axios.get('/api/attendance-anomalies', { 
+                params: { 
+                    limit: 15,
+                    search: anomalySearch.value 
+                } 
+            });
+            
+            let filteredData = data.map(r => {
+                return {
+                    id: r.id,
+                    name: r.employee_name,
+                    initials: getInitials(r.employee_name),
+                    avatar: r.avatar,
+                    date: new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                    timeIn: r.time_in,
+                    timeOut: r.time_out,
+                    // Normalize statuses: if it is explicitly 'Half Day', keep it. Otherwise, follow anomaly logic.
+                    status: (r.status === 'Half Day') ? 'Half Day' : ((r.status === 'Absent' || r.time_in === '-' || r.time_out === '-') && r.status !== 'Late' ? 'Absent' : 'Late')
+                };
+            });
+
+            if (anomalyFilter.value !== 'all') {
+                filteredData = filteredData.filter(r => r.status === anomalyFilter.value);
+            }
+
+            recentAnomalies.value = filteredData;
+        } catch (error) {
+            console.error('Failed to fetch anomalies:', error);
+        } finally {
+            loadingAnomalies.value = false;
+        }
+    };
 
     // Recent Leaves Data (From API)
     const recentLeaves = computed(() => {

@@ -9,10 +9,21 @@ class AttendanceController extends Controller
 {
     public function index(Request $request)
     {
-        // Use a join to get the employee's avatar directly for performance
-        $query = AttendanceRecord::query()
-            ->leftJoin('employees', 'attendance_records.employee_id_number', '=', 'employees.employee_id')
-            ->select('attendance_records.*', 'employees.avatar as avatar');
+        $query = AttendanceRecord::leftJoin('employees', 'attendance_records.employee_id_number', '=', 'employees.employee_id')
+            ->leftJoin('departments', 'employees.department_id', '=', 'departments.id')
+            ->select(
+                'attendance_records.id',
+                'attendance_records.employee_id_number',
+                'attendance_records.employee_name',
+                'attendance_records.date',
+                'attendance_records.time_in',
+                'attendance_records.time_out',
+                'attendance_records.hours_worked',
+                'attendance_records.status',
+                'departments.name as employee_department',
+                'employees.position as employee_position',
+                'employees.avatar as avatar'
+            );
 
         if ($request->has('start_date')) {
             $query->where('attendance_records.date', '>=', $request->start_date);
@@ -26,6 +37,9 @@ class AttendanceController extends Controller
         if ($request->has('status')) {
             $query->where('attendance_records.status', $request->status);
         }
+        if ($request->has('employee_id')) {
+            $query->where('attendance_records.employee_id_number', $request->employee_id);
+        }
 
         // Add limit support for dashboard performance
         $limit = $request->get('limit');
@@ -34,7 +48,7 @@ class AttendanceController extends Controller
         }
 
         // If no filters and no limit, default to 100 to prevent massive payloads
-        if (!$request->hasAny(['start_date', 'end_date', 'department', 'status'])) {
+        if (!$request->hasAny(['start_date', 'end_date', 'department', 'status', 'employee_id'])) {
             return response()->json($query->orderBy('attendance_records.date', 'desc')->take(100)->get());
         }
 
@@ -64,6 +78,61 @@ class AttendanceController extends Controller
 
         return response()->json(['message' => 'Successfully imported attendance records.']);
     }
+
+    public function roster(Request $request)
+    {
+        $perPage = $request->input('per_page', 5);
+        // Only get employees that actually have attendance records and are NOT archived
+        $query = \App\Models\Employee::with('department')
+            ->whereExists(function ($query) {
+                $query->select(\DB::raw(1))
+                    ->from('attendance_records')
+                    ->whereColumn('attendance_records.employee_id_number', 'employees.employee_id');
+            })
+            ->where('is_archived', false)
+            ->orderBy('first_name', 'asc');
+
+        // Apply search filter if provided
+        if ($request->has('search') && !empty($request->search)) {
+            $search = strtoupper($request->search); // Match uppercase storage
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('last_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('employee_id', 'ILIKE', "%{$search}%");
+            });
+        }
+
+        return response()->json($query->paginate($perPage));
+    }
+
+    public function anomalies(Request $request)
+    {
+        $limit = $request->input('limit', 50);
+        $query = AttendanceRecord::query()
+            ->leftJoin('employees', 'attendance_records.employee_id_number', '=', 'employees.employee_id')
+            ->where('employees.is_archived', false)
+            ->where(function ($q) {
+                $q->whereIn('attendance_records.status', ['Absent', 'Late', 'Half Day'])
+                    ->orWhere('attendance_records.time_in', '-')
+                    ->orWhere('attendance_records.time_out', '-');
+            })
+            ->select('attendance_records.*', 'employees.avatar as avatar')
+            ->orderBy('attendance_records.date', 'desc')
+            ->limit($limit);
+
+        // Apply search filter if provided
+        if ($request->has('search') && !empty($request->search)) {
+            $search = strtoupper($request->search); // Match uppercase storage pattern
+            $query->where(function ($q) use ($search) {
+                $q->where('attendance_records.employee_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('attendance_records.employee_id_number', 'ILIKE', "%{$search}%")
+                    ->orWhere('attendance_records.department', 'ILIKE', "%{$search}%");
+            });
+        }
+
+        return response()->json($query->get());
+    }
+
     public function stats(Request $request)
     {
         $type = $request->input('type', 'daily');
@@ -125,5 +194,19 @@ class AttendanceController extends Controller
         }
 
         return response()->json($data);
+    }
+
+    public function summary(Request $request)
+    {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $query = AttendanceRecord::query()
+            ->whereBetween('date', [$startDate, $endDate])
+            ->select('date', 'status', \DB::raw('count(*) as count'))
+            ->groupBy('date', 'status')
+            ->get();
+
+        return response()->json($query);
     }
 }

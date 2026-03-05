@@ -74,8 +74,8 @@ class EmployeePortalController extends Controller
 
     public function submitLeave(Request $request)
     {
-        $request->validate([
-            'employee_id' => 'required|exists:employees,id',
+        $validator = \Validator::make($request->all(), [
+            'employee_id' => 'required',
             'birthdate' => 'required|string|size:8',
 
             'leave_type' => 'required|string',
@@ -90,6 +90,17 @@ class EmployeePortalController extends Controller
             'additional_details' => 'nullable',
             'attachment' => 'nullable|file|max:5120' // 5MB limit
         ]);
+
+        if ($validator->fails()) {
+            \Log::warning('Portal Leave Submission Validation Failed', [
+                'errors' => $validator->errors()->toArray(),
+                'payload' => $request->except(['birthdate', 'attachment'])
+            ]);
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         // Re-authenticate silently utilizing internal primary key id if fallback needed
         $employee = $this->verifyEmployee($request->employee_id, $request->birthdate);
@@ -152,8 +163,8 @@ class EmployeePortalController extends Controller
 
     public function updateLeave(Request $request, $id)
     {
-        $request->validate([
-            'employee_id' => 'required|exists:employees,id',
+        $validator = \Validator::make($request->all(), [
+            'employee_id' => 'required',
             'birthdate' => 'required|string|size:8',
 
             'leave_type' => 'required|string',
@@ -168,6 +179,17 @@ class EmployeePortalController extends Controller
             'additional_details' => 'nullable',
             'attachment' => 'nullable|file|max:5120'
         ]);
+
+        if ($validator->fails()) {
+            \Log::warning('Portal Leave Update Validation Failed', [
+                'errors' => $validator->errors()->toArray(),
+                'payload' => $request->except(['birthdate', 'attachment'])
+            ]);
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         $employee = $this->verifyEmployee($request->employee_id, $request->birthdate);
 
@@ -226,7 +248,7 @@ class EmployeePortalController extends Controller
     public function archiveLeave(Request $request, $id)
     {
         $request->validate([
-            'employee_id' => 'required|exists:employees,id',
+            'employee_id' => 'required',
             'birthdate' => 'required|string|size:8',
         ]);
 

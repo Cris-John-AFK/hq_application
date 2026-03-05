@@ -84,23 +84,20 @@
                     <span>{{ user?.role === 'admin' ? 'File Employee Leave' : 'Request Leave' }}</span>
                 </button>
 
-                <!-- User Profile -->
-                <router-link to="/profile">
-                    <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/80 transition-colors cursor-pointer group">
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-teal-900/20 ring-2 ring-slate-900 group-hover:ring-teal-500/30 transition-all overflow-hidden">
-                            <img v-if="user?.avatar_url" :src="user.avatar_url" alt="Profile" class="w-full h-full object-cover">
-                            <span v-else>{{ user?.name?.charAt(0) || 'U' }}</span>
-                        </div>
-                        <div class="overflow-hidden flex-1">
-                            <p class="text-sm font-bold text-white truncate">{{ user?.name }}</p>
-                            <p class="text-xs text-slate-400 capitalize flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                {{ user?.role }}
-                            </p>
-                        </div>
-                        <i class="pi pi-chevron-right text-xs text-slate-500 group-hover:text-white transition-colors"></i>
+                <!-- User Info (non-clickable) -->
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-800/40 border border-slate-700/50">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-teal-900/20 ring-2 ring-slate-900 overflow-hidden">
+                        <img v-if="user?.avatar_url" :src="user.avatar_url" alt="Profile" class="w-full h-full object-cover">
+                        <span v-else>{{ user?.name?.charAt(0) || 'U' }}</span>
                     </div>
-                </router-link>
+                    <div class="overflow-hidden flex-1">
+                        <p class="text-sm font-bold text-white truncate">{{ user?.name }}</p>
+                        <p class="text-xs text-slate-400 capitalize flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                            {{ user?.role }}
+                        </p>
+                    </div>
+                </div>
             </div>
         </aside>
 
@@ -631,11 +628,14 @@ const todaySchedule = computed(() => {
 const menuItems = computed(() => {
     const isAdmin = props.user?.role === 'admin';
     if (!isAdmin) {
-        return [
+        const items = [
             { label: 'Dashboard', icon: 'pi-home', href: '/dashboard' },
-            { label: 'My Profile', icon: 'pi-user', href: '/profile' },
-            { label: 'My Attendance', icon: 'pi-clock', href: '/my-attendance' },
+            { label: 'Leave Requests', icon: 'pi-calendar-times', href: '/leave-requests' },
         ];
+        if (props.user?.role === 'dept_head') {
+            items.push({ label: 'Analytics', icon: 'pi-chart-line', href: '/dept-analytics' });
+        }
+        return items;
     }
 
     const items = [

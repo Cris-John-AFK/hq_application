@@ -17,6 +17,11 @@ class AttendanceRecord extends Model
         'department'
     ];
 
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class, 'employee_id_number', 'employee_id');
+    }
+
     /**
      * Synchronize department names in attendance records with the current employee masterlist.
      */
