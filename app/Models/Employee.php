@@ -57,4 +57,20 @@ class Employee extends Model
         $last = $this->last_name ? strtoupper(substr($this->last_name, 0, 1)) : '';
         return $first . $last;
     }
+
+    // Mutators to enforce uppercase storage
+    public function setFirstNameAttribute($value)
+    {
+        $this->attributes['first_name'] = strtoupper($value);
+    }
+
+    public function setLastNameAttribute($value)
+    {
+        $this->attributes['last_name'] = strtoupper($value);
+    }
+
+    public function setMiddleNameAttribute($value)
+    {
+        $this->attributes['middle_name'] = $value ? strtoupper($value) : null;
+    }
 }

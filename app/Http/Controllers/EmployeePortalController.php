@@ -131,6 +131,19 @@ class EmployeePortalController extends Controller
             'additional_details' => $details ?? []
         ]);
 
+        // Notify Admins
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            \App\Models\Notification::create([
+                'user_id' => $admin->id,
+                'title' => 'New Leave Request Filed',
+                'message' => "{$employee->name} has filed a new {$leave->leave_type} request for {$leave->days_taken} day(s).",
+                'type' => 'info',
+                'link' => "/manage-leaves?search={$employee->employee_id}",
+                'is_read' => false
+            ]);
+        }
+
         // Audit Log
         \App\Utils\AuditLogger::log('Leaves', 'Created', "Employee {$employee->name} filed a new {$leave->leave_type} request for {$leave->days_taken} day(s).", null, $leave->toArray());
 

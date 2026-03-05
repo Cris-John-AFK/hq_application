@@ -365,6 +365,36 @@
         <!-- Settings overlay (close on outside click) -->
         <div v-if="isSettingsOpen" @click="isSettingsOpen = false" class="fixed inset-0 z-40"></div>
 
+        <!-- Sticky Toasts Container -->
+        <div class="fixed bottom-6 right-6 z-[100] flex flex-col gap-3 max-w-sm pointer-events-none">
+            <transition-group name="toast-slide">
+                <div 
+                    v-for="note in unreadNotifications" 
+                    :key="note.id"
+                    class="pointer-events-auto bg-slate-800 text-white p-4 rounded-xl shadow-2xl border border-slate-700 flex gap-4 items-start w-80 relative overflow-hidden group"
+                >
+                    <div class="absolute inset-0 bg-gradient-to-br from-teal-500/10 to-purple-500/10 opacity-50"></div>
+                    <!-- Icon -->
+                    <div class="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center text-teal-400 shrink-0 relative z-10 border border-teal-500/30">
+                        <i :class="['pi', note.type === 'info' ? 'pi-info-circle' : note.type === 'warning' ? 'pi-exclamation-triangle' : note.type === 'success' ? 'pi-check-circle' : 'pi-bell']"></i>
+                    </div>
+                    <!-- Content -->
+                    <div class="flex-1 min-w-0 relative z-10">
+                        <p class="text-sm font-black text-white leading-tight mb-1">{{ note.title }}</p>
+                        <p class="text-[11px] text-slate-300 leading-snug mb-2">{{ note.message }}</p>
+                        <div class="flex items-center gap-3 mt-1">
+                            <router-link v-if="note.link" :to="note.link" @click="markNotificationRead(note.id)" class="text-[10px] font-bold text-teal-400 uppercase tracking-widest hover:text-teal-300 transition-colors">
+                                View Details
+                            </router-link>
+                            <button @click="markNotificationRead(note.id)" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-white transition-colors">
+                                Dismiss
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </transition-group>
+        </div>
+
         <!-- Leave Request Modal -->
         <LeaveRequestModal 
             v-model="showLeaveModal"
@@ -432,6 +462,28 @@ const checkNavOverflow = () => {
 
 let timeInterval;
 let unreadInterval;
+let notifInterval;
+
+const unreadNotifications = ref([]);
+
+const fetchNotifications = async () => {
+    try {
+        const res = await axios.get('/api/notifications');
+        // Filter only unread
+        unreadNotifications.value = res.data.filter(n => !n.is_read);
+    } catch (e) {
+        console.error('Failed to fetch notifications', e);
+    }
+};
+
+const markNotificationRead = async (id) => {
+    try {
+        await axios.put(`/api/notifications/${id}/read`);
+        unreadNotifications.value = unreadNotifications.value.filter(n => n.id !== id);
+    } catch (e) {
+        console.error('Failed to mark notification read', e);
+    }
+};
 
 const updateTime = () => {
     const now = new Date();
@@ -517,7 +569,9 @@ onMounted(() => {
         
         if (props.user?.role === 'admin') {
             fetchUnreadEventsCount();
+            fetchNotifications();
             unreadInterval = setInterval(fetchUnreadEventsCount, 30000);
+            notifInterval = setInterval(fetchNotifications, 15000); // Check every 15s
         }
     }, 1500); // 1.5s delay gives priority to the actual page data (like Inventory)
 
@@ -527,6 +581,7 @@ onMounted(() => {
 onUnmounted(() => {
     if (timeInterval) clearInterval(timeInterval);
     if (unreadInterval) clearInterval(unreadInterval);
+    if (notifInterval) clearInterval(notifInterval);
     window.removeEventListener('resize', handleNavScroll);
 });
 
@@ -661,4 +716,17 @@ nav::-webkit-scrollbar-thumb:hover {
     animation: spin-slow 3s linear infinite;
 }
 
+/* Toast Slide Animation */
+.toast-slide-enter-active,
+.toast-slide-leave-active {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.toast-slide-enter-from {
+    opacity: 0;
+    transform: translateX(100px) scale(0.9);
+}
+.toast-slide-leave-to {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+}
 </style>
