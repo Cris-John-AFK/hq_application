@@ -58,8 +58,17 @@ class AttendanceController extends Controller
     public function bulkStore(Request $request)
     {
         $records = $request->input('records', []);
+        $reportService = new \App\Services\AttendanceReportService();
 
         foreach ($records as $record) {
+            $status = $record['status'];
+
+            // Re-verify lateness based on individual working hours
+            if ($status === 'Present' || $status === 'Late') {
+                $isActuallyLate = $reportService->isLate($record['time_in'], $status, $record['employee_id_number']);
+                $status = $isActuallyLate ? 'Late' : 'Present';
+            }
+
             AttendanceRecord::updateOrCreate(
                 [
                     'employee_id_number' => $record['employee_id_number'],
@@ -70,7 +79,7 @@ class AttendanceController extends Controller
                     'time_in' => $record['time_in'],
                     'time_out' => $record['time_out'],
                     'hours_worked' => $record['hours_worked'],
-                    'status' => $record['status'],
+                    'status' => $status,
                     'department' => $record['department']
                 ]
             );

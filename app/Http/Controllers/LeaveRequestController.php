@@ -37,7 +37,7 @@ class LeaveRequestController extends Controller
         session_write_close();
         $user = Auth::user();
         $query = LeaveRequest::with([
-            'user:id,name,department,avatar,employment_status,leave_credits,department_id',
+            'user:id,name,department,avatar,employment_status,vacation_leave,paternity_leave,solo_parent_leave,bereavement_leave,vawc_leave,department_id',
             'employee.department',
             'deptHead:id,name',
             'hrApprover:id,name',
@@ -419,7 +419,7 @@ class LeaveRequestController extends Controller
                         'justification' => $remarksField ?: 'Updated by HR/Admin',
                         'snapshot_data' => [
                             'old_status' => $oldStatus,
-                            'credits_before' => $subject->leave_credits ?? 0,
+                            'credits_before' => $subject->vacation_leave ?? 0, // Simplified to VL for now in snapshot
                             'reviewer_role' => $user->role,
                         ],
                     ]);
@@ -444,7 +444,20 @@ class LeaveRequestController extends Controller
                 $newIsPaid = $leaveRequest->is_paid;
                 $days = $leaveRequest->days_taken;
                 if ($subject) {
-                    $creditField = 'leave_credits';
+                    $creditField = 'vacation_leave'; // default
+                    $type = strtolower($leaveRequest->leave_type);
+
+                    if (str_contains($type, 'paternity'))
+                        $creditField = 'paternity_leave';
+                    else if (str_contains($type, 'solo'))
+                        $creditField = 'solo_parent_leave';
+                    else if (str_contains($type, 'bereavement'))
+                        $creditField = 'bereavement_leave';
+                    else if (str_contains($type, 'vawc') || str_contains($type, 'vaws'))
+                        $creditField = 'vawc_leave';
+                    else if (str_contains($type, 'vacation') || str_contains($type, 'sick') || $type === 'vl' || $type === 'sl')
+                        $creditField = 'vacation_leave';
+
                     if ($newStatus === 'Approved' && $oldStatus !== 'Approved') {
                         if ($newIsPaid)
                             $subject->decrement($creditField, (float) $days);

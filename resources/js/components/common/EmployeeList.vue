@@ -119,12 +119,29 @@
                     </select>
                 </div>
 
-                <!-- Hired Year -->
+                <!-- Working Hours Filter -->
                 <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Hired Year</label>
-                    <select v-model="filterHiredYear" class="w-full h-9 px-3 border border-gray-200 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-teal-500">
-                        <option value="All">All Years</option>
-                        <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Working Hours (Shift)</label>
+                    <select v-model="filterWorkingHours" class="w-full h-9 px-3 border border-gray-200 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="All">All Shifts</option>
+                        <option value="7:00 AM - 3:00 PM">Shift A (7 AM - 3 PM)</option>
+                        <option value="7:00 PM - 4:00 AM">Shift B (7 PM - 4 AM)</option>
+                        <option value="6:00 AM - 2:00 PM">Shift C (6 AM - 2 PM)</option>
+                        <option value="2:00 PM - 10:00 PM">Shift D (2 PM - 10 PM)</option>
+                        <option value="8:00 AM - 4:00 PM">Shift E (8 AM - 4 PM)</option>
+                    </select>
+                </div>
+
+                 <!-- Leave Type Filter -->
+                 <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">With Balance In</label>
+                    <select v-model="filterHasBalance" class="w-full h-9 px-3 border border-gray-200 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="All">Any / All</option>
+                        <option value="vl">Vacation Leave (VL)</option>
+                        <option value="pl">Paternity Leave (PL)</option>
+                        <option value="sp">Solo Parent (SP)</option>
+                        <option value="bl">Bereavement (BL)</option>
+                        <option value="vawc">VAWC Leave (VW)</option>
                     </select>
                 </div>
             </div>
@@ -137,6 +154,22 @@
             </div>
         </div>
 
+        <!-- Shift Legend Section -->
+        <div class="px-6 py-4 bg-slate-50 border-b border-gray-100 grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div v-for="stat in shiftStats" :key="stat.code" class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between group">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-5 h-5 bg-teal-600 text-white rounded-full flex items-center justify-center text-[10px] font-black">{{ stat.code }}</span>
+                        <span class="text-[10px] font-black text-slate-800 tracking-tight">{{ stat.time }}</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-[14px] font-black text-teal-600">{{ stat.count }}</p>
+                    <p class="text-[8px] font-bold text-slate-400 uppercase">Deployed</p>
+                </div>
+            </div>
+        </div>
+
         <div class="overflow-x-auto min-h-[400px]">
             <table class="w-full text-left border-collapse">
                 <thead>
@@ -145,6 +178,7 @@
                         <th class="px-6 py-4 font-semibold">ID</th>
                         <th class="px-6 py-4 font-semibold">Department</th>
                         <th class="px-6 py-4 font-semibold">Position</th>
+                        <th class="px-6 py-4 font-semibold">Balances</th>
                         <th class="px-6 py-4 font-semibold">Status</th>
                         <th class="px-6 py-4 font-semibold">Date Hired</th>
                         <th class="px-6 py-4 font-semibold text-right">Actions</th>
@@ -162,7 +196,7 @@
                             No employees found. Add one to get started.
                         </td>
                     </tr>
-                    <tr v-else v-for="employee in employees" :key="employee.id" class="hover:bg-gray-50/50 transition-colors">
+                    <tr v-else v-for="employee in employees" :key="employee.id" @click="openEditModal(employee)" class="hover:bg-gray-50/50 transition-colors cursor-pointer">
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-sm bg-cover bg-center shrink-0 border border-slate-200"
@@ -178,6 +212,30 @@
                         <td class="px-6 py-4 text-sm text-gray-600">{{ employee.department?.name || 'N/A' }}</td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ employee.position }}</td>
                         <td class="px-6 py-4">
+                            <div class="grid grid-cols-5 gap-1 text-center w-[120px]">
+                                <div class="flex flex-col border border-gray-100 rounded p-1 bg-white" title="Vacation">
+                                    <span class="text-[8px] font-bold text-gray-400">VL</span>
+                                    <span class="text-[10px] font-black" :class="employee.vacation_leave > 0 ? 'text-teal-600' : 'text-gray-300'">{{ Number(employee.vacation_leave) || 0 }}</span>
+                                </div>
+                                <div class="flex flex-col border border-gray-100 rounded p-1 bg-white" title="Paternity">
+                                    <span class="text-[8px] font-bold text-gray-400">PL</span>
+                                    <span class="text-[10px] font-black" :class="employee.paternity_leave > 0 ? 'text-blue-600' : 'text-gray-300'">{{ Number(employee.paternity_leave) || 0 }}</span>
+                                </div>
+                                <div class="flex flex-col border border-gray-100 rounded p-1 bg-white" title="Solo Parent">
+                                    <span class="text-[8px] font-bold text-gray-400">SP</span>
+                                    <span class="text-[10px] font-black" :class="employee.solo_parent_leave > 0 ? 'text-purple-600' : 'text-gray-300'">{{ Number(employee.solo_parent_leave) || 0 }}</span>
+                                </div>
+                                <div class="flex flex-col border border-gray-100 rounded p-1 bg-white" title="Bereavement">
+                                    <span class="text-[8px] font-bold text-gray-400">BL</span>
+                                    <span class="text-[10px] font-black" :class="employee.bereavement_leave > 0 ? 'text-amber-600' : 'text-gray-300'">{{ Number(employee.bereavement_leave) || 0 }}</span>
+                                </div>
+                                <div class="flex flex-col border border-gray-100 rounded p-1 bg-white" title="VAWC">
+                                    <span class="text-[8px] font-bold text-gray-400">VW</span>
+                                    <span class="text-[10px] font-black" :class="employee.vawc_leave > 0 ? 'text-rose-600' : 'text-gray-300'">{{ Number(employee.vawc_leave) || 0 }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
                             <div class="flex flex-col gap-1">
                                 <span :class="getStatusClass(employee.employment_status)" class="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-wider w-fit">
                                     {{ employee.employment_status }}
@@ -189,7 +247,7 @@
                                 </div>
                                 <button 
                                     v-else 
-                                    @click="openAccountModal(employee)"
+                                    @click.stop="openAccountModal(employee)"
                                     class="mt-1 text-[9px] font-black uppercase text-teal-600 hover:text-teal-700 flex items-center gap-1 cursor-pointer transition-colors"
                                 >
                                     <i class="pi pi-user-plus"></i>
@@ -201,28 +259,28 @@
                         <td class="px-6 py-4 text-right">
                              <div class="flex items-center justify-end gap-2">
                                 <button 
-                                    @click="openEditModal(employee)" 
+                                    @click.stop="openEditModal(employee)" 
                                     class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors cursor-pointer"
                                     title="Edit Details"
                                 >
                                     <i class="pi pi-pencil text-xs"></i>
                                 </button>
                                 <button 
-                                    @click="goToLeaveManagement(employee.employee_id)" 
+                                    @click.stop="goToLeaveManagement(employee.employee_id)" 
                                     class="w-8 h-8 rounded-full bg-teal-50 text-teal-600 hover:bg-teal-100 flex items-center justify-center transition-colors cursor-pointer"
                                     title="View Leave History"
                                 >
                                     <i class="pi pi-calendar-plus text-xs"></i>
                                 </button>
                                 <button 
-                                    @click="adminFileLeave(employee.employee_id)" 
+                                    @click.stop="adminFileLeave(employee.employee_id)" 
                                     class="w-8 h-8 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 flex items-center justify-center transition-colors cursor-pointer"
                                     title="File Leave for Employee"
                                 >
                                     <i class="pi pi-plus text-xs"></i>
                                 </button>
                                 <button 
-                                    @click="archiveEmployee(employee.id)" 
+                                    @click.stop="archiveEmployee(employee.id)" 
                                     class="w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center transition-colors cursor-pointer"
                                     title="Archive Record"
                                 >
@@ -253,6 +311,7 @@
         />
 
         <EditEmployeeModal 
+            ref="editEmployeeModalRef"
             v-model="showEditModal"
             :employee="selectedEmployee"
             :departments="departments"
@@ -341,7 +400,10 @@ const filterGender = ref('All');
 const filterCivilStatus = ref('All');
 const filterMissingId = ref('All');
 const filterHiredYear = ref('All');
+const filterWorkingHours = ref('All');
+const filterHasBalance = ref('All');
 const availableYears = ref([]);
+const shiftStats = ref([]);
 
 let debounceTimer = null;
 
@@ -352,6 +414,7 @@ const isCreating = ref(false);
 const isEditing = ref(false);
 const selectedEmployee = ref(null);
 const selectedEmployeeForAccount = ref(null);
+const editEmployeeModalRef = ref(null);
 const showAccountModal = ref(false);
 const accountRole = ref('user');
 const isCreatingAccount = ref(false);
@@ -400,7 +463,18 @@ const resetFilters = () => {
     filterCivilStatus.value = 'All';
     filterMissingId.value = 'All';
     filterHiredYear.value = 'All';
+    filterWorkingHours.value = 'All';
+    filterHasBalance.value = 'All';
     searchQuery.value = '';
+};
+
+const fetchShiftStats = async () => {
+    try {
+        const response = await axios.get('/api/employees/shift-stats');
+        shiftStats.value = response.data;
+    } catch (e) {
+        console.error("Shift stats error", e);
+    }
 };
 
 const fetchEmployees = async (page = 1) => {
@@ -415,6 +489,8 @@ const fetchEmployees = async (page = 1) => {
             civil_status: filterCivilStatus.value === 'All' ? null : filterCivilStatus.value,
             missing_id: filterMissingId.value === 'All' ? null : filterMissingId.value,
             hired_year: filterHiredYear.value === 'All' ? null : filterHiredYear.value,
+            working_hours: filterWorkingHours.value === 'All' ? null : filterWorkingHours.value,
+            has_balance: filterHasBalance.value === 'All' ? null : filterHasBalance.value,
         };
         const response = await axios.get('/api/employees', { params });
         employees.value = response.data.data;
@@ -498,7 +574,9 @@ const handleUpdate = async (payload) => {
     try {
         // payload contains { id, ...data, details: {...} }
         await axios.put(`/api/employees/${payload.id}`, payload);
-        showEditModal.value = false;
+        if (editEmployeeModalRef.value) {
+            editEmployeeModalRef.value.setEditMode(false);
+        }
         fetchEmployees(currentPage.value);
         alert('Employee updated successfully!');
     } catch (e) {
@@ -555,6 +633,7 @@ const handleImport = async (event) => {
         });
         alert('Masterlist imported successfully!');
         fetchDepartments();
+        fetchShiftStats();
         fetchEmployees(1);
     } catch (e) {
         console.error(e);
@@ -572,7 +651,9 @@ watch([
     filterGender, 
     filterCivilStatus, 
     filterMissingId, 
-    filterHiredYear
+    filterHiredYear,
+    filterWorkingHours,
+    filterHasBalance
 ], () => {
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
@@ -582,6 +663,7 @@ watch([
 
 onMounted(() => {
     fetchDepartments();
+    fetchShiftStats();
     fetchEmployees();
 });
 </script>

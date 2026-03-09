@@ -105,7 +105,6 @@ class UserController extends Controller
             'department' => $employee->department?->name,
             'department_id' => $employee->department_id,
             'employment_status' => $employee->employment_status,
-            'leave_credits' => $employee->leave_credits,
             'status' => 'Available',
         ]);
 
@@ -135,7 +134,6 @@ class UserController extends Controller
             'employment_status' => 'sometimes|string|in:Probationary,Regular',
             'role' => 'sometimes|string|in:admin,user,dept_head',
             'id_number' => 'sometimes|string|max:20|unique:users,id_number,' . $id,
-            'leave_credits' => 'sometimes|numeric|min:0',
         ]);
 
         $oldData = $user->toArray();
@@ -233,15 +231,10 @@ class UserController extends Controller
             'amount' => 'required|numeric',
         ]);
 
-        $amount = $validated['amount'];
-        $count = User::whereIn('id', $validated['user_ids'])->increment('leave_credits', $amount);
-
-        // Audit Log
-        \App\Utils\AuditLogger::log('Employees', 'Updated', "Bulk updated leave credits (+{$amount}) for {$count} employee(s).");
-
+        // Skip for now, feature being deprecated.
         return response()->json([
-            'message' => "Successfully added {$amount} credits to {$count} employees.",
-            'updated_count' => $count
+            'message' => "Bulk credits not supported with new leave balance system.",
+            'updated_count' => 0
         ]);
     }
 
@@ -251,14 +244,10 @@ class UserController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $count = User::query()->update(['leave_credits' => 0]);
-
-        // Audit Log
-        \App\Utils\AuditLogger::log('Employees', 'Security', "NUCLEAR RESET: All leave credits reset to 0 for {$count} employee(s).");
-
+        // Skip for now, feature being deprecated.
         return response()->json([
-            'message' => "Successfully reset credits for {$count} employees.",
-            'count' => $count
+            'message' => "Credit reset not supported with new leave balance system.",
+            'count' => 0
         ]);
     }
 }

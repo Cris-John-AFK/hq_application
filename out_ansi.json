@@ -1,0 +1,49 @@
+[
+    {
+        "id": 1,
+        "employee_id": "EMPLOYEE ID",
+        "last_name": "LAST NAME",
+        "first_name": "FIRST NAME",
+        "middle_name": "MI",
+        "department_id": 18,
+        "position": "PAG IBIG",
+        "employment_status": "Regular",
+        "date_hired": "2026-03-09T00:00:00.000000Z",
+        "email": null,
+        "avatar": null,
+        "vacation_leave": "5.00",
+        "sick_leave": "0.00",
+        "paternity_leave": "0.00",
+        "solo_parent_leave": "0.00",
+        "bereavement_leave": "0.00",
+        "vawc_leave": "0.00",
+        "working_hours": null,
+        "is_archived": false,
+        "archived_at": null,
+        "created_at": "2026-03-09T02:14:34.000000Z",
+        "updated_at": "2026-03-09T02:14:34.000000Z",
+        "deleted_at": null,
+        "name": "FIRST NAME LAST NAME",
+        "initials": "FL",
+        "details": {
+            "id": 1,
+            "employee_id": 1,
+            "birthdate": "1900-01-01",
+            "place_of_birth": null,
+            "gender": "Male",
+            "civil_status": "DATE HIRED",
+            "sss_number": "POSITION",
+            "philhealth_number": "DEPARTMENT",
+            "pagibig_number": "BIRTHDATE",
+            "tin_number": "AGE",
+            "created_at": "2026-03-09T02:14:34.000000Z",
+            "updated_at": "2026-03-09T02:14:34.000000Z"
+        },
+        "department": {
+            "id": 18,
+            "name": "PHILHEALTH",
+            "created_at": "2026-03-09T02:14:34.000000Z",
+            "updated_at": "2026-03-09T02:14:34.000000Z"
+        }
+    }
+]

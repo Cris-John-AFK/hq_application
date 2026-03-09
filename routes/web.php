@@ -60,6 +60,7 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
         Route::delete('/api/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'destroy']);
         Route::post('/api/employees/{id}/archive', [\App\Http\Controllers\EmployeeController::class, 'archive']);
         Route::post('/api/employees/{id}/unarchive', [\App\Http\Controllers\EmployeeController::class, 'unarchive']);
+        Route::post('/api/employees/{id}/adjust-leave', [\App\Http\Controllers\EmployeeController::class, 'adjustLeave']);
 
         Route::post('/api/departments', [\App\Http\Controllers\DepartmentController::class, 'store']);
 
@@ -98,6 +99,7 @@ Route::get('/api/settings/{key}', [\App\Http\Controllers\SystemSettingsControlle
 
 Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     // Share/Employee Access Routes (Read-only for most)
+    Route::get('/api/employees/shift-stats', [\App\Http\Controllers\EmployeeController::class, 'getShiftStats']);
     Route::get('/api/employees', [\App\Http\Controllers\EmployeeController::class, 'index']);
     Route::get('/api/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'show']);
     Route::get('/api/employees/find-by-code/{id}', [\App\Http\Controllers\EmployeeController::class, 'findByEmployeeId']);

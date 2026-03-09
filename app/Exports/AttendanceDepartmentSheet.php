@@ -38,7 +38,7 @@ class AttendanceDepartmentSheet implements FromCollection, WithTitle, WithHeadin
             [
                 'Department',
                 'Total Employees',
-                'Total Working Days',
+                'Actual Working Days',
                 'Total Scheduled Hrs',
                 'Total Actual Hrs',
                 'Regular Actual Hrs',
@@ -55,7 +55,22 @@ class AttendanceDepartmentSheet implements FromCollection, WithTitle, WithHeadin
         $service = new AttendanceReportService();
         $data = $service->getMonthlyDepartmentReport($this->year, $this->month);
 
-        return collect($data);
+        $mappedData = collect($data)->map(function ($row) {
+            return [
+                'department' => $row['department'],
+                'total_employees' => $row['total_employees'],
+                'total_working_days' => $row['total_working_days'],
+                'total_scheduled_hours' => $row['total_scheduled_hours'],
+                'total_actual_hours' => $row['total_actual_hours'],
+                'regular_actual_hours' => $row['regular_actual_hours'],
+                'overtime_actual_hours' => $row['overtime_actual_hours'],
+                'excess_hours_worked' => $row['excess_hours_worked'],
+                'employees_with_excess_ot' => $row['employees_with_excess_ot'],
+                'avg_daily_working_hours' => $row['avg_daily_working_hours']
+            ];
+        });
+
+        return $mappedData;
     }
 
     public function styles(Worksheet $sheet)

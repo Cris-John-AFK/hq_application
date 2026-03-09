@@ -9,6 +9,7 @@ use App\Models\AttendanceRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class EmployeeController extends Controller
 {
@@ -34,6 +35,26 @@ class EmployeeController extends Controller
 
         if ($request->filled('department_id')) {
             $query->where('department_id', $request->department_id);
+        }
+
+        if ($request->filled('working_hours')) {
+            $query->where('working_hours', 'like', "%{$request->working_hours}%");
+        }
+
+        // Filter based on specific leave types (having balance > 0)
+        if ($request->filled('has_balance')) {
+            $type = $request->has_balance; // e.g. 'vl', 'pl', 'sp', 'bl', 'vawc'
+            $columnMap = [
+                'vl' => 'vacation_leave',
+                'pl' => 'paternity_leave',
+                'sp' => 'solo_parent_leave',
+                'bl' => 'bereavement_leave',
+                'vawc' => 'vawc_leave'
+            ];
+            $col = $columnMap[$type] ?? null;
+            if ($col) {
+                $query->where($col, '>', 0);
+            }
         }
 
         // Check if user wants ALL records (no pagination)
@@ -86,7 +107,7 @@ class EmployeeController extends Controller
                 'employment_status' => $validated['employment_status'],
                 'date_hired' => $validated['date_hired'],
                 'email' => $validated['email'] ?? null,
-                'leave_credits' => $validated['leave_credits'] ?? 0,
+                'vacation_leave' => $validated['vacation_leave'] ?? 0,
                 'avatar' => $avatarPath ? '/storage/' . $avatarPath : null,
             ]);
 
@@ -136,7 +157,12 @@ class EmployeeController extends Controller
                 'employment_status',
                 'date_hired',
                 'email',
-                'leave_credits'
+                'vacation_leave',
+                'paternity_leave',
+                'solo_parent_leave',
+                'bereavement_leave',
+                'vawc_leave',
+                'working_hours'
             ]));
 
             if ($request->has('details')) {
@@ -244,12 +270,78 @@ class EmployeeController extends Controller
             // Audit Log
             \App\Utils\AuditLogger::log('MASTERLIST', 'IMPORTED', "Imported employees via Excel file.");
 
-            // Invalidate cache
             \Illuminate\Support\Facades\Cache::flush();
-
             return response()->json(['message' => 'Import successful']);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Import failed: ' . $e->getMessage()], 422);
         }
+    }
+
+    public function adjustLeave(Request $request, $id)
+    {
+        if (Auth::user()->role !== 'admin' && Auth::user()->role !== 'hr') {
+            return response()->json(['message' => 'Unauthorized. Only HR and Admins can adjust leave balances.'], 403);
+        }
+
+        $employee = Employee::findOrFail($id);
+
+        $validated = $request->validate([
+            'leave_type' => 'required|string|in:vacation_leave,paternity_leave,solo_parent_leave,bereavement_leave,vawc_leave',
+            'action' => 'required|in:add,deduct',
+            'amount' => 'required|numeric|min:0.5',
+            'justification' => 'required|string|min:5'
+        ]);
+
+        $field = $validated['leave_type'];
+        $amount = (float) $validated['amount'];
+        $oldBalance = $employee->$field ?? 0;
+
+        if ($validated['action'] === 'deduct') {
+            if ($oldBalance < $amount) {
+                return response()->json(['message' => 'Cannot deduct more than the current balance.'], 422);
+            }
+            $employee->decrement($field, $amount);
+        } else {
+            $employee->increment($field, $amount);
+        }
+
+        $employee->refresh();
+        $newBalance = $employee->$field;
+
+        // Log the action explicitly to system logs so that there is an Audit Trail
+        \App\Utils\AuditLogger::log(
+            'Employees',
+            'Leave Adjusted',
+            Auth::user()->name . " {$validated['action']}ed {$amount} to {$employee->name}'s {$field}. (Old: {$oldBalance}, New: {$newBalance})",
+            ['old_balance' => $oldBalance, 'leave_type' => $field],
+            ['new_balance' => $newBalance, 'justification' => $validated['justification']]
+        );
+
+        return response()->json([
+            'message' => 'Leave balance updated successfully.',
+            'employee' => $employee
+        ]);
+    }
+
+    public function getShiftStats()
+    {
+        $shifts = [
+            'A' => '7:00 AM - 3:00 PM',
+            'B' => '7:00 PM - 4:00 AM',
+            'C' => '6:00 AM - 2:00 PM',
+            'D' => '2:00 PM - 10:00 PM',
+            'E' => '8:00 AM - 4:00 PM'
+        ];
+
+        $stats = [];
+        foreach ($shifts as $code => $time) {
+            $stats[] = [
+                'code' => $code,
+                'time' => $time,
+                'count' => Employee::where('working_hours', 'like', "%{$time}%")->where('is_archived', false)->count()
+            ];
+        }
+
+        return response()->json($stats);
     }
 }

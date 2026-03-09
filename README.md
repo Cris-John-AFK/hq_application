@@ -9,46 +9,45 @@ A professional, enterprise-grade human capital management application built with
 - **Glassmorphic Navigation**: A sleek, dark-themed sidebar with interactive states and smooth transitions.
 - **Global Smart Scroll**: An intelligent, pulsing "Scroll Down" indicator that ensures users never miss deep content on dashboards or schedules.
 - **Universal Topbar**: Features a live 12-hour synchronized clock and dynamic breadcrumb navigation.
+- **Production-Ready Stability**: All previously "experimental" features (Attendance, Reports) have been promoted to core modules, and the temporary Settings panel has been deprecated for a cleaner, focused administrative experience.
+- **Mistake-Proof Employee Records**: Clicking an employee opens a beautiful, read-only "Details Modal" to prevent accidental data overwrites. Explicit "Edit" modes ensure purposeful updates.
 
-### 📊 Enterprise Analytics Dashboard
+### 📊 Enterprise Analytics & Reporting
 - **Executive Stats Grid**: Real-time monitoring of **Total Employees**, **Daily Presence**, **Absences**, **Lateness**, and **On-Leave** staff.
+- **Robust Attendance Rates**: Realistic absence and tardiness calculation factoring in explicitly logged records and individualized dynamic working shifts, eliminating inflated figures.
 - **Attendance Trend Graph**: A high-fidelity, interactive **ApexCharts** visualization with toggleable **Daily**, **Weekly**, and **Monthly** perspectives for long-term presence tracking.
 - **Corporate Performance Ranking**: A data-driven leaderboard ranking departments by attendance excellence, fostering healthy motivation.
 - **Live Activity Feeds**: Paginated "Recent Attendance" and "Recent Leaves" streams with real-time status notifications and high-density employee metadata.
 - **Unified HR Sync**: Attendance records are automatically cross-referenced with the centralized **Employee Masterlist**, resolving Department, Full Name, and Avatar data even for staff without digital accounts.
 
-### 🧬 Biometric Attendance Engine
-- **Universal Excel Parser**: High-performance client-side engine designed specifically for biometric scanning devices.
+### 🩸 Comprehensive Leave Workflow
+- **Multi-Leave Credits System**: Dedicated tracking for Vacation (VL), Paternity (PL), Solo Parent (SP), Bereavement, and VAWC leaves with dynamic balance checking during submission.
+- **Multi-Stage Approval Trail**: High-fidelity chronological timeline tracking every step of a request: **Employee Filing** → **Dept Head Review** → **HR/Admin Final Decision**.
+- **Role-Specific Queues**: HR/Admin view now defaults to **"Forwarded to HR"** (Dept Approved), ensuring a streamlined workflow focused on final-stage actions.
+- **Dept Head Empowerment**: Department heads have a specialized dashboard to view, review, and add remarks to staff requests within their own department scope.
+- **Frictionless Employee Portal**: A standalone, high-security portal for field staff to file leaves and track their detailed multi-leave balances without requiring a full system account.
+- **Hybrid Data Fetching**: User dashboards dynamically fetch both web-submitted and portal-submitted records by cross-referencing **ID Number** and **Employee ID**.
+
+### 🧪 Biometric Attendance Engine & Masterlist Import
+- **Multi-Sheet Universal Excel Parser**: High-performance client-side engine capable of reading 3-sheet formats to import Masterlists, schedule working hours, and initial leave balances.
 - **Dual-Log Reconciliation**: Advanced logic that automatically groups separate **IN** and **OUT** rows, identifies the earliest/latest timestamps, and calculates exact work hours.
 - **Live Progress UI**: Real-time visual feedback during mass imports, showing parsing stages and calculation status with a synchronized progress bar.
-- **Smart Identity Matching**: Dual-layer verification that matches scanned logs via **Personnel ID** with a fallback to **Fuzzy Name Matching**, ensuring 100% data attribution.
-- **Status Classification**: Automatically determines **Present**, **Late**, **Half-Day**, or **Absent** statuses based on organizational time thresholds.
+- **Dynamic Lateness Classification**: Automatically determines **Present**, **Late**, **Half-Day**, or **Absent** statuses based on the individualized working hours assigned to the employee rather than a single hardcoded cutoff.
 
 ### 📅 Advanced Scheduling & Calendar
 - **Continuous Multi-Day Visualization**: Sophisticated logic that renders multi-day events as single, unbroken visual bars for clarity.
-- **Intelligent Decluttering**: Dynamic labeling ensures event titles only appear on the first day or weekly boundaries.
 - **Philippine Compliance**: Pre-loaded with Philippine Public Holidays integrated into the dynamic organizational calendar.
 - **One-Click Planning**: Full-screen schedule management module for organizational planning.
 
 ### 📦 Advanced Resource Auditing (Inventory)
-- **High-Density Data Grid**: Resources are presented in a clean, professional spreadsheet-like data table structure to maximize visibility of critical organization assets at a glance.
-- **Bulk Excel Importer**: Seamlessly migrate hundreds of historical assets from legacy `<inventory_details.xlsx>` files directly into the modernized HatQ SQL registry with a single click.
-- **Dynamic Resource Registry**: Comprehensive lifecycle management for IT hardware (Laptops, Desktops, Network), Furniture, and specialized equipment.
-- **Integrated Audit Trail**: Every asset modification (Create, Update, Delete, Import) is automatically captured in the global security journal for financial transparency.
-- **Advanced Audit Toolbar**: Instant real-time searching by **Serial Number**, **Asset Nomenclature**, or **Technical Description** with multi-criteria category filters.
+- **High-Density Data Grid**: Resources are presented in a clean, professional spreadsheet-like data table structure to maximize visibility of critical organization assets.
+- **Bulk Excel Importer**: Seamlessly migrate hundreds of historical assets from legacy `<inventory_details.xlsx>` files directly into the modernized HatQ SQL registry.
+- **Integrated Audit Trail**: Every asset modification (Create, Update, Delete, Import) is automatically captured in the global security journal.
 
-### 📁 Advanced Leave & Masterlist Management
-- **Unified Masterlist Support**: Seamlessly manage leave and attendance for both system users and "Masterlist Employees" (staff without digital accounts) with 100% data parity.
-- **Advanced Archive Registry**: Featuring a Windows 11-inspired Explorer navigation system. Records are categorized into secure "Folders":
-    - **Leave Request Archive**: Structured by Year and Month for high-density historical lookup.
-    - **Employee Masterlist Archive**: A dedicated registry for archived/off-boarded personnel, keeping the active workspace clutter-free.
-- **Soft-Delete Maintenance**: High-performance administrative tool to mass-archive legacy records using smart date thresholds (30, 60, or 90 days ago) with a single click.
-- **One-Click Restoration**: Full data integrity fallback allowing administrators to restore any archived record or employee back to the active list instantly.
-- **Admin-Filing with Auto-Approval**: Administrators can bypass approval workflows by filing leaves directly on behalf of employees, triggering instant credit deductions.
-- **Full-Spectrum HR Reconciliation**: Attendance records with missing department data are dynamically resolved by hot-linking to the Masterlist registry, fixing "N/A" gaps in reports.
-- **Disciplinary Metadata Tracking**: New **Attendance Category** system allows administrators to classify leaves (UA, WMC, WD, UH) for advanced absenteeism reporting.
-- **Conflict Prevention**: Intelligent overlap validation prevents filing duplicate requests for the same date.
-- **Precision SIL Tracking**: Automated Service Incentive Leave (SIL) system with 100% accurate numeric deductions and restorations, managed through dedicated leave modules rather than the masterlist.
+### 📁 Archive & Data Maintenance
+- **Advanced Archive Registry**: Featuring a Windows 11-inspired Explorer navigation system. Records are categorized into secure "Folders" for Leaves and Personnel.
+- **Soft-Delete Maintenance**: High-performance administrative tool to mass-archive legacy records using smart date thresholds (30, 60, or 90 days ago).
+- **Precision SIL Tracking**: Automated Service Incentive Leave (SIL) system with 100% accurate numeric deductions managed through dedicated leave modules.
 
 ---
 
@@ -57,23 +56,16 @@ A professional, enterprise-grade human capital management application built with
 The development environment is optimized for maximum "snappiness" by leveraging a hybrid server architecture:
 
 ### **Why is `localhost:5173` faster?**
-- **Vite Engine**: Port 5173 is powered by **Vite**, which uses native ES modules and a high-performance Go-based pre-bundler. It is designed for near-instant asset delivery and **Hot Module Replacement (HMR)**.
-- **Zero Overhead**: Unlike the backend which must boot the entire Laravel framework for every request, 5173 only serves exactly what the browser needs at that millisecond.
-
-### **The Hybrid Workflow**
-We have implemented a **Development Proxy** in `vite.config.js`. You can now use `localhost:5173` as your main entry point for a faster UI experience:
-- **UI & Assets**: Served directly by Vite at lightspeed on 5173.
-- **API & Data**: Automatically proxied to Laravel on 8000 in the background.
+- **Vite Engine**: Port 5173 is powered by **Vite**, providing near-instant asset delivery and **Hot Module Replacement (HMR)**.
+- **The Hybrid Workflow**: UI & Assets are served by Vite (5173), while API & Data are automatically proxied to Laravel (8000) in the background.
 
 ---
 
 ## 🛡️ Security & Action Audit Trail
-- **Comprehensive Action Logging**: Every administrative move—including **Excel Exports**, **Bulk Imports**, **Setting Changes**, and **Bulletin Updates**—is recorded in the Audit Trail.
-- **Granular Change Tracking**: Profile updates log "Old vs New" data snapshots for technical review and security monitoring.
+- **Comprehensive Action Logging**: Every administrative move—including **Excel Exports**, **Bulk Imports**, and **Setting Changes**—is recorded in the Audit Trail.
 - **Native Automated Backups**: Integrated `php artisan backup:daily` system with 7-day automated rotation.
-- **Granular Authorization**: Strict Laravel **Policies** control every action, ensuring users only see what they own.
-- **Global API Protection**: Built-in **Rate Limiting** (`throttle:120,1`) to prevent brute-force attacks and abuse.
-- **Safe Transactions**: Multi-table updates (Credits + Status) are wrapped in atomic database transactions.
+- **Global API Protection**: Built-in **Rate Limiting** (`throttle:120,1`) to prevent abuse.
+- **Safe Transactions**: Multi-table updates are wrapped in atomic database transactions.
 
 ---
 
@@ -87,56 +79,22 @@ We have implemented a **Development Proxy** in `vite.config.js`. You can now use
 ## 🚀 Getting Started
 
 ### 1. Prerequisites
-- PHP 8.2+
-- Node.js & NPM
-- PostgreSQL 15+
+- PHP 8.2+ | Node.js & NPM | PostgreSQL 15+
 
 ### 2. Installation
 ```bash
-# Clone the repository
 git clone https://github.com/Cris-John-AFK/hq_application.git
 cd hq_application
-
-# Install dependencies
-composer install
-npm install
-
-# Setup Environment
-cp .env.example .env
-php artisan key:generate
-
-# Build Assets
+composer install && npm install
+cp .env.example .env && php artisan key:generate
 npm run build
 ```
 
 ### 3. Database & Deployment
 ```bash
-# Run Migrations & Seeds
 php artisan migrate --seed
-
-# Start the Application
 php artisan serve
 ```
-
-### 4. Production (BACKUP FREQUENTLY!)
-```bash
-# Build Optimized Assets
-npm run build
-
-# Clear & Cache Configurations
-php artisan config:cache
-php artisan route:cache
-
-# Run Daily Backup (Critical)
-php artisan backup:daily
-```
-
-## 🔐 Default Credentials
-
-| Role | Email | Password |
-| :--- | :--- | :--- |
-| **Administrator** | `admin@hq.app` | `password` |
-| **Employee** | `user@hq.app` | `password` |
 
 ---
 *Created by Cris John M. Cañales & Jessica Roque*

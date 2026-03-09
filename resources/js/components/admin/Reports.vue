@@ -82,10 +82,10 @@
                                     <tr class="bg-gray-900 text-white uppercase tracking-wider text-xs">
                                         <th class="px-6 py-4 font-semibold w-32 border-r border-gray-800">Month</th>
                                         <th class="px-4 py-4 text-center border-r border-gray-800">Headcount</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Present<br>Days</th>
                                         <th class="px-4 py-4 text-center border-r border-gray-800">Total Working<br>Days</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Person-Days<br>Present</th>
                                         <th class="px-4 py-4 text-center border-r border-gray-800">Attendance<br>Rate (%)</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Absent<br>Days</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Person-Days<br>Absent</th>
                                         <th class="px-4 py-4 text-center border-r border-gray-800">Absenteeism<br>Rate (%)</th>
                                         <th class="px-4 py-4 text-center border-r border-gray-800">Late<br>Count</th>
                                         <th class="px-4 py-4 text-center border-r border-gray-800">Tardiness<br>Freq (%)</th>
@@ -98,8 +98,8 @@
                                     <tr v-for="row in annualData" :key="row.month" class="hover:bg-gray-50">
                                         <td class="px-6 py-3 font-medium text-gray-800 border-r border-gray-100">{{ row.month }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.headcount }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.total_present_days }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.total_working_days }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.total_present_days }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-100 font-bold" :class="getRateColor(row.attendance_rate)">{{ row.attendance_rate }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.total_absent_days }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-100 font-medium">{{ row.absenteeism_rate }}</td>
@@ -113,8 +113,8 @@
                                     <tr v-if="annualTotals" class="bg-gray-900 text-white font-bold border-t-2 border-gray-900">
                                         <td class="px-6 py-3 font-bold text-white border-r border-gray-800">TOTAL</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.headcount }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.total_present_days }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.total_working_days }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.total_present_days }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.attendance_rate }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.total_absent_days }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.absenteeism_rate }}</td>
@@ -137,7 +137,7 @@
                                     <tr class="bg-gray-900 text-white uppercase tracking-wider text-xs">
                                         <th class="px-6 py-4 font-semibold w-48 border-r border-gray-800">Department</th>
                                         <th class="px-4 py-4 text-center border-r border-gray-800">Total<br>Employees</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total<br>Working Days</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800">Actual<br>Working Days</th>
                                         <th class="px-4 py-4 text-center border-r border-gray-800">Total<br>Scheduled Hrs</th>
                                         <th class="px-4 py-4 text-center border-r border-gray-800">Total<br>Actual Hrs</th>
                                         <th class="px-4 py-4 text-center border-r border-gray-800 bg-gray-800">Regular<br>Actual Hrs</th>
@@ -172,10 +172,10 @@
                                 <thead>
                                     <tr class="bg-gray-900 text-white uppercase tracking-wider text-xs">
                                         <th class="px-6 py-4 font-semibold w-32 border-r border-gray-800">Month</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Working<br>Days</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800">Actual Working<br>Days</th>
                                         <th class="px-4 py-4 text-center border-r border-gray-800">Total<br>Employees</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Present<br>Days</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Absent<br>Days</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Person-Days<br>Present</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Person-Days<br>Absent</th>
                                         <th class="px-4 py-4 text-center border-r border-gray-800">Total Tardiness<br>(mins)</th>
                                         <th class="px-4 py-4 text-center">Total Undertime<br>(mins)</th>
                                     </tr>
@@ -252,6 +252,7 @@ const annualTotals = computed(() => {
         headcount: 0,
         total_present_days: 0,
         total_working_days: 0,
+        possible_person_days: 0,
         total_absent_days: 0,
         employees_late: 0,
         employees_undertime: 0,
@@ -262,16 +263,17 @@ const annualTotals = computed(() => {
         stats.headcount = Math.max(stats.headcount, row.headcount || 0);
         stats.total_present_days += row.total_present_days || 0;
         stats.total_working_days += row.total_working_days || 0;
+        stats.possible_person_days += row.possible_person_days || 0;
         stats.total_absent_days += row.total_absent_days || 0;
         stats.employees_late += row.employees_late || 0;
         stats.employees_undertime += row.employees_undertime || 0;
         stats.total_undertime_mins += row.total_undertime_mins || 0;
     });
     
-    const attRate = stats.total_working_days > 0 ? (stats.total_present_days / stats.total_working_days * 100).toFixed(1) : 0;
-    const absRate = stats.total_working_days > 0 ? (stats.total_absent_days / stats.total_working_days * 100).toFixed(1) : 0;
-    const lateFreq = stats.total_working_days > 0 ? (stats.employees_late / stats.total_working_days * 100).toFixed(1) : 0;
-    const undFreq = stats.total_working_days > 0 ? (stats.employees_undertime / stats.total_working_days * 100).toFixed(1) : 0;
+    const attRate = stats.possible_person_days > 0 ? (stats.total_present_days / stats.possible_person_days * 100).toFixed(1) : 0;
+    const absRate = stats.possible_person_days > 0 ? (stats.total_absent_days / stats.possible_person_days * 100).toFixed(1) : 0;
+    const lateFreq = stats.possible_person_days > 0 ? (stats.employees_late / stats.possible_person_days * 100).toFixed(1) : 0;
+    const undFreq = stats.possible_person_days > 0 ? (stats.employees_undertime / stats.possible_person_days * 100).toFixed(1) : 0;
     
     return {
         ...stats,

@@ -414,15 +414,25 @@
                     <template v-if="!isEditing('leave_type')">
                         <!-- Options List (Static in View Mode) -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
-                            <label v-for="lType in leaveTypes" :key="lType" class="flex items-center cursor-pointer group">
-                                <input type="radio" v-model="form.leaveType" :value="lType" name="leaveType" class="peer h-4 w-4 cursor-pointer text-purple-600 focus:ring-purple-500 border-gray-300">
-                                <span class="ml-2 text-sm text-gray-700 group-hover:text-purple-700 transition-colors">{{ lType }}</span>
+                            <label v-for="lType in leaveTypes" :key="lType" class="flex items-center justify-between cursor-pointer group p-2 rounded hover:bg-purple-50 transition-colors border border-transparent hover:border-purple-100">
+                                <div class="flex items-center">
+                                    <input type="radio" v-model="form.leaveType" :value="lType" name="leaveType" class="peer h-4 w-4 cursor-pointer text-purple-600 focus:ring-purple-500 border-gray-300">
+                                    <span class="ml-2 text-sm text-gray-700 group-hover:text-purple-700 font-medium transition-colors">{{ lType }}</span>
+                                </div>
+                                <!-- NEW: Show exact balance if applicable -->
+                                <span v-if="displayUser && getAvailableBalance(lType) !== null" 
+                                    class="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                                    :class="getAvailableBalance(lType) > 0 ? 'bg-purple-100 text-purple-700' : 'bg-rose-100 text-rose-500'">
+                                    {{ getAvailableBalance(lType) }} left
+                                </span>
                             </label>
                             
                             <div class="col-span-1 md:col-span-2 mt-2">
-                                <label class="flex items-center cursor-pointer group mb-2">
-                                    <input type="radio" v-model="form.leaveType" value="Others" name="leaveType" class="peer h-4 w-4 cursor-pointer text-purple-600 focus:ring-purple-500 border-gray-300">
-                                    <span class="ml-2 text-sm text-gray-700 group-hover:text-purple-700 font-medium">Others (Please Specify)</span>
+                                <label class="flex items-center justify-between cursor-pointer group p-2 rounded hover:bg-purple-50 transition-colors border border-transparent hover:border-purple-100 mb-2">
+                                    <div class="flex items-center">
+                                        <input type="radio" v-model="form.leaveType" value="Others" name="leaveType" class="peer h-4 w-4 cursor-pointer text-purple-600 focus:ring-purple-500 border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-700 group-hover:text-purple-700 font-medium">Others (Please Specify)</span>
+                                    </div>
                                 </label>
                                 <transition name="fade">
                                     <input 
@@ -609,14 +619,31 @@
                                             </label>
                                         </div>
                                         <transition name="slide-down">
-                                            <div v-if="form.isPaid" class="flex items-center gap-3 pt-2 border-t border-teal-100/50">
-                                                <div class="flex-1">
-                                                    <label class="block text-[9px] font-black text-teal-600 uppercase mb-1">Total Days to be Paid</label>
-                                                    <div class="flex items-center gap-2">
-                                                        <input type="number" step="0.5" v-model="form.daysPaid" class="w-full px-3 py-2 bg-white border border-teal-200 rounded-lg text-sm font-black text-teal-900 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all">
-                                                        <span class="text-xs font-bold text-teal-600">DAYS</span>
+                                            <div v-if="form.isPaid" class="flex flex-col gap-3 pt-2 border-t border-teal-100/50">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="flex-1">
+                                                        <label class="block text-[9px] font-black text-teal-600 uppercase mb-1">Total Days to be Paid</label>
+                                                        <div class="flex items-center gap-2">
+                                                            <input type="number" step="0.5" v-model="form.daysPaid" class="w-full px-3 py-2 bg-white border border-teal-200 rounded-lg text-sm font-black text-teal-900 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all">
+                                                            <span class="text-xs font-bold text-teal-600">DAYS</span>
+                                                        </div>
                                                     </div>
                                                 </div>
+                                                
+                                                <!-- Insufficient Balance Warning -->
+                                                <transition name="fade">
+                                                    <div v-if="insufficientBalanceWarning" class="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                                                        <i class="pi pi-exclamation-triangle text-red-500 mt-0.5"></i>
+                                                        <div class="text-[10px]">
+                                                            <p class="font-black text-red-700 uppercase tracking-widest mb-0.5">Insufficient Balance Warning</p>
+                                                            <p class="text-red-600 font-medium">
+                                                                Requesting <b>{{ form.daysPaid }} paid days</b> but only <b>{{ selectedTypeBalance }} credits</b> are available for <b>{{ form.leaveType }}</b>.
+                                                                <span v-if="isAdminMode"> As an admin, you can bypass this, but it may cause negative balances.</span>
+                                                                <span v-else> This request may be rejected by HR.</span>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </transition>
                                             </div>
                                         </transition>
                                     </div>
@@ -1352,6 +1379,40 @@ watch(adminSearchId, (newVal) => {
             searchingSuggestions.value = false;
         }
     }, 300);
+});
+
+// Leave Balance Fetching Helper
+const getAvailableBalance = (typeString) => {
+    if (!displayUser.value) return null;
+    
+    // Map standard labels to DB fields
+    const ts = (typeString || '').toLowerCase();
+    
+    // Normalize user object depending on if it's the raw auth user or imported employee
+    const u = displayUser.value;
+    
+    // The exact matches based on default seeding
+    if (ts.includes('vacation') || ts === 'vl' || ts.includes('sick')) return u.vacation_leave || 0;
+    if (ts.includes('paternity') || ts === 'pl') return u.paternity_leave || 0;
+    if (ts.includes('solo') || ts === 'sp') return u.solo_parent_leave || 0;
+    if (ts.includes('bereavement')) return u.bereavement_leave || 0;
+    if (ts.includes('vawc')) return u.vawc_leave || 0;
+    
+    return null; // For 'Others' or unrecognized types
+};
+
+// Computed property to monitor balance warnings
+const selectedTypeBalance = computed(() => {
+    return getAvailableBalance(form.value.leaveType);
+});
+
+const insufficientBalanceWarning = computed(() => {
+    if (!form.value.isPaid || form.value.daysPaid <= 0 || !form.value.leaveType || form.value.leaveType === 'Others') return false;
+    
+    const bal = selectedTypeBalance.value;
+    if (bal === null) return false;
+    
+    return form.value.daysPaid > bal;
 });
 
 const submitForm = async () => {

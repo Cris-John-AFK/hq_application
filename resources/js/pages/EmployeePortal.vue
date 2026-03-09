@@ -190,9 +190,40 @@
                     </div>
                     <h2 class="text-sm font-black text-gray-800 uppercase tracking-tight">{{ employee.first_name }} {{ employee.last_name }}</h2>
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">{{ employee.position || 'Employee' }}</p>
-                    <div class="mt-3 px-3 py-1 bg-gray-50 rounded-lg border border-gray-100 w-full">
+                    
+                    <div class="mt-3 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100 w-full mb-1">
                         <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest block">ID Number</span>
                         <span class="text-xs font-black text-purple-600 block">{{ employee.employee_id }}</span>
+                    </div>
+
+                    <!-- Shift Info -->
+                    <div class="px-3 py-2 bg-teal-50/50 rounded-lg border border-teal-100 w-full mb-3 text-left">
+                        <span class="text-[9px] text-teal-600/70 font-bold uppercase tracking-widest block mb-0.5"><i class="pi pi-clock text-[8px] mr-0.5"></i> My Shift</span>
+                        <span class="text-xs font-black text-teal-700 block whitespace-nowrap overflow-hidden text-ellipsis">{{ employee.working_hours || 'Standard (8:30 AM)' }}</span>
+                    </div>
+                    
+                    <!-- Leave Balances Mini Grid -->
+                    <div class="w-full grid grid-cols-2 gap-2 mb-3">
+                        <div class="bg-purple-50 rounded-lg p-2 border border-purple-100/50 text-center">
+                            <span class="block text-[8px] uppercase tracking-widest font-bold text-purple-400">VL</span>
+                            <span class="block text-lg font-black text-purple-700">{{ employee.vacation_leave || 0 }}</span>
+                        </div>
+                        <div class="bg-blue-50 rounded-lg p-2 border border-blue-100/50 text-center">
+                            <span class="block text-[8px] uppercase tracking-widest font-bold text-blue-400">PL</span>
+                            <span class="block text-lg font-black text-blue-700">{{ employee.paternity_leave || 0 }}</span>
+                        </div>
+                        <div class="bg-emerald-50 rounded-lg p-2 border border-emerald-100/50 text-center">
+                            <span class="block text-[8px] uppercase tracking-widest font-bold text-emerald-400">Solo</span>
+                            <span class="block text-lg font-black text-emerald-700">{{ employee.solo_parent_leave || 0 }}</span>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-2 border border-gray-200/50 text-center">
+                            <span class="block text-[8px] uppercase tracking-widest font-bold text-gray-400">Bereav.</span>
+                            <span class="block text-lg font-black text-gray-700">{{ employee.bereavement_leave || 0 }}</span>
+                        </div>
+                        <div class="bg-rose-50 rounded-lg p-2 border border-rose-100/50 text-center col-span-2">
+                            <span class="block text-[8px] uppercase tracking-widest font-bold text-rose-400">VAWC</span>
+                            <span class="block text-lg font-black text-rose-700">{{ employee.vawc_leave || 0 }}</span>
+                        </div>
                     </div>
                 </div>
  

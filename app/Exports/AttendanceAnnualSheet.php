@@ -34,10 +34,10 @@ class AttendanceAnnualSheet implements FromCollection, WithTitle, WithHeadings, 
             [
                 'Month',
                 'Headcount',
-                'Total Present Days',
                 'Total Working Days',
+                'Total Person-Days Present',
                 'Attendance Rate (%)',
-                'Total Absent Days',
+                'Total Person-Days Absent',
                 'Absenteeism Rate (%)',
                 'Late Count',
                 'Tardiness Freq (%)',
@@ -53,7 +53,24 @@ class AttendanceAnnualSheet implements FromCollection, WithTitle, WithHeadings, 
         $service = new AttendanceReportService();
         $data = $service->getAnnualReport($this->year);
 
-        return collect($data);
+        $mappedData = collect($data)->map(function ($row) {
+            return [
+                'month' => $row['month'],
+                'headcount' => $row['headcount'],
+                'total_working_days' => $row['total_working_days'],
+                'total_present_days' => $row['total_present_days'],
+                'attendance_rate' => $row['attendance_rate'],
+                'total_absent_days' => $row['total_absent_days'],
+                'absenteeism_rate' => $row['absenteeism_rate'],
+                'employees_late' => $row['employees_late'],
+                'tardiness_frequency' => $row['tardiness_frequency'],
+                'employees_undertime' => $row['employees_undertime'],
+                'total_undertime_mins' => $row['total_undertime_mins'],
+                'undertime_frequency' => $row['undertime_frequency']
+            ];
+        });
+
+        return $mappedData;
     }
 
     public function styles(Worksheet $sheet)

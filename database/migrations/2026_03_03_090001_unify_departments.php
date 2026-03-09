@@ -11,6 +11,10 @@ return new class extends Migration {
      */
     public function up()
     {
+        if (!\Schema::hasTable('departments') || !\Schema::hasTable('employees')) {
+            return;
+        }
+
         // 1. Unify Maintenance and Engineering
         $this->merge('Maintenance and Engineering', [
             'Maintenance & Engineering',
@@ -43,7 +47,9 @@ return new class extends Migration {
         ]);
 
         // 5. Global sync of attendance records
-        AttendanceRecord::syncDepartments();
+        if (\Schema::hasTable('attendance_records')) {
+            AttendanceRecord::syncDepartments();
+        }
 
         // 6. Final cleanup of empty departments
         Department::cleanup();

@@ -33,10 +33,10 @@ class AttendanceYearlySummarySheet implements FromCollection, WithTitle, WithHea
             [''],
             [
                 'Month',
-                'Total Working Days',
                 'Total Employees',
-                'Total Present Days',
-                'Total Absent Days',
+                'Actual Working Days',
+                'Total Person-Days Present',
+                'Total Person-Days Absent',
                 'Total Tardiness (mins)',
                 'Total Undertime (mins)'
             ]
@@ -51,8 +51,8 @@ class AttendanceYearlySummarySheet implements FromCollection, WithTitle, WithHea
         $summaryData = collect($annualData)->map(function ($row) {
             return [
                 'month' => $row['month'],
-                'total_working_days' => $row['total_working_days'],
                 'headcount' => $row['headcount'],
+                'total_working_days' => $row['total_working_days'],
                 'total_present_days' => $row['total_present_days'],
                 'total_absent_days' => $row['total_absent_days'],
                 'total_tardiness_mins' => $row['employees_late'] * 2, // as per frontend logic

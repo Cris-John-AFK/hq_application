@@ -38,24 +38,39 @@ class AttendanceReportService
             // Distinct dates with attendance in this month (actual working days)
             $actualWorkingDays = $records->pluck('date')->unique()->count();
 
-            // Total possible days (everyone * actual days worked)
-            // Or just calculate against the amount of data we *actually* have
-            $totalPossibleDays = $totalCompanyEmployees * $actualWorkingDays;
+            // More realistic possible days based on actual records plus explicit absent records
+            $explicitAbsences = $records->where('status', 'Absent')->count();
 
             $presentDays = $records->filter(function ($r) {
                 return in_array($r->status, ['Present', 'Late']);
             })->count();
 
-            // Re-calculate absent days properly.
-            $explicitAbsences = $records->where('status', 'Absent')->count();
-            $inferredAbsences = $totalPossibleDays - $records->whereNotIn('status', ['Absent'])->count();
-            $absentDays = max($explicitAbsences, $inferredAbsences);
+            $undertimesCount = $records->whereIn('status', ['Half Day', 'Undertime'])->count();
 
-            $attendanceRate = $totalPossibleDays > 0 ? round(($presentDays / $totalPossibleDays) * 100, 2) : 0;
+            // Re-calculate absent days properly.
+            // If the user's data does not contain every employee every day, 
+            // relying on $totalCompanyEmployees * $actualWorkingDays gives a huge false number for "Absent"
+            // We use the recorded days + known absences to base our calculations on explicit data.
+            $recordedPersonDays = $records->count();
+            $totalPossibleDays = $recordedPersonDays; // Using actual records as base
+
+            // If you want to assume all employees should have worked $actualWorkingDays:
+            $expectedPersonDays = $totalCompanyEmployees * $actualWorkingDays;
+
+            // To fix the user issue ("6200+ working days"), we will use $expectedPersonDays as possible days, 
+            // but ONLY if it seems realistic. Actually, let's use the explicit records for accurate metrics if imports are partial.
+            // But usually "Total Working Days" means the distinct days.
+            // "Possible Person Days" = Total Employees * Total Working Days.
+            $totalPossibleDays = $expectedPersonDays;
+
+            $inferredAbsences = max(0, $totalPossibleDays - $recordedPersonDays);
+            $absentDays = $explicitAbsences + $inferredAbsences;
+
+            $attendanceRate = $totalPossibleDays > 0 ? round((($presentDays + $undertimesCount) / $totalPossibleDays) * 100, 2) : 0;
             $absenteeismRate = $totalPossibleDays > 0 ? round(($absentDays / $totalPossibleDays) * 100, 2) : 0;
 
             $latesCount = $records->filter(function ($r) {
-                return $this->isLate($r->time_in, $r->status);
+                return $this->isLate($r->time_in, $r->status, $r->employee_id_number);
             })->count();
 
             $undertimesCount = $records->whereIn('status', ['Half Day', 'Undertime'])->count();
@@ -64,7 +79,8 @@ class AttendanceReportService
                 'month' => $monthName,
                 'headcount' => $totalCompanyEmployees,
                 'total_present_days' => $presentDays,
-                'total_working_days' => $totalPossibleDays, // Based on actual logged active days
+                'total_working_days' => $actualWorkingDays, // Actual chronological days (e.g., 5 or 20)
+                'possible_person_days' => $totalPossibleDays, // Person-days for rate calculations
                 'attendance_rate' => $attendanceRate . '%',
                 'total_absent_days' => $absentDays,
                 'absenteeism_rate' => $absenteeismRate . '%',
@@ -102,9 +118,15 @@ class AttendanceReportService
                 ->unique()
                 ->count();
 
-            $totalPossibleDays = $empCount * $actualWorkingDays;
+            $recordedPersonDays = $records->count();
+            // Expected
+            $expectedPersonDays = $empCount * $actualWorkingDays;
+
+            // To fix inflated rates:
+            $totalPossibleDays = $expectedPersonDays;
 
             $actualHours = $records->sum('hours_worked');
+            // Assuming 8 hours scheduled for possible days
             $scheduledHours = $totalPossibleDays * 8;
 
             // Calculate regular vs overtime hours
@@ -125,7 +147,8 @@ class AttendanceReportService
             $data[] = [
                 'department' => $dept->name,
                 'total_employees' => $empCount,
-                'total_working_days' => $totalPossibleDays,
+                'total_working_days' => $actualWorkingDays, // Actual chronological days
+                'possible_person_days' => $totalPossibleDays,
                 'total_scheduled_hours' => $scheduledHours,
                 'total_actual_hours' => round($actualHours, 2),
                 'regular_actual_hours' => round($regularActualHours, 2),
@@ -139,7 +162,7 @@ class AttendanceReportService
         return $data;
     }
 
-    private function isLate($timeIn, $status)
+    public function isLate($timeIn, $status, $employeeIdNumber = null)
     {
         if ($status === 'Late')
             return true;
@@ -147,9 +170,37 @@ class AttendanceReportService
             return false;
 
         try {
-            // Assuming standard start time is 08:30 AM
             $time = \Carbon\Carbon::createFromFormat('h:i A', $timeIn);
+
+            // Try to find the exact schedule for this employee
+            if ($employeeIdNumber) {
+                // Since employee_id in AttendanceRecord matches employee_id in Employee
+                $employee = Employee::where('employee_id', $employeeIdNumber)->first();
+                if ($employee && $employee->working_hours) {
+                    // Extract the "7:00 AM" side of "7:00 AM - 3:00 PM"
+                    $parts = explode('-', $employee->working_hours);
+                    if (count($parts) > 0) {
+                        $startTimeStr = trim($parts[0]);
+                        try {
+                            // Trim and ensure format like "7:00 AM" maps to "g:i A", string could be "07:00 AM" ("h:i A")
+                            // We use parse to be more flexible against variations like 7:00AM vs 07:00 AM
+                            $cutoff = \Carbon\Carbon::parse($startTimeStr);
+
+                            // Align date part just for comparison ease (same day)
+                            $cutoff->setDate($time->year, $time->month, $time->day);
+
+                            // Lateness grace period: let's stick to exact cutoff or 1 min grace to be safe
+                            return $time->gt($cutoff);
+                        } catch (\Exception $e) {
+                            // Fallthrough on format error
+                        }
+                    }
+                }
+            }
+
+            // Fallback: Default schedule cutoff (08:30 AM)
             $cutoff = \Carbon\Carbon::createFromFormat('H:i', '08:30');
+            $cutoff->setDate($time->year, $time->month, $time->day);
             return $time->gt($cutoff);
         } catch (\Exception $e) {
             return false;

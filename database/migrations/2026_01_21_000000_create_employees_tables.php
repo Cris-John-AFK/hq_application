@@ -24,7 +24,16 @@ return new class extends Migration {
             $table->date('date_hired');
             $table->string('email')->nullable();
             $table->string('avatar')->nullable();
-            $table->decimal('leave_credits', 8, 2)->default(0);
+
+            // Unified Leave Columns
+            $table->decimal('vacation_leave', 8, 2)->default(0);
+            $table->decimal('sick_leave', 8, 2)->default(0);
+            $table->decimal('paternity_leave', 8, 2)->default(0);
+            $table->decimal('solo_parent_leave', 8, 2)->default(0);
+            $table->decimal('bereavement_leave', 8, 2)->default(0);
+            $table->decimal('vawc_leave', 8, 2)->default(0);
+
+            $table->string('working_hours')->nullable();
 
             // Archiving
             $table->boolean('is_archived')->default(false)->index();

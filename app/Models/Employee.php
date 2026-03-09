@@ -21,7 +21,13 @@ class Employee extends Model
         'date_hired',
         'email',
         'avatar',
-        'leave_credits',
+        'vacation_leave',
+        'sick_leave',
+        'paternity_leave',
+        'solo_parent_leave',
+        'bereavement_leave',
+        'vawc_leave',
+        'working_hours',
         'is_archived',
         'archived_at'
     ];
