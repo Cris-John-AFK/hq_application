@@ -61,6 +61,7 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
         Route::post('/api/employees/{id}/archive', [\App\Http\Controllers\EmployeeController::class, 'archive']);
         Route::post('/api/employees/{id}/unarchive', [\App\Http\Controllers\EmployeeController::class, 'unarchive']);
         Route::post('/api/employees/{id}/adjust-leave', [\App\Http\Controllers\EmployeeController::class, 'adjustLeave']);
+        Route::post('/api/employees/bulk-update-leaves', [\App\Http\Controllers\EmployeeController::class, 'bulkUpdateLeaves']);
 
         Route::post('/api/departments', [\App\Http\Controllers\DepartmentController::class, 'store']);
 

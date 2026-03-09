@@ -554,6 +554,7 @@ const menuItems = computed(() => {
 
     items.push(
         { label: 'Manage Leaves', icon: 'pi-calendar-times', href: '/manage-leaves' },
+        { label: 'Leave Setup', icon: 'pi-cog', href: '/leave-credits' },
         { label: 'Assets', icon: 'pi-box', href: '/inventory' },
         { label: 'Activity Logs', icon: 'pi-list', href: '/activity-logs' },
         { label: 'Archive Registry', icon: 'pi-folder', href: '/archive-leaves' },

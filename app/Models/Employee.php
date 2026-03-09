@@ -27,6 +27,9 @@ class Employee extends Model
         'solo_parent_leave',
         'bereavement_leave',
         'vawc_leave',
+        'maternity_leave',
+        'magna_carta_leave',
+        'emergency_leave',
         'working_hours',
         'is_archived',
         'archived_at'

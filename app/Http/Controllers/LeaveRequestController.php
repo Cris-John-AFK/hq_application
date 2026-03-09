@@ -285,6 +285,36 @@ class LeaveRequestController extends Controller
         // Audit Log
         \App\Utils\AuditLogger::log('Leaves', 'Created', "Submitted a new {$leaveRequest->leave_type} request for {$leaveRequest->days_taken} day(s).", null, $leaveRequest->toArray());
 
+        // Deduct credits for admin-filed Approved requests immediately
+        if ($status === 'Approved' && $leaveRequest->is_paid) {
+            $deductSubject = $leaveRequest->user ?? $leaveRequest->employee;
+            if ($deductSubject) {
+                $creditField = 'vacation_leave';
+                $type = strtolower($leaveRequest->leave_type);
+                if (str_contains($type, 'paternity'))
+                    $creditField = 'paternity_leave';
+                else if (str_contains($type, 'solo'))
+                    $creditField = 'solo_parent_leave';
+                else if (str_contains($type, 'bereavement'))
+                    $creditField = 'bereavement_leave';
+                else if (str_contains($type, 'vawc') || str_contains($type, 'vaws'))
+                    $creditField = 'vawc_leave';
+                else if (str_contains($type, 'maternity'))
+                    $creditField = 'maternity_leave';
+                else if (str_contains($type, 'magna') || str_contains($type, 'carta'))
+                    $creditField = 'magna_carta_leave';
+                else if (str_contains($type, 'emergency'))
+                    $creditField = 'emergency_leave';
+                else if (str_contains($type, 'sick') || $type === 'sl')
+                    $creditField = 'sick_leave';
+                else if (str_contains($type, 'vacation') || $type === 'vl')
+                    $creditField = 'vacation_leave';
+
+                $deduction = (float) ($leaveRequest->days_paid ?? $leaveRequest->days_taken);
+                $deductSubject->decrement($creditField, $deduction);
+            }
+        }
+
         // Return the fresh model with DB defaults (like status = 'Pending')
         return response()->json($leaveRequest->fresh(), 201);
     }
@@ -455,20 +485,30 @@ class LeaveRequestController extends Controller
                         $creditField = 'bereavement_leave';
                     else if (str_contains($type, 'vawc') || str_contains($type, 'vaws'))
                         $creditField = 'vawc_leave';
-                    else if (str_contains($type, 'vacation') || str_contains($type, 'sick') || $type === 'vl' || $type === 'sl')
+                    else if (str_contains($type, 'maternity'))
+                        $creditField = 'maternity_leave';
+                    else if (str_contains($type, 'magna') || str_contains($type, 'carta'))
+                        $creditField = 'magna_carta_leave';
+                    else if (str_contains($type, 'emergency'))
+                        $creditField = 'emergency_leave';
+                    else if (str_contains($type, 'sick') || $type === 'sl')
+                        $creditField = 'sick_leave';
+                    else if (str_contains($type, 'vacation') || $type === 'vl')
                         $creditField = 'vacation_leave';
+
+                    $deductAmount = (float) ($leaveRequest->days_paid ?? $leaveRequest->days_taken);
 
                     if ($newStatus === 'Approved' && $oldStatus !== 'Approved') {
                         if ($newIsPaid)
-                            $subject->decrement($creditField, (float) $days);
+                            $subject->decrement($creditField, $deductAmount);
                     } elseif ($newStatus !== 'Approved' && $oldStatus === 'Approved') {
                         if ($oldIsPaid)
-                            $subject->increment($creditField, (float) $days);
+                            $subject->increment($creditField, (float) ($leaveRequest->days_paid ?? $leaveRequest->days_taken));
                     } elseif ($newStatus === 'Approved' && $oldStatus === 'Approved') {
                         if (!$oldIsPaid && $newIsPaid)
-                            $subject->decrement($creditField, (float) $days);
+                            $subject->decrement($creditField, $deductAmount);
                         elseif ($oldIsPaid && !$newIsPaid)
-                            $subject->increment($creditField, (float) $days);
+                            $subject->increment($creditField, (float) ($leaveRequest->days_paid ?? $leaveRequest->days_taken));
                     }
                 }
 

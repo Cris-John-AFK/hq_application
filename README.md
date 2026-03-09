@@ -87,16 +87,71 @@ git clone https://github.com/Cris-John-AFK/hq_application.git
 cd hq_application
 composer install && npm install
 cp .env.example .env && php artisan key:generate
-npm run build
 ```
 
-### 3. Database & Deployment
+### 3. Database Setup
 ```bash
 php artisan migrate --seed
-php artisan serve
 ```
 
 ---
+
+## 💻 Running the Development Server
+
+### Option A — Local Only (your machine only)
+Open **two separate terminals** and run:
+
+```bash
+# Terminal 1 – Laravel API backend
+php artisan serve
+
+# Terminal 2 – Vite frontend (HMR)
+npm run dev
+```
+
+Access via: `http://localhost:5173`
+
+---
+
+### Option B — Local Network Access (share with other PCs on the same Wi-Fi/LAN) ⭐
+
+> Use this when you want other computers or phones on the same network to open the app.
+
+**Step 1 — Find your machine's local IP address**
+```powershell
+# Run in PowerShell or CMD
+ipconfig
+# Look for: IPv4 Address → e.g. 10.10.10.8
+```
+
+**Step 2 — Start both servers bound to all interfaces**
+```bash
+# Terminal 1 – Laravel backend (bound to all network interfaces)
+php artisan serve --host=0.0.0.0 --port=8000
+
+# Terminal 2 – Vite frontend (exposed to network)
+npm run dev -- --host
+```
+
+**Step 3 — Access from other devices**
+
+| Device | URL to open |
+| :--- | :--- |
+| Your machine | `http://localhost:5173` |
+| Other PC / Phone on same Wi-Fi | `http://10.10.10.8:5173` *(replace with your actual IP)* |
+
+> [!IMPORTANT]
+> **Firewall:** Windows Firewall may block incoming connections. If other devices can't connect, run this in an **Administrator PowerShell** to open the ports:
+> ```powershell
+> netsh advfirewall firewall add rule name="HQ-App Vite" dir=in action=allow protocol=TCP localport=5173
+> netsh advfirewall firewall add rule name="HQ-App Laravel" dir=in action=allow protocol=TCP localport=8000
+> ```
+
+> [!NOTE]
+> **How it works internally:** Vite (`npm run dev -- --host`) acts as the UI server and automatically proxies all `/api/*` requests to Laravel on port 8000. Remote devices only need to open the Vite port (5173). Laravel on port 8000 handles all API calls transparently in the background.
+
+---
+
 ## 📖 Operational Procedures & Calculation Logic
 
 This section defines the strict mathematical rules and processing workflows used by the HatQ HQ-App to ensure "1:1 Data Accuracy" vs. actual employee records.

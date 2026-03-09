@@ -40,6 +40,9 @@
                                         <span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{{ formatDate(lastLeave.date_filed) }}</span>
                                     </div>
                                     <h4 class="text-sm font-black text-slate-800 uppercase tracking-tight">{{ lastLeave.leave_type }} <span class="text-slate-400 font-bold mx-1">—</span> {{ formatDate(lastLeave.from_date) }}</h4>
+                                    <p v-if="lastLeave.hr_remarks || lastLeave.dept_head_remarks" class="text-[9px] font-bold text-rose-400 mt-1 max-w-[300px] truncate italic" :title="lastLeave.hr_remarks || lastLeave.dept_head_remarks">
+                                        Note: "{{ lastLeave.hr_remarks || lastLeave.dept_head_remarks }}"
+                                    </p>
                                 </div>
                             </div>
                             <div class="flex flex-col items-end gap-1">
@@ -88,7 +91,7 @@
                                         <div class="absolute inset-0 bg-emerald-500 origin-left animate-progress-shrink"></div>
                                     </div>
 
-                                    <button @click="successMsg = ''" class="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[24px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/30 transition-all hover:scale-105 active:scale-95 text-xl cursor-pointer">
+                                    <button @click="handleRefresh" class="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[24px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/30 transition-all hover:scale-105 active:scale-95 text-xl cursor-pointer">
                                         Continue
                                     </button>
                                 </div>
@@ -141,6 +144,24 @@
                                     </div>
                                     <h4 class="text-base font-bold text-gray-800">{{ leave.leave_type }}</h4>
                                     <p class="text-sm text-gray-600 truncate max-w-sm">{{ leave.reason }}</p>
+
+                                    <!-- Reviewer Remarks / Justification -->
+                                    <div v-if="leave.hr_remarks || leave.admin_remarks || leave.dept_head_remarks" class="mt-4 overflow-hidden rounded-xl border border-dashed border-gray-200 bg-gray-50/50">
+                                        <div class="px-3 py-1.5 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
+                                            <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                                                <i class="pi pi-comments"></i> 
+                                                Reviewer Justification
+                                            </span>
+                                            <span v-if="leave.hr_approver || leave.dept_head" class="text-[8px] font-bold text-gray-300 uppercase tracking-tighter">
+                                                Processed by {{ leave.hr_approver?.name || leave.dept_head?.name }}
+                                            </span>
+                                        </div>
+                                        <div class="px-3 py-2.5">
+                                            <p class="text-xs font-bold text-gray-600 italic leading-relaxed">
+                                                "{{ leave.hr_remarks || leave.admin_remarks || leave.dept_head_remarks }}"
+                                            </p>
+                                        </div>
+                                    </div>
                                     
                                     <p v-if="leave.status === 'Pending'" class="mt-3 text-[10px] font-black uppercase tracking-widest text-[#673ab7] flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
                                         <i class="pi pi-pencil"></i> Click anywhere to edit this form
@@ -203,10 +224,14 @@
                     </div>
                     
                     <!-- Leave Balances Mini Grid -->
-                    <div class="w-full grid grid-cols-2 gap-2 mb-3">
+                    <div class="w-full grid grid-cols-3 gap-1.5 mb-3">
                         <div class="bg-purple-50 rounded-lg p-2 border border-purple-100/50 text-center">
                             <span class="block text-[8px] uppercase tracking-widest font-bold text-purple-400">VL</span>
                             <span class="block text-lg font-black text-purple-700">{{ employee.vacation_leave || 0 }}</span>
+                        </div>
+                        <div class="bg-pink-50 rounded-lg p-2 border border-pink-100/50 text-center">
+                            <span class="block text-[8px] uppercase tracking-widest font-bold text-pink-400">SL</span>
+                            <span class="block text-lg font-black text-pink-700">{{ employee.sick_leave || 0 }}</span>
                         </div>
                         <div class="bg-blue-50 rounded-lg p-2 border border-blue-100/50 text-center">
                             <span class="block text-[8px] uppercase tracking-widest font-bold text-blue-400">PL</span>
@@ -220,9 +245,21 @@
                             <span class="block text-[8px] uppercase tracking-widest font-bold text-gray-400">Bereav.</span>
                             <span class="block text-lg font-black text-gray-700">{{ employee.bereavement_leave || 0 }}</span>
                         </div>
-                        <div class="bg-rose-50 rounded-lg p-2 border border-rose-100/50 text-center col-span-2">
+                        <div class="bg-rose-50 rounded-lg p-2 border border-rose-100/50 text-center">
                             <span class="block text-[8px] uppercase tracking-widest font-bold text-rose-400">VAWC</span>
                             <span class="block text-lg font-black text-rose-700">{{ employee.vawc_leave || 0 }}</span>
+                        </div>
+                        <div class="bg-amber-50 rounded-lg p-2 border border-amber-100/50 text-center">
+                            <span class="block text-[8px] uppercase tracking-widest font-bold text-amber-400">Mat.</span>
+                            <span class="block text-lg font-black text-amber-700">{{ employee.maternity_leave || 0 }}</span>
+                        </div>
+                        <div class="bg-indigo-50 rounded-lg p-2 border border-indigo-100/50 text-center">
+                            <span class="block text-[8px] uppercase tracking-widest font-bold text-indigo-400">MC.</span>
+                            <span class="block text-lg font-black text-indigo-700">{{ employee.magna_carta_leave || 0 }}</span>
+                        </div>
+                        <div class="bg-orange-50 rounded-lg p-2 border border-orange-100/50 text-center">
+                            <span class="block text-[8px] uppercase tracking-widest font-bold text-orange-400">Emg.</span>
+                            <span class="block text-lg font-black text-orange-700">{{ employee.emergency_leave || 0 }}</span>
                         </div>
                     </div>
                 </div>
@@ -335,7 +372,7 @@ const handleScrollEffect = () => {
     }, 150);
 };
 
-onMounted(async () => {
+const fetchPortalData = async () => {
     const activeEmp = localStorage.getItem('hq_employee_portal_id');
     const bdCheck = localStorage.getItem('hq_employee_portal_bd');
     
@@ -347,7 +384,6 @@ onMounted(async () => {
     birthdateCred.value = bdCheck;
 
     try {
-        // Re-verify and fetch history
         const { data } = await axios.post('/api/employee-portal/login', {
             employee_id: activeEmp,
             birthdate: bdCheck
@@ -355,18 +391,22 @@ onMounted(async () => {
 
         employee.value = data.employee;
         leaveHistory.value = data.leave_history || [];
-        
-        // Start session countdown
+        return true;
+    } catch (e) {
+        logout();
+        return false;
+    }
+};
+
+onMounted(async () => {
+    const success = await fetchPortalData();
+    if (success) {
         startCountdown();
-        
-        // Setup activity listeners
         document.addEventListener('mousemove', resetTimer);
         document.addEventListener('keydown', resetTimer);
         document.addEventListener('click', resetTimer);
         document.addEventListener('scroll', resetTimer);
         window.addEventListener('scroll', handleScrollEffect, { passive: true });
-    } catch (e) {
-        logout(); // Kick out if tampering
     }
 });
 
@@ -407,6 +447,10 @@ const logout = () => {
     localStorage.removeItem('hq_employee_portal_id');
     localStorage.removeItem('hq_employee_portal_bd');
     window.location.href = '/login';
+};
+
+const handleRefresh = () => {
+    window.location.reload();
 };
 
 const formatDate = (dateStr) => {
@@ -455,7 +499,8 @@ const handleFormSubmit = async (payload, resolve, reject) => {
         const { data } = await axios.post('/api/employee-portal/submit-leave', formData);
         successMsg.value = 'Your leave request has been sent to the HR successfully.';
         
-        leaveHistory.value.unshift(data.leave); // Update history live
+        // Full background refresh to ensure credits and history are 100% in sync
+        await fetchPortalData();
         
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
@@ -499,11 +544,8 @@ const handleFormUpdate = async (payload, resolve, reject) => {
         const { data } = await axios.post(`/api/employee-portal/update-leave/${editData.value.id}`, formData);
         successMsg.value = 'Your leave request has been successfully updated.';
         
-        // Update history live
-        const idx = leaveHistory.value.findIndex(l => l.id === editData.value.id);
-        if (idx !== -1) {
-            leaveHistory.value[idx] = data.leave;
-        }
+        // Full background refresh
+        await fetchPortalData();
         
         editData.value = null;
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -533,7 +575,7 @@ const confirmArchive = async () => {
             employee_id: employee.value?.employee_id,
             birthdate: birthdateCred.value
         });
-        leaveHistory.value = leaveHistory.value.filter(l => l.id !== archiveTarget.value.id);
+        await fetchPortalData();
         showArchiveModal.value = false;
         archiveTarget.value = null;
     } catch (e) {

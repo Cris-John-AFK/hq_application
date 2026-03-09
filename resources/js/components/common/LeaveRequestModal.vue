@@ -31,6 +31,29 @@
                 </div>
             </transition>
             
+            <!-- Maintenance Overlay for Employees -->
+            <transition name="fade">
+                <div v-if="isDesignActiveOnServer && !isAdminMode" class="absolute inset-0 z-[150] bg-white/80 backdrop-blur-md flex items-center justify-center p-8 text-center">
+                    <div class="max-w-md space-y-6 animate-in zoom-in duration-300">
+                        <div class="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center mx-auto shadow-inner relative">
+                            <i class="pi pi-cog text-4xl text-purple-600 animate-spin-slow"></i>
+                            <div class="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center border border-purple-100">
+                                <i class="pi pi-pencil text-[#673ab7] text-xs"></i>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <h3 class="text-2xl font-black text-gray-800 uppercase tracking-tighter">Form Update in Progress</h3>
+                            <p class="text-sm text-gray-500 font-medium">HR is currently refining the leave request form layout to serve you better. We'll be back in just a few moments!</p>
+                        </div>
+                        <div class="flex items-center justify-center gap-2">
+                            <div class="w-1.5 h-1.5 bg-purple-600 rounded-full animate-bounce"></div>
+                            <div class="w-1.5 h-1.5 bg-purple-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                            <div class="w-1.5 h-1.5 bg-purple-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+            
             <!-- Scrollable Content -->
             <div class="overflow-y-auto p-6 space-y-4">
                 <!-- Design Mode Welcome -->
@@ -47,12 +70,10 @@
                 </div>
                 <!-- Header Section -->
                 <div v-if="getSection('header').visible || isDesignMode" 
-                    :class="['bg-white p-6 rounded-lg border-2 shadow-sm relative transition-all', 
-                        isDesignMode ? 'hover:border-blue-400 cursor-pointer' : 'border-gray-300',
-                        isEditing('header') ? 'border-blue-600 ring-8 ring-blue-500/5 z-20' : ''
-                    ]"
                     @click="isDesignMode && !isEditing('header') ? startEditingSection(getSection('header')) : null"
                 >
+                    <div v-if="isDesignMode && !isEditing('header')" class="absolute inset-0 bg-blue-500/5 hover:bg-blue-500/10 cursor-pointer z-10 transition-colors rounded-lg"></div>
+
                     <div v-if="isEditing('header')" class="absolute top-0 left-0 w-full h-1.5 bg-blue-600 rounded-t"></div>
                     
                     <template v-if="isEditing('header')">
@@ -85,7 +106,12 @@
                             <div>
                                 <div class="flex items-center gap-2">
                                     <h2 class="text-2xl font-bold text-gray-800">{{ getSection('header').title }}</h2>
-                                    <div v-if="isDesignMode" class="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse"><i class="pi pi-pencil text-[10px]"></i></div>
+                                    <div v-if="isDesignMode" 
+                                        class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse shadow-lg cursor-pointer hover:scale-110 active:scale-95 transition-all z-20"
+                                        @click.stop="startEditingSection(getSection('header'))"
+                                    >
+                                        <i class="pi pi-pencil text-xs"></i>
+                                    </div>
                                 </div>
                                 <p class="text-sm text-gray-600 mt-1">{{ getSection('header').description }}</p>
                             </div>
@@ -192,13 +218,16 @@
                 </div>
 
                 <!-- 1. Attendance Category (ADMIN ONLY) -->
-                <div v-if="isAdminMode && (getSection('attendance_category').visible || isDesignMode)" 
+                <div v-if="isAdminMode" 
                     :class="['bg-white p-6 rounded-lg border-2 shadow-sm relative overflow-hidden transition-all',
+                         isAdminMode && (getSection('attendance_category').visible || isDesignMode) ? 'block' : 'hidden',
                          isDesignMode ? 'hover:border-blue-400 cursor-pointer' : 'border-purple-100',
                          isEditing('attendance_category') ? 'border-blue-600 ring-8 ring-blue-500/5 z-20' : ''
                     ]"
                     @click="isDesignMode && !isEditing('attendance_category') ? startEditingSection(getSection('attendance_category')) : null"
                 >
+                    <div v-if="isDesignMode && !isEditing('attendance_category')" class="absolute inset-0 bg-blue-500/5 hover:bg-blue-500/10 cursor-pointer z-10 transition-colors"></div>
+
                     <div v-if="isEditing('attendance_category')" class="absolute top-0 left-0 w-full h-1.5 bg-blue-600 z-10"></div>
                     <div class="absolute top-0 right-0 bg-purple-100 text-purple-700 text-[10px] font-black px-3 py-1 rounded-bl-lg uppercase tracking-wider">Disciplinary Metadata</div>
                     
@@ -250,7 +279,12 @@
                                 <span class="text-base font-bold text-gray-800">{{ getSection('attendance_category').title }}</span>
                                 <p class="text-xs text-gray-500">{{ getSection('attendance_category').description }}</p>
                             </div>
-                            <div v-if="isDesignMode" class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse shadow-lg"><i class="pi pi-pencil text-[10px]"></i></div>
+                            <div v-if="isDesignMode" 
+                                class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse shadow-lg cursor-pointer hover:scale-110 active:scale-95 transition-all z-20"
+                                @click.stop="startEditingSection(getSection('attendance_category'))"
+                            >
+                                <i class="pi pi-pencil text-xs"></i>
+                            </div>
                         </div>
                     </template>
                     
@@ -332,7 +366,12 @@
                                 <span class="text-[#d93025] ml-1">*</span>
                                 <p class="text-xs text-gray-500 mt-0.5">{{ getSection('request_type').description }}</p>
                             </div>
-                            <div v-if="isDesignMode" class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse shadow-lg"><i class="pi pi-pencil text-[10px]"></i></div>
+                            <div v-if="isDesignMode" 
+                                class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse shadow-lg cursor-pointer hover:scale-110 active:scale-95 transition-all z-20"
+                                @click.stop="startEditingSection(getSection('request_type'))"
+                            >
+                                <i class="pi pi-pencil text-xs"></i>
+                            </div>
                         </div>
                     </template>
 
@@ -407,7 +446,12 @@
                                 <span class="text-[#d93025] ml-1">*</span>
                                 <p class="text-xs text-gray-500 mt-0.5">{{ getSection('leave_type').description }}</p>
                             </div>
-                            <div v-if="isDesignMode" class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse shadow-lg"><i class="pi pi-pencil text-[10px]"></i></div>
+                            <div v-if="isDesignMode" 
+                                class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse shadow-lg cursor-pointer hover:scale-110 active:scale-95 transition-all z-20"
+                                @click.stop="startEditingSection(getSection('leave_type'))"
+                            >
+                                <i class="pi pi-pencil text-xs"></i>
+                            </div>
                         </div>
                     </template>
 
@@ -504,7 +548,12 @@
                                 <div class="text-base font-medium text-gray-800">{{ getSection('details').title }}</div>
                                 <p class="text-xs text-gray-500 mt-0.5">{{ getSection('details').description }}</p>
                             </div>
-                            <div v-if="isDesignMode" class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse"><i class="pi pi-pencil text-[10px]"></i></div>
+                            <div v-if="isDesignMode" 
+                                class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse shadow-lg cursor-pointer hover:scale-110 active:scale-95 transition-all z-20"
+                                @click.stop="startEditingSection(getSection('details'))"
+                            >
+                                <i class="pi pi-pencil text-xs"></i>
+                            </div>
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -624,7 +673,7 @@
                                                     <div class="flex-1">
                                                         <label class="block text-[9px] font-black text-teal-600 uppercase mb-1">Total Days to be Paid</label>
                                                         <div class="flex items-center gap-2">
-                                                            <input type="number" step="0.5" v-model="form.daysPaid" class="w-full px-3 py-2 bg-white border border-teal-200 rounded-lg text-sm font-black text-teal-900 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all">
+                                                            <input type="number" step="0.5" v-model="form.daysPaid" @input="isDaysPaidManuallySet = true" class="w-full px-3 py-2 bg-white border border-teal-200 rounded-lg text-sm font-black text-teal-900 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all">
                                                             <span class="text-xs font-bold text-teal-600">DAYS</span>
                                                         </div>
                                                     </div>
@@ -736,7 +785,12 @@
                                 <span class="text-base font-medium text-gray-800">{{ getSection('attachment').title }}</span>
                                 <p class="text-xs text-gray-500 mt-0.5">{{ getSection('attachment').description }}</p>
                             </div>
-                            <div v-if="isDesignMode" class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse"><i class="pi pi-pencil text-[10px]"></i></div>
+                            <div v-if="isDesignMode" 
+                                class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse shadow-lg cursor-pointer hover:scale-110 active:scale-95 transition-all z-20"
+                                @click.stop="startEditingSection(getSection('attachment'))"
+                            >
+                                <i class="pi pi-pencil text-xs"></i>
+                            </div>
                         </div>
                         <div class="flex items-center gap-4">
                             <label class="cursor-pointer flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-200 transition-all group">
@@ -795,7 +849,12 @@
                                 <span class="text-[#d93025] ml-1">*</span>
                                 <p class="text-xs text-gray-500 mt-0.5">{{ getSection('reason').description }}</p>
                             </div>
-                            <div v-if="isDesignMode" class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse"><i class="pi pi-pencil text-[10px]"></i></div>
+                            <div v-if="isDesignMode" 
+                                class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse shadow-lg cursor-pointer hover:scale-110 active:scale-95 transition-all z-20"
+                                @click.stop="startEditingSection(getSection('reason'))"
+                            >
+                                <i class="pi pi-pencil text-xs"></i>
+                            </div>
                         </div>
                         <textarea 
                             v-model="form.reason" 
@@ -887,7 +946,12 @@
                                     <h3 class="text-base font-medium text-gray-800">{{ section.title }}</h3>
                                     <p class="text-xs text-gray-500 mt-0.5">{{ section.description }}</p>
                                 </div>
-                                <div v-if="isDesignMode" class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse"><i class="pi pi-pencil text-[10px]"></i></div>
+                                <div v-if="isDesignMode" 
+                                    class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center animate-pulse shadow-lg cursor-pointer hover:scale-110 active:scale-95 transition-all z-20"
+                                    @click.stop="startEditingSection(section)"
+                                >
+                                    <i class="pi pi-pencil text-xs"></i>
+                                </div>
                             </div>
 
                             <div v-if="isAdminMode" class="mt-2 text-gray-400 border-2 border-dashed border-gray-100 p-2 text-center text-[10px] font-black uppercase tracking-widest mb-4">
@@ -977,6 +1041,31 @@ const showErrors = ref(false);
 const formError = ref('');
 const loading = ref(false);
 const isDesignMode = ref(false);
+const isDesignActiveOnServer = ref(false);
+let pollingInterval = null;
+
+const checkDesignStatus = async () => {
+    try {
+        const res = await axios.get('/api/settings/form_design_active');
+        const isActive = res.data === true || res.data === 'true';
+        
+        // If it was active and now it's NOT (admin finished), but we are still in portal mode
+        // that means the admin just saved/applied changes. Force Refresh for the employee.
+        if (isDesignActiveOnServer.value === true && isActive === false && !props.isAdminMode) {
+            window.location.reload();
+        }
+        
+        isDesignActiveOnServer.value = isActive;
+    } catch (e) {
+        // Quiet fail
+    }
+};
+
+watch(isDesignMode, async (val) => {
+    if (props.isAdminMode) {
+        await settingsStore.updateSetting('form_design_active', val);
+    }
+});
 
 const newOptionValue = ref('');
 const newOptionLabel = ref('');
@@ -1043,6 +1132,7 @@ const form = ref({
 });
 
 const attachmentName = ref('');
+const isDaysPaidManuallySet = ref(false);
 const fileInput = ref(null);
 
 // Get today's date in YYYY-MM-DD format for min attribute
@@ -1054,6 +1144,17 @@ const today = computed(() => {
 onMounted(() => {
     if (!props.isPortalMode && !user.value) authStore.fetchUser();
     settingsStore.fetchSettings();
+
+    // Start polling design status
+    checkDesignStatus();
+    pollingInterval = setInterval(checkDesignStatus, 5000);
+});
+
+import { onUnmounted } from 'vue';
+onUnmounted(() => {
+    if (pollingInterval) clearInterval(pollingInterval);
+    // If admin leaves while in design mode, we don't automatically clear it to avoid flicker
+    // but the next admin entering will toggle it.
 });
 
 const addOption = (targetKey) => {
@@ -1095,7 +1196,7 @@ const saveSettings = async (targetKey) => {
 
 const isEditing = (id) => isDesignMode.value && editingSectionId.value === id;
 
-const getSection = (id) => settingsStore.formSections.find(s => s.id === id) || { visible: true, title: '', description: '' };
+const getSection = (id) => settingsStore.formSections.find(s => s.id === id) || { id: id, visible: true, title: id.replace(/_/g, ' '), description: '' };
 
 const toggleSectionVisibility = async (id) => {
     const sections = [...settingsStore.formSections];
@@ -1154,9 +1255,15 @@ const saveSectionChanges = async () => {
     const idx = sections.findIndex(s => s.id === editingSectionId.value);
     if (idx !== -1) {
         sections[idx] = { ...sections[idx], ...sectionForm.value };
-        await settingsStore.updateSetting('leave_form_sections', sections);
-        editingSectionId.value = null;
+    } else if (editingSectionId.value) {
+        sections.push({
+            id: editingSectionId.value,
+            type: 'core',
+            ...sectionForm.value
+        });
     }
+    await settingsStore.updateSetting('leave_form_sections', sections);
+    editingSectionId.value = null;
 };
 
 const setError = (msg) => {
@@ -1246,10 +1353,12 @@ const resetForm = () => {
     searchError.value = '';
     suggestions.value = [];
     showSuggestions.value = false;
+    isDaysPaidManuallySet.value = false;
 };
 
 const closeModal = () => {
     emit('update:modelValue', false);
+    if (isDesignMode.value) isDesignMode.value = false;
     resetForm();
 };
 
@@ -1274,9 +1383,10 @@ const initFormFromProps = () => {
                 reason: data.reason,
                 attachment: null,
                 isPaid: !!data.is_paid,
-                daysPaid: data.days_paid || 0,
+                daysPaid: data.days_paid !== null && data.days_paid !== undefined ? data.days_paid : data.days_taken,
                 additionalDetails: data.additional_details || {}
             };
+            isDaysPaidManuallySet.value = true; // Mark as manual to preserve loaded value from watcher sync
             // Populate Time Parts
             parseTimeToParts(form.value.startTime, 'start');
             parseTimeToParts(form.value.endTime, 'end');
@@ -1392,11 +1502,15 @@ const getAvailableBalance = (typeString) => {
     const u = displayUser.value;
     
     // The exact matches based on default seeding
-    if (ts.includes('vacation') || ts === 'vl' || ts.includes('sick')) return u.vacation_leave || 0;
+    if (ts.includes('vacation') || ts === 'vl') return u.vacation_leave || 0;
+    if (ts.includes('sick') || ts === 'sl') return u.sick_leave || 0;
     if (ts.includes('paternity') || ts === 'pl') return u.paternity_leave || 0;
     if (ts.includes('solo') || ts === 'sp') return u.solo_parent_leave || 0;
     if (ts.includes('bereavement')) return u.bereavement_leave || 0;
     if (ts.includes('vawc')) return u.vawc_leave || 0;
+    if (ts.includes('maternity')) return u.maternity_leave || 0;
+    if (ts.includes('magna')) return u.magna_carta_leave || 0;
+    if (ts.includes('emergency')) return u.emergency_leave || 0;
     
     return null; // For 'Others' or unrecognized types
 };
@@ -1532,7 +1646,17 @@ watch([() => form.value.fromDate, () => form.value.toDate, () => form.value.requ
             form.value.numberOfHours = diffDays * 8; // Default to 8 hrs per day for standard leave
         }
 
-        if (form.value.isPaid) form.value.daysPaid = form.value.numberOfDays;
+        // Only auto-sync if the user hasn't manually overridden it
+        if (form.value.isPaid && !isDaysPaidManuallySet.value) {
+            form.value.daysPaid = form.value.numberOfDays;
+        }
+    }
+});
+
+// Watch isPaid toggle
+watch(() => form.value.isPaid, (newVal) => {
+    if (newVal && !isDaysPaidManuallySet.value) {
+        form.value.daysPaid = form.value.numberOfDays;
     }
 });
 

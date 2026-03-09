@@ -58,7 +58,8 @@ class EmployeePortalController extends Controller
         }
 
         // Get leave history excluding archived
-        $leaveHistory = LeaveRequest::where('employee_id', $employee->id)
+        $leaveHistory = LeaveRequest::with(['deptHead', 'hrApprover'])
+            ->where('employee_id', $employee->id)
             ->where('is_archived', false)
             ->latest('created_at')
             ->get();
@@ -87,6 +88,8 @@ class EmployeePortalController extends Controller
             'start_time' => 'nullable',
             'end_time' => 'nullable',
             'reason' => 'required|string',
+            'is_paid' => 'nullable',
+            'days_paid' => 'nullable|numeric',
             'additional_details' => 'nullable',
             'attachment' => 'nullable|file|max:5120' // 5MB limit
         ]);
@@ -122,6 +125,9 @@ class EmployeePortalController extends Controller
             $details = json_decode($details, true);
         }
 
+        // Normalize boolean from string/integer if needed
+        $isPaid = filter_var($request->is_paid, FILTER_VALIDATE_BOOLEAN);
+
         $leave = LeaveRequest::create([
             'employee_id' => $employee->id,
             'user_id' => null, // Filled by employee portal
@@ -138,7 +144,8 @@ class EmployeePortalController extends Controller
             'reason' => $request->reason,
             'attachment_path' => $attachmentPath,
             'status' => 'Pending',
-            'is_paid' => false,
+            'is_paid' => $isPaid,
+            'days_paid' => $isPaid ? ($request->days_paid ?? $request->days_taken) : 0,
             'additional_details' => $details ?? []
         ]);
 
@@ -176,6 +183,8 @@ class EmployeePortalController extends Controller
             'start_time' => 'nullable',
             'end_time' => 'nullable',
             'reason' => 'required|string',
+            'is_paid' => 'nullable',
+            'days_paid' => 'nullable|numeric',
             'additional_details' => 'nullable',
             'attachment' => 'nullable|file|max:5120'
         ]);
@@ -224,6 +233,9 @@ class EmployeePortalController extends Controller
             $details = json_decode($details, true);
         }
 
+        // Normalize boolean
+        $isPaid = filter_var($request->is_paid, FILTER_VALIDATE_BOOLEAN);
+
         $leave->update([
             'leave_type' => $request->leave_type,
             'request_type' => $request->request_type,
@@ -235,6 +247,8 @@ class EmployeePortalController extends Controller
             'end_time' => $request->end_time,
             'reason' => $request->reason,
             'attachment_path' => $attachmentPath,
+            'is_paid' => $isPaid,
+            'days_paid' => $isPaid ? ($request->days_paid ?? $request->days_taken) : 0,
             'additional_details' => $details ?? []
         ]);
 

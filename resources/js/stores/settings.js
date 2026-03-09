@@ -22,7 +22,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
     // Leave Form Options
     const requestTypes = ref(['Leave', 'Halfday', 'Undertime', 'Official Business']);
-    const leaveTypes = ref(['Vacation Leave', 'Sick Leave', 'SIL', 'Solo Parent', 'Maternity', 'VAWS', 'Paternity', 'Magna Carta', 'Emergency']);
+    const leaveTypes = ref(['Vacation Leave', 'SIL', 'Solo Parent', 'Maternity', 'VAWS', 'Paternity', 'Magna Carta', 'Emergency']);
     const attendanceCategories = ref([
         { code: 'UA', label: 'Unauthorized Absence' },
         { code: 'WMC', label: 'With Medical Certificate' },

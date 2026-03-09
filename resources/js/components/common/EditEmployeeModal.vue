@@ -66,19 +66,21 @@
                         </div>
                     </div>
 
-                    <!-- NEW: Section 1.5: Leave Balances & Adjustments -->
+                    <!-- NEW: Section 1.5: Leave Balances & Adjustments (outside fieldset so Adjust always works) -->
+                    </fieldset>
+
                     <div>
                         <div class="flex justify-between items-center mb-4 border-b border-purple-100 pb-2">
                             <h4 class="text-sm font-bold text-purple-700 uppercase tracking-widest flex items-center gap-2">
                                 <i class="pi pi-calendar-plus"></i> Leave Balances
                             </h4>
-                            <span class="text-[10px] text-purple-500 font-bold bg-purple-50 px-2 py-1 rounded">Live Data</span>
+                            <span class="text-[10px] text-purple-500 font-bold bg-purple-50 px-2 py-1 rounded">Live Data · Hover to Adjust</span>
                         </div>
                         
-                        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                        <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
                             <div v-for="(label, key) in leaveTypes" :key="key" class="p-3 bg-white border border-gray-100 rounded-xl shadow-sm text-center relative group">
                                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{{ label }}</p>
-                                <p class="text-2xl font-black text-gray-800">{{ form[key] || 0 }}</p>
+                                <p class="text-2xl font-black text-gray-800">{{ form[key] ?? 0 }}</p>
                                 
                                 <!-- Hover Actions -->
                                 <div class="absolute inset-x-0 bottom-0 top-0 bg-white/95 backdrop-blur-sm rounded-xl flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity p-2 hidden md:flex border border-purple-200 border-dashed">
@@ -91,9 +93,14 @@
 
                         <!-- Mobile Adjust Hint -->
                         <div class="mt-3 block md:hidden text-center">
-                            <button type="button" @click="openAdjustModal('vacation_leave', 'Vacation Leave')" class="text-xs font-bold text-purple-600 underline">Tap here to adjust balances</button>
+                            <p class="text-xs text-purple-600 font-bold mb-2">Tap a type to adjust:</p>
+                            <div class="flex flex-wrap gap-2 justify-center">
+                                <button v-for="(label, key) in leaveTypes" :key="key" type="button" @click="openAdjustModal(key, label)" class="text-[10px] font-bold text-purple-600 underline">{{ label }}</button>
+                            </div>
                         </div>
                     </div>
+
+                    <fieldset :disabled="!isEditMode" class="space-y-8">
 
                     <!-- Section 2: System Access (Promote/Demote) -->
                     <div v-if="form.role">
@@ -320,6 +327,7 @@ const form = reactive({
     
     // Leaves
     vacation_leave: 0,
+    sick_leave: 0,
     paternity_leave: 0,
     solo_parent_leave: 0,
     bereavement_leave: 0,
@@ -364,11 +372,12 @@ const fetchDetails = async (id) => {
         form.working_hours = data.working_hours;
         
         // Leaves
-        form.vacation_leave = data.vacation_leave || 0;
-        form.paternity_leave = data.paternity_leave || 0;
-        form.solo_parent_leave = data.solo_parent_leave || 0;
-        form.bereavement_leave = data.bereavement_leave || 0;
-        form.vawc_leave = data.vawc_leave || 0;
+        form.vacation_leave = data.vacation_leave ?? 0;
+        form.sick_leave = data.sick_leave ?? 0;
+        form.paternity_leave = data.paternity_leave ?? 0;
+        form.solo_parent_leave = data.solo_parent_leave ?? 0;
+        form.bereavement_leave = data.bereavement_leave ?? 0;
+        form.vawc_leave = data.vawc_leave ?? 0;
 
         form.last_name = data.last_name;
         form.first_name = data.first_name;

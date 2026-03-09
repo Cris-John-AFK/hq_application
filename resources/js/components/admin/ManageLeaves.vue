@@ -200,7 +200,6 @@
                         <select v-model="filters.type" class="cursor-pointer px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white flex-1">
                             <option value="">All Leave Types</option>
                             <option value="SIL">SIL (Service Incentive)</option>
-                            <option value="Sick">Sick Leave</option>
                             <option value="Vacation">Vacation Leave</option>
                             <option value="Emergency">Emergency Leave</option>
                             <option value="Maternity">Maternity Leave</option>
@@ -530,146 +529,175 @@
                                 <!-- Right Panel: Request & Actions -->
                                 <div class="lg:col-span-8 space-y-6">
                                     <!-- Main Request Info -->
-                                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                                        <div class="flex justify-between items-start mb-6">
+                                    <!-- 1. Approval Timeline (Top) -->
+                                    <div class="mb-4 p-4 bg-gradient-to-br from-slate-50 to-teal-50/40 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                                         <div class="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                                         <h4 class="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4 flex items-center gap-1.5 relative z-10">
+                                             <i class="pi pi-list-check text-teal-500"></i> Approval Trail & Visibility
+                                         </h4>
+                                         <div class="relative pl-5 z-10">
+                                             <!-- Vertical connector line -->
+                                             <div class="absolute left-[7px] top-2 bottom-2 w-0.5 bg-gray-200 rounded-full"></div>
+
+                                             <!-- Step 1: Employee filed -->
+                                             <div class="relative mb-4">
+                                                 <div class="absolute -left-5 top-0.5 w-3.5 h-3.5 rounded-full bg-indigo-500 border-2 border-white shadow-sm"></div>
+                                                 <div class="bg-white rounded-lg border border-gray-100 p-3 shadow-sm flex items-center justify-between">
+                                                     <div>
+                                                         <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest leading-none mb-1">Filed by Employee</p>
+                                                         <p class="text-xs font-bold text-gray-700">
+                                                             {{ selectedRequest.user?.name || (selectedRequest.employee?.last_name + ', ' + selectedRequest.employee?.first_name) }}
+                                                         </p>
+                                                     </div>
+                                                     <div class="text-right">
+                                                         <p class="text-[9px] text-gray-400 font-bold uppercase">{{ selectedRequest.date_filed ? new Date(selectedRequest.date_filed).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '—' }}</p>
+                                                     </div>
+                                                 </div>
+                                             </div>
+
+                                             <!-- Step 2: Dept Head -->
+                                             <div class="relative mb-4">
+                                                 <div class="absolute -left-5 top-0.5 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm"
+                                                     :class="selectedRequest.dept_head ? 'bg-teal-500' : 'bg-amber-300'"></div>
+                                                 <div class="bg-white rounded-lg border p-3 shadow-sm"
+                                                     :class="selectedRequest.dept_head ? 'border-teal-100/50' : 'border-amber-100'">
+                                                     <p class="text-[10px] font-black uppercase tracking-widest"
+                                                         :class="selectedRequest.dept_head ? 'text-teal-600' : 'text-amber-500'">
+                                                         {{ selectedRequest.dept_head ? 'Dept Head Reviewed' : 'Awaiting Dept Head Review' }}
+                                                     </p>
+                                                     <template v-if="selectedRequest.dept_head">
+                                                         <div class="flex items-center justify-between mt-1">
+                                                            <p class="text-xs font-bold text-gray-700">{{ selectedRequest.dept_head.name }}</p>
+                                                            <p class="text-[9px] text-gray-400 font-bold">
+                                                                {{ new Date(selectedRequest.dept_reviewed_at).toLocaleDateString('en-US', {month:'short',day:'numeric'}) }}
+                                                            </p>
+                                                         </div>
+                                                         <p v-if="selectedRequest.dept_head_remarks" class="text-[10px] text-gray-500 italic mt-1.5 border-l-2 border-teal-200 pl-2 bg-teal-50/30 py-1">
+                                                             "{{ selectedRequest.dept_head_remarks }}"
+                                                         </p>
+                                                     </template>
+                                                     <template v-else>
+                                                         <p class="text-[10px] text-amber-500 mt-1 animate-pulse font-medium">Pending review by department head</p>
+                                                     </template>
+                                                 </div>
+                                             </div>
+
+                                             <!-- Step 3: HR/Admin Final -->
+                                             <div class="relative">
+                                                 <div class="absolute -left-5 top-0.5 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm"
+                                                     :class="selectedRequest.hr_approver ? 'bg-emerald-500' : (selectedRequest.status === 'Dept Approved' ? 'bg-blue-400 animate-pulse' : 'bg-gray-200')"></div>
+                                                 <div class="bg-white rounded-lg border p-3 shadow-sm"
+                                                     :class="selectedRequest.hr_approver ? 'border-emerald-100' : (selectedRequest.status === 'Dept Approved' ? 'border-blue-200 shadow-blue-50' : 'border-gray-100')">
+                                                     <p class="text-[10px] font-black uppercase tracking-widest"
+                                                         :class="selectedRequest.hr_approver ? 'text-emerald-600' : (selectedRequest.status === 'Dept Approved' ? 'text-blue-500' : 'text-gray-400')">
+                                                         {{ selectedRequest.hr_approver ? 'HR / Admin Final Decision' : (selectedRequest.status === 'Dept Approved' ? 'Ready for HR Final Approval' : 'Awaiting HR / Admin') }}
+                                                     </p>
+                                                     <template v-if="selectedRequest.hr_approver">
+                                                         <div class="flex items-center justify-between mt-1">
+                                                            <p class="text-xs font-bold text-gray-700">{{ selectedRequest.hr_approver.name }}</p>
+                                                            <p class="text-[9px] text-gray-400 font-bold">
+                                                                {{ new Date(selectedRequest.hr_approved_at).toLocaleDateString('en-US', {month:'short',day:'numeric'}) }}
+                                                            </p>
+                                                         </div>
+                                                         <p class="text-[10px] font-black mt-1 uppercase tracking-widest"
+                                                             :class="selectedRequest.status === 'Approved' ? 'text-emerald-600' : 'text-rose-600'">
+                                                             {{ selectedRequest.status === 'Approved' ? 'Approved ✓' : 'Rejected ✗' }}
+                                                         </p>
+                                                         <p v-if="selectedRequest.hr_remarks" class="text-[10px] text-gray-500 italic mt-1.5 border-l-2 border-emerald-200 pl-2 bg-emerald-50/30 py-1">
+                                                             "{{ selectedRequest.hr_remarks }}"
+                                                         </p>
+                                                     </template>
+                                                     <template v-else-if="selectedRequest.status === 'Dept Approved'">
+                                                         <p class="text-[10px] text-blue-500 mt-1 animate-pulse font-medium">Forwarded — awaiting final HR approval</p>
+                                                     </template>
+                                                     <template v-else>
+                                                         <p class="text-[10px] text-gray-400 mt-1 font-medium">Not yet reached this stage</p>
+                                                     </template>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                    </div>
+
+                                    <!-- 2. User Inputted Form Details (Middle) -->
+                                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-5">
+                                        <div class="flex justify-between items-start">
                                             <div>
-                                                <span class="text-xs font-bold text-teal-600 uppercase tracking-wider">{{ selectedRequest.leave_type }}</span>
-                                                <h3 class="text-2xl font-bold text-gray-800 mt-1">{{ formatDate(selectedRequest.from_date) }} <span class="text-gray-400 font-normal">to</span> {{ formatDate(selectedRequest.to_date || selectedRequest.from_date) }}</h3>
-                                                <div class="flex items-center gap-2 mt-2">
-                                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1 block">Request Details</span>
+                                                <h3 class="text-2xl font-black text-gray-800 tracking-tight">
+                                                    {{ formatDate(selectedRequest.from_date) }} 
+                                                    <span class="text-gray-300 font-medium px-1">to</span> 
+                                                    {{ formatDate(selectedRequest.to_date || selectedRequest.from_date) }}
+                                                </h3>
+                                                <div class="flex items-center gap-3 mt-2">
+                                                     <span class="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-[10px] font-black uppercase tracking-widest border border-gray-200">
                                                         {{ selectedRequest.days_taken }} Day(s)
                                                     </span>
-                                                    <span class="text-sm text-gray-500">{{ selectedRequest.request_type }}</span>
+                                                    <span class="text-xs font-bold text-gray-500 uppercase tracking-widest bg-gray-50 px-2 py-0.5 rounded border border-gray-100">{{ selectedRequest.leave_type }}</span>
+                                                    <span class="text-xs font-bold text-teal-600 uppercase tracking-widest">{{ selectedRequest.request_type }}</span>
                                                 </div>
                                             </div>
                                             <div :class="[
-                                                'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border',
+                                                'px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border-2',
                                                 selectedRequest.status === 'Approved'      ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                                                 selectedRequest.status === 'Dept Approved' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                                                 selectedRequest.status === 'Pending'       ? 'bg-orange-50 text-orange-700 border-orange-200' :
-                                                selectedRequest.status === 'Cancelled'     ? 'bg-gray-50 text-gray-500 border-gray-200' :
+                                                selectedRequest.status === 'Cancelled'     ? 'bg-gray-50 text-gray-500 border-gray-200 shadow-inner' :
                                                 'bg-rose-50 text-rose-700 border-rose-200'
                                             ]">
                                                 {{ selectedRequest.status }}
                                             </div>
                                         </div>
 
-                                        <!-- ── Approval Timeline ────────────────────────────────── -->
-                                        <div class="mb-4 p-4 bg-gradient-to-br from-slate-50 to-teal-50/40 rounded-xl border border-slate-200">
-                                            <h4 class="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4 flex items-center gap-1.5">
-                                                <i class="pi pi-list-check text-teal-500"></i> Approval Trail
-                                            </h4>
-                                            <div class="relative pl-5">
-                                                <!-- Vertical connector line -->
-                                                <div class="absolute left-[7px] top-2 bottom-2 w-0.5 bg-gray-200 rounded-full"></div>
-
-                                                <!-- Step 1: Employee filed -->
-                                                <div class="relative mb-4">
-                                                    <div class="absolute -left-5 top-0.5 w-3.5 h-3.5 rounded-full bg-indigo-500 border-2 border-white shadow-sm"></div>
-                                                    <div class="bg-white rounded-lg border border-gray-100 p-3 shadow-sm">
-                                                        <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Filed by Employee</p>
-                                                        <p class="text-xs font-bold text-gray-700 mt-0.5">
-                                                            {{ selectedRequest.user?.name || (selectedRequest.employee?.last_name + ', ' + selectedRequest.employee?.first_name) }}
-                                                        </p>
-                                                        <p class="text-[10px] text-gray-400 mt-0.5">
-                                                            {{ selectedRequest.user?.department || selectedRequest.employee?.department?.name || '—' }}
-                                                        </p>
-                                                        <p class="text-[9px] text-gray-400 mt-1">{{ selectedRequest.date_filed ? new Date(selectedRequest.date_filed).toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'}) : '—' }}</p>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Step 2: Dept Head -->
-                                                <div class="relative mb-4">
-                                                    <div class="absolute -left-5 top-0.5 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm"
-                                                        :class="selectedRequest.dept_head ? 'bg-teal-500' : 'bg-amber-300'"></div>
-                                                    <div class="bg-white rounded-lg border p-3 shadow-sm"
-                                                        :class="selectedRequest.dept_head ? 'border-teal-100' : 'border-amber-100'">
-                                                        <p class="text-[10px] font-black uppercase tracking-widest"
-                                                            :class="selectedRequest.dept_head ? 'text-teal-600' : 'text-amber-500'">
-                                                            {{ selectedRequest.dept_head ? 'Dept Head Reviewed' : 'Awaiting Dept Head Review' }}
-                                                        </p>
-                                                        <template v-if="selectedRequest.dept_head">
-                                                            <p class="text-xs font-bold text-gray-700 mt-0.5">{{ selectedRequest.dept_head.name }}</p>
-                                                            <p class="text-[10px] text-gray-400">
-                                                                {{ ['Dept Approved', 'Approved'].includes(selectedRequest.status) ? 'Forwarded to HR for final approval' : 'Request was Rejected at dept level' }}
-                                                            </p>
-                                                            <p v-if="selectedRequest.dept_head_remarks" class="text-[10px] text-gray-500 italic mt-1 border-l-2 border-teal-200 pl-2">
-                                                                "{{ selectedRequest.dept_head_remarks }}"
-                                                            </p>
-                                                            <p v-if="selectedRequest.dept_reviewed_at" class="text-[9px] text-gray-400 mt-1">
-                                                                {{ new Date(selectedRequest.dept_reviewed_at).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}) }}
-                                                            </p>
-                                                        </template>
-                                                        <template v-else>
-                                                            <p class="text-[10px] text-amber-500 mt-0.5 animate-pulse">Pending review by department head</p>
-                                                        </template>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Step 3: HR/Admin Final -->
-                                                <div class="relative">
-                                                    <div class="absolute -left-5 top-0.5 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm"
-                                                        :class="selectedRequest.hr_approver ? 'bg-emerald-500' : (selectedRequest.status === 'Dept Approved' ? 'bg-blue-400 animate-pulse' : 'bg-gray-200')"></div>
-                                                    <div class="bg-white rounded-lg border p-3 shadow-sm"
-                                                        :class="selectedRequest.hr_approver ? 'border-emerald-100' : (selectedRequest.status === 'Dept Approved' ? 'border-blue-200' : 'border-gray-100')">
-                                                        <p class="text-[10px] font-black uppercase tracking-widest"
-                                                            :class="selectedRequest.hr_approver ? 'text-emerald-600' : (selectedRequest.status === 'Dept Approved' ? 'text-blue-500' : 'text-gray-400')">
-                                                            {{ selectedRequest.hr_approver ? 'HR / Admin Final Decision' : (selectedRequest.status === 'Dept Approved' ? 'Ready for HR Final Approval' : 'Awaiting HR / Admin') }}
-                                                        </p>
-                                                        <template v-if="selectedRequest.hr_approver">
-                                                            <p class="text-xs font-bold text-gray-700 mt-0.5">{{ selectedRequest.hr_approver.name }}</p>
-                                                            <p class="text-[10px] font-bold mt-0.5"
-                                                                :class="selectedRequest.status === 'Approved' ? 'text-emerald-600' : 'text-rose-600'">
-                                                                {{ selectedRequest.status === 'Approved' ? 'Officially Approved ✓' : 'Rejected ✗' }}
-                                                            </p>
-                                                            <p v-if="selectedRequest.hr_remarks" class="text-[10px] text-gray-500 italic mt-1 border-l-2 border-emerald-200 pl-2">
-                                                                "{{ selectedRequest.hr_remarks }}"
-                                                            </p>
-                                                            <p v-if="selectedRequest.hr_approved_at" class="text-[9px] text-gray-400 mt-1">
-                                                                {{ new Date(selectedRequest.hr_approved_at).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}) }}
-                                                            </p>
-                                                        </template>
-                                                        <template v-else-if="selectedRequest.status === 'Dept Approved'">
-                                                            <p class="text-[10px] text-blue-500 mt-0.5 animate-pulse">Forwarded — awaiting final HR decision</p>
-                                                        </template>
-                                                        <template v-else>
-                                                            <p class="text-[10px] text-gray-400 mt-0.5">Not yet reached this stage</p>
-                                                        </template>
-                                                    </div>
-                                                </div>
-
-                                            </div>
+                                        <!-- Reason -->
+                                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 relative overflow-hidden">
+                                            <div class="absolute top-0 right-0 p-2 opacity-5"><i class="pi pi-comment text-3xl"></i></div>
+                                            <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-2 flex items-center gap-1.5">
+                                                <i class="pi pi-info-circle text-slate-400"></i> Employee Justification
+                                            </p>
+                                            <p class="text-gray-700 font-medium leading-relaxed italic text-sm">"{{ selectedRequest.reason }}"</p>
                                         </div>
-                                        <!-- ── END Approval Timeline ────────────────────────────── -->
 
-                                        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
-                                            <p class="text-xs text-gray-400 uppercase font-bold mb-2">Employee Reason</p>
-                                            <p class="text-gray-700 italic">"{{ selectedRequest.reason }}"</p>
+                                        <!-- Pay Config (View Only Here) -->
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div :class="['p-4 rounded-xl border flex flex-col justify-center transition-all', selectedRequest.is_paid ? 'bg-teal-50 border-teal-200' : 'bg-gray-50 border-gray-200']">
+                                                <span class="text-[10px] font-black uppercase tracking-widest mb-1" :class="selectedRequest.is_paid ? 'text-teal-600' : 'text-gray-400'">Payment Configuration</span>
+                                                <div class="flex items-center gap-2">
+                                                    <i :class="['pi text-lg', selectedRequest.is_paid ? 'pi-check-circle text-teal-600' : 'pi-circle text-gray-400']"></i>
+                                                    <span class="text-sm font-black" :class="selectedRequest.is_paid ? 'text-teal-900' : 'text-gray-500'">{{ selectedRequest.is_paid ? 'PAID LEAVE' : 'UNPAID LEAVE' }}</span>
+                                                </div>
+                                                <div v-if="selectedRequest.is_paid" class="mt-2 pt-2 border-t border-teal-100">
+                                                    <span class="text-[9px] font-black text-teal-500 uppercase tracking-tighter">Hours/Days Covered:</span>
+                                                    <p class="text-lg font-black text-teal-800">{{ (selectedRequest.days_paid !== null && selectedRequest.days_paid !== undefined) ? selectedRequest.days_paid : selectedRequest.days_taken }} <span class="text-xs font-bold opacity-60">DAYS</span></p>
+                                                </div>
+                                            </div>
+
+                                            <div v-if="selectedRequest.attachment_path" class="p-4 rounded-xl border border-gray-200 bg-white flex flex-col justify-center hover:border-purple-200 transition-all group">
+                                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Supporting Document</span>
+                                                <a :href="selectedRequest.attachment_path" target="_blank" class="flex items-center gap-2 text-purple-600 hover:text-purple-700 transition-colors">
+                                                    <i class="pi pi-file-pdf text-xl group-hover:scale-110 transition-transform"></i>
+                                                    <span class="text-sm font-black uppercase tracking-tighter">View Attachment</span>
+                                                </a>
+                                            </div>
                                         </div>
 
                                         <!-- Additional Custom Details -->
-                                        <div v-if="selectedRequest.additional_details && Object.keys(selectedRequest.additional_details).filter(k => !k.endsWith('_input')).length" class="mb-5">
-                                            <h4 class="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-3">Custom Form Details Collected</h4>
+                                        <div v-if="selectedRequest.additional_details && Object.keys(selectedRequest.additional_details).filter(k => !k.endsWith('_input')).length" class="mt-5">
+                                            <div class="flex items-center gap-2 mb-3">
+                                                <div class="h-px bg-gray-100 flex-1"></div>
+                                                <span class="text-[10px] font-black uppercase text-gray-300 tracking-[0.2em]">Form Data</span>
+                                                <div class="h-px bg-gray-100 flex-1"></div>
+                                            </div>
                                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div v-for="key in Object.keys(selectedRequest.additional_details).filter(k => !k.endsWith('_input'))" :key="key" class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 shadow-sm relative overflow-hidden hover:border-indigo-300 transition-all">
-                                                    <div class="absolute top-0 right-0 w-16 h-16 bg-white/40 rounded-full -translate-y-1/2 translate-x-1/3 blur-xl pointer-events-none"></div>
-                                                    <p class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><i class="pi pi-list"></i> {{ key.replace('_', ' ') }}</p>
-                                                    <div class="flex flex-col gap-2">
-                                                        <p class="text-sm font-black text-indigo-900 leading-tight">Option: {{ selectedRequest.additional_details[key] || 'Not specified' }}</p>
-                                                        <div v-if="selectedRequest.additional_details[key + '_input']" class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/80 backdrop-blur-sm rounded-lg border border-indigo-50 w-max shadow-sm">
-                                                            <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Input Value:</span>
-                                                            <span class="text-sm font-black text-indigo-700">{{ selectedRequest.additional_details[key + '_input'] }}</span>
+                                                <div v-for="key in Object.keys(selectedRequest.additional_details).filter(k => !k.endsWith('_input'))" :key="key" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden active:scale-[0.98] transition-all">
+                                                    <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{{ key.replace('_', ' ') }}</p>
+                                                    <div class="flex flex-col gap-1">
+                                                        <p class="text-sm font-black text-slate-800 leading-tight">{{ selectedRequest.additional_details[key] || 'Not specified' }}</p>
+                                                        <div v-if="selectedRequest.additional_details[key + '_input']" class="text-[10px] font-bold text-teal-600 mt-1 flex items-center gap-1">
+                                                            <i class="pi pi-tag text-[9px]"></i> Value: {{ selectedRequest.additional_details[key + '_input'] }}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        <div v-if="selectedRequest.attachment_path" class="mb-2">
-                                            <a :href="selectedRequest.attachment_path" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg border border-purple-200 hover:bg-purple-100 transition-colors text-sm font-bold">
-                                                <i class="pi pi-download"></i>
-                                                View Supporting Document
-                                            </a>
                                         </div>
                                     </div>
 
@@ -680,27 +708,23 @@
                                         </h4>
 
                                         <div class="flex flex-col gap-6 mb-6">
-                                            <!-- Pay Config -->
-                                            <div>
-                                                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Pay Configuration</label>
-                                                <div class="flex items-center gap-3">
-                                                    <button 
-                                                        @click="selectedRequest.is_paid = !selectedRequest.is_paid"
-                                                        :class="['cursor-pointer flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all text-sm font-black uppercase tracking-tight', selectedRequest.is_paid ? 'bg-teal-50 border-teal-500 text-teal-700 shadow-sm shadow-teal-100' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50']"
-                                                    >
+                                            <!-- Pay Config (Locked for Admin) -->
+                                            <div class="p-4 bg-teal-50/10 border-2 border-dashed border-teal-100 rounded-2xl relative overflow-hidden">
+                                                <div class="absolute -top-1 -right-1 p-2"><i class="pi pi-lock text-teal-100"></i></div>
+                                                <label class="block text-[10px] font-black text-teal-600 uppercase tracking-widest mb-3">Locked Employee Pay Config</label>
+                                                <div class="flex items-center gap-4">
+                                                    <div :class="['px-4 py-2 rounded-xl border-2 flex items-center gap-2 text-sm font-black uppercase transition-all', selectedRequest.is_paid ? 'bg-teal-50 border-teal-500 text-teal-700 shadow-sm' : 'bg-white border-gray-100 text-gray-300 shadow-inner']">
                                                         <i :class="['pi', selectedRequest.is_paid ? 'pi-check-circle' : 'pi-circle']"></i>
-                                                        With Pay
-                                                    </button>
-                                                    <div v-if="selectedRequest.is_paid" class="animate-in fade-in slide-in-from-left-2 flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-xl border-2 border-gray-200">
-                                                        <label class="text-[10px] uppercase font-bold text-gray-400">Days Paid:</label>
-                                                        <input 
-                                                            v-model="selectedRequest.days_paid" 
-                                                            type="number" 
-                                                            step="0.5" 
-                                                            class="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 bg-white"
-                                                        >
+                                                        {{ selectedRequest.is_paid ? 'With Pay' : 'Unpaid' }}
+                                                    </div>
+                                                    <div v-if="selectedRequest.is_paid" class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border-2 border-teal-100">
+                                                        <span class="text-[10px] uppercase font-black text-teal-500">Amount:</span>
+                                                        <span class="text-sm font-black text-teal-900">{{ selectedRequest.days_paid ?? selectedRequest.days_taken }} DAYS</span>
                                                     </div>
                                                 </div>
+                                                <p class="text-[9px] text-teal-500 mt-3 font-bold italic tracking-tight flex items-center gap-1.5 opacity-70">
+                                                    <i class="pi pi-info-circle"></i> This value was set by the employee and is locked during review to prevent balance discrepancies.
+                                                </p>
                                             </div>
 
                                             <!-- Classification Metadata -->
@@ -891,7 +915,7 @@ import axios from 'axios';
 import { useAuthStore } from '../../stores/auth';
 import { useLeaveStore } from '../../stores/leaves';
 import { useEmployeeStore } from '../../stores/employees';
-import { useSettingsStore } from '@/stores/settings';
+import { useSettingsStore } from '../../stores/settings';
 import { storeToRefs } from 'pinia';
 import MainLayout from '../../layouts/MainLayout.vue';
 import LeaveRequestModal from '../common/LeaveRequestModal.vue';
@@ -1038,7 +1062,7 @@ const formatTime = (t) => {
 const viewDetails = async (req) => {
     selectedRequest.value = { 
         ...req,
-        days_paid: req.days_paid || req.days_taken || 0
+        days_paid: req.days_paid ?? req.days_taken ?? 0
     };
     justification.value = req.justification || req.admin_remarks || ''; // Pre-fill if exists
     adminRemarks.value = req.admin_remarks || '';

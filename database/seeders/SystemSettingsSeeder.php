@@ -19,7 +19,7 @@ class SystemSettingsSeeder extends Seeder
 
         \App\Models\SystemSetting::updateOrCreate(
             ['key' => 'leave_types'],
-            ['value' => ['SIL', 'Solo Parent', 'Maternity', 'VAWS', 'Paternity', 'Magna Carta', 'Emergency']]
+            ['value' => ['Sick Leave', 'Vacation Leave', 'SIL', 'Solo Parent', 'Maternity', 'VAWC', 'Paternity', 'Magna Carta', 'Emergency', 'Bereavement']]
         );
 
         \App\Models\SystemSetting::updateOrCreate(

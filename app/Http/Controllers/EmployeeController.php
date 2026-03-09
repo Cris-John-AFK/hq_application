@@ -158,6 +158,7 @@ class EmployeeController extends Controller
                 'date_hired',
                 'email',
                 'vacation_leave',
+                'sick_leave',
                 'paternity_leave',
                 'solo_parent_leave',
                 'bereavement_leave',
@@ -286,7 +287,7 @@ class EmployeeController extends Controller
         $employee = Employee::findOrFail($id);
 
         $validated = $request->validate([
-            'leave_type' => 'required|string|in:vacation_leave,paternity_leave,solo_parent_leave,bereavement_leave,vawc_leave',
+            'leave_type' => 'required|string|in:vacation_leave,sick_leave,paternity_leave,solo_parent_leave,bereavement_leave,vawc_leave',
             'action' => 'required|in:add,deduct',
             'amount' => 'required|numeric|min:0.5',
             'justification' => 'required|string|min:5'
@@ -343,5 +344,48 @@ class EmployeeController extends Controller
         }
 
         return response()->json($stats);
+    }
+
+    public function bulkUpdateLeaves(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'employee_ids' => 'required|array',
+            'employee_ids.*' => 'exists:employees,id',
+            'leave_type' => 'required|string|in:vacation_leave,sick_leave,paternity_leave,solo_parent_leave,bereavement_leave,vawc_leave',
+            'amount' => 'required|numeric',
+            'mode' => 'required|in:set,add',
+            'reason' => 'nullable|string'
+        ]);
+
+        $ids = $validated['employee_ids'];
+        $field = $validated['leave_type'];
+        $amount = (float) $validated['amount'];
+        $mode = $validated['mode'];
+        $reason = $validated['reason'] ?? 'Bulk credit update';
+
+        return DB::transaction(function () use ($ids, $field, $amount, $mode, $reason) {
+            $employees = Employee::whereIn('id', $ids)->get();
+            $count = 0;
+
+            foreach ($employees as $employee) {
+                $oldValue = $employee->$field;
+                if ($mode === 'set') {
+                    $employee->$field = $amount;
+                } else {
+                    $employee->$field += $amount;
+                }
+                $employee->save();
+
+                \App\Utils\AuditLogger::log('Leaves', 'Bulk Adjust', "Bulk updated {$field} for {$employee->name} from {$oldValue} to {$employee->$field}. Reason: {$reason}");
+                $count++;
+            }
+
+            \Illuminate\Support\Facades\Cache::flush();
+            return response()->json(['message' => "Successfully updated credits for {$count} employees.", 'updated_count' => $count]);
+        });
     }
 }

@@ -39,12 +39,12 @@ class EmployeeLeavesSheet implements ToCollection, WithStartRow
                     $workingHoursCode = strtoupper(trim($row[13] ?? ''));
                     $workingHoursStr = self::WORKING_HOURS_MAP[$workingHoursCode] ?? null;
 
-                    $vl = intval($row[14] ?? 0);
-                    $sl = 0; // The standard sheet does not appear to export this explicitly or it is handled as a separate pool.
-                    $pl = intval($row[15] ?? 0);
-                    $sp = intval($row[16] ?? 0);
-                    $bl = intval($row[17] ?? 0);
-                    $vawc = intval($row[18] ?? 0);
+                    $vl = max(0, intval($row[14] ?? 0)); // Vacation Leave
+                    $sl = 0;                              // Sick Leave – not in this sheet, always 0
+                    $pl = max(0, intval($row[15] ?? 0)); // Paternity Leave
+                    $sp = max(0, intval($row[16] ?? 0)); // Solo Parent
+                    $bl = max(0, intval($row[17] ?? 0)); // Bereavement
+                    $vawc = max(0, intval($row[18] ?? 0)); // VAWC
 
                     // Update all leave columns
                     $updateData = [
@@ -54,6 +54,9 @@ class EmployeeLeavesSheet implements ToCollection, WithStartRow
                         'solo_parent_leave' => $sp,
                         'bereavement_leave' => $bl,
                         'vawc_leave' => $vawc,
+                        'maternity_leave' => 0,
+                        'magna_carta_leave' => 0,
+                        'emergency_leave' => 0,
                     ];
 
 
