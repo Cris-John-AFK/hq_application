@@ -335,89 +335,99 @@
                 </div>
             </div>
 
-            <!-- Attendance Anomalies Watchlist -->
+            <!-- Chronic Offenders Tracker -->
             <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col min-h-[400px]">
-                <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center justify-between mb-1">
                     <div>
                         <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                            Attendance Watchlist
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                            Absenteeism Tracker
                         </h3>
-                        <p class="text-[9px] font-bold text-rose-500/60 uppercase tracking-widest pl-3.5 italic">Recent Lates & Absences</p>
+                        <p class="text-[9px] font-bold text-rose-500/60 uppercase tracking-widest pl-3.5 italic">Chronic Lates &amp; Absences</p>
                     </div>
-                </div>
-
-                <div class="flex gap-2 mb-4">
-                    <div class="relative flex-1">
-                        <input 
-                            v-model="anomalySearch"
-                            @input="debounceAnomalySearch"
-                            type="text" 
-                            placeholder="Search anomalies..." 
-                            class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none transition-all"
-                        >
-                        <i class="pi pi-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
-                    </div>
-                     <select 
-                        v-model="anomalyFilter"
-                        @change="fetchAnomalies"
-                        class="px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none text-gray-600 cursor-pointer bg-white"
+                    <select
+                        v-model="offenderFilter"
+                        class="px-2 py-1 border border-gray-200 rounded-lg text-[10px] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none text-gray-600 cursor-pointer bg-white font-bold"
                     >
-                        <option value="all">All Status</option>
-                        <option value="Late">Late</option>
-                        <option value="Absent">Absent</option>
-                        <option value="Half Day">Half Day</option>
+                        <option value="all">All Levels</option>
+                        <option value="critical">🔴 Critical (5+)</option>
+                        <option value="notice">🟠 Notice (3–4)</option>
+                        <option value="watch">🟡 Watch (1–2)</option>
                     </select>
                 </div>
-                
+
+                <!-- Legend -->
+                <div class="flex gap-3 mb-3 flex-wrap">
+                    <span class="flex items-center gap-1 text-[9px] font-black text-rose-600 uppercase tracking-widest"><span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span> Critical: 5+ offenses</span>
+                    <span class="flex items-center gap-1 text-[9px] font-black text-orange-500 uppercase tracking-widest"><span class="w-2 h-2 rounded-full bg-orange-400 inline-block"></span> Notice: 3–4</span>
+                    <span class="flex items-center gap-1 text-[9px] font-black text-yellow-600 uppercase tracking-widest"><span class="w-2 h-2 rounded-full bg-yellow-400 inline-block"></span> Watch: 1–2</span>
+                </div>
+
                 <div v-if="loadingAnomalies" class="flex-1 space-y-3">
-                    <div v-for="i in 5" :key="i" class="h-12 bg-gray-50 animate-pulse rounded-xl"></div>
+                    <div v-for="i in 5" :key="i" class="h-14 bg-gray-50 animate-pulse rounded-xl"></div>
                 </div>
                 <div v-else class="flex-1 flex flex-col justify-start">
-                    <div class="space-y-3 overflow-y-auto custom-scrollbar pr-2 max-h-[300px]">
-                        <div v-for="record in recentAnomalies" :key="record.id" class="flex items-center justify-between p-3 bg-gray-50/50 rounded-xl border border-gray-100 hover:border-gray-300 transition-all hover:bg-white">
-                            <div class="flex items-center gap-3">
-                                <div :class="[
-                                    'shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black border transition-all',
-                                    record.status === 'Late' ? 'bg-orange-50 text-orange-600 border-orange-200' : 
-                                    record.status === 'Half Day' ? 'bg-yellow-50 text-yellow-600 border-yellow-200' : 
-                                    'bg-rose-50 text-rose-600 border-rose-200'
-                                ]">
-                                    <i class="pi" :class="
-                                        record.status === 'Late' ? 'pi-clock' : 
-                                        record.status === 'Half Day' ? 'pi-calendar-minus' : 
-                                        'pi-times-circle'
-                                    "></i>
-                                </div>
-                                <div class="flex flex-col min-w-0">
-                                    <span class="text-xs font-bold text-gray-700 truncate">{{ record.name }}</span>
-                                    <span class="text-[9px] text-gray-400 font-bold tracking-widest truncate">{{ record.date }}</span>
+                    <div class="space-y-2 overflow-y-auto custom-scrollbar pr-1 max-h-[310px]">
+                        <div v-if="filteredOffenders.length === 0" class="flex flex-col items-center justify-center h-40 text-center">
+                            <i class="pi pi-shield text-4xl text-emerald-200 mb-3"></i>
+                            <p class="text-xs text-emerald-600 font-bold uppercase tracking-widest">No chronic offenders</p>
+                            <p class="text-[10px] text-gray-400 mt-1">All employees are within normal range!</p>
+                        </div>
+
+                        <div
+                            v-for="offender in filteredOffenders"
+                            :key="offender.employee_id"
+                            class="flex items-center gap-3 p-3 rounded-xl border transition-all hover:shadow-sm"
+                            :class="{
+                                'bg-rose-50/60 border-rose-200 hover:border-rose-400': offender.level === 'critical',
+                                'bg-orange-50/60 border-orange-200 hover:border-orange-400': offender.level === 'notice',
+                                'bg-yellow-50/40 border-yellow-200 hover:border-yellow-400': offender.level === 'watch',
+                            }"
+                        >
+                            <!-- Severity Badge -->
+                            <div
+                                class="shrink-0 w-9 h-9 rounded-lg flex flex-col items-center justify-center text-white font-black text-[11px] shadow-sm"
+                                :class="{
+                                    'bg-rose-500': offender.level === 'critical',
+                                    'bg-orange-400': offender.level === 'notice',
+                                    'bg-yellow-400': offender.level === 'watch',
+                                }"
+                                :title="`${offender.total} total offense(s)`"
+                            >
+                                {{ offender.total }}
+                            </div>
+
+                            <!-- Name & Breakdown -->
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-black text-gray-800 truncate leading-tight">{{ offender.name }}</p>
+                                <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                                    <span v-if="offender.lates > 0" class="text-[9px] font-bold text-orange-600 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-full">
+                                        ⏰ {{ offender.lates }} Late{{ offender.lates > 1 ? 's' : '' }}
+                                    </span>
+                                    <span v-if="offender.absences > 0" class="text-[9px] font-bold text-rose-600 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-full">
+                                        ✗ {{ offender.absences }} Absent{{ offender.absences > 1 ? 's' : '' }}
+                                    </span>
+                                    <span v-if="offender.halfDays > 0" class="text-[9px] font-bold text-yellow-600 bg-yellow-50 border border-yellow-100 px-1.5 py-0.5 rounded-full">
+                                        ◑ {{ offender.halfDays }} Half Day{{ offender.halfDays > 1 ? 's' : '' }}
+                                    </span>
                                 </div>
                             </div>
-                            <div class="flex items-stretch shrink-0 bg-gray-50 rounded-lg border border-gray-100 w-[160px] shadow-sm overflow-hidden">
-                                <div class="flex-1 flex flex-col items-start p-1.5 border-r border-gray-200/60 bg-white/50">
-                                    <span class="text-[7px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Time In</span>
-                                    <span class="text-[10px] font-bold text-gray-700 leading-none whitespace-nowrap">{{ record.timeIn }}</span>
-                                </div>
-                                <div class="flex-1 flex flex-col items-start p-1.5 bg-white/30">
-                                    <span class="text-[7px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Time Out</span>
-                                    <span class="text-[10px] font-bold text-gray-700 leading-none whitespace-nowrap">{{ record.timeOut }}</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-2 shrink-0">
-                                <span :class="[
-                                    'text-[10px] font-black px-2 py-0.5 rounded border uppercase tracking-widest text-center min-w-[60px]',
-                                    record.status === 'Late' ? 'text-orange-600 bg-orange-50 border-orange-100' : 
-                                    record.status === 'Half Day' ? 'text-yellow-600 bg-yellow-50 border-yellow-100' : 
-                                    'text-rose-600 bg-rose-50 border-rose-100'
-                                ]">{{ record.status }}</span>
+
+                            <!-- Warning Level -->
+                            <div class="shrink-0 flex flex-col items-center gap-1">
+                                <span
+                                    class="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest border"
+                                    :class="{
+                                        'text-rose-700 bg-rose-100 border-rose-200': offender.level === 'critical',
+                                        'text-orange-600 bg-orange-100 border-orange-200': offender.level === 'notice',
+                                        'text-yellow-700 bg-yellow-100 border-yellow-200': offender.level === 'watch',
+                                    }"
+                                >
+                                    {{ offender.level === 'critical' ? '🔴 Critical' : offender.level === 'notice' ? '🟠 Notice' : '🟡 Watch' }}
+                                </span>
+                                <span class="text-[8px] text-gray-400 font-medium">{{ offender.lastSeen }}</span>
                             </div>
                         </div>
-                    </div>
-                    <div v-if="recentAnomalies.length === 0" class="flex flex-col items-center justify-center h-full text-center py-10">
-                        <i class="pi pi-check-circle text-4xl text-emerald-200 mb-3"></i>
-                        <p class="text-xs text-emerald-600 font-bold uppercase tracking-widest">No recent anomalies detected</p>
-                        <p class="text-[10px] text-gray-400 mt-1">Everyone is on track!</p>
                     </div>
                 </div>
             </div>
@@ -502,7 +512,8 @@
         selectedEmployee.value = {
             employee_name: emp.name,
             employee_id: emp.employee_id,
-            department: emp.department?.name || '--'
+            department: emp.department?.name || '--',
+            working_hours: emp.working_hours || null,
         };
         employeeRecords.value = []; // Clear old data
         showEmployeeModal.value = true;
@@ -573,54 +584,66 @@
         return recentAttendance.value.slice(start, end);
     });
 
+    // ---- Chronic Offenders (replaces raw anomaly watchlist) ----
     const loadingAnomalies = ref(true);
-    const recentAnomalies = ref([]);
-    const anomalySearch = ref('');
-    const anomalyFilter = ref('all');
-    let anomalySearchTimeout = null;
+    const rawAnomalies = ref([]);
+    const offenderFilter = ref('all');
 
-    const debounceAnomalySearch = () => {
-        clearTimeout(anomalySearchTimeout);
-        anomalySearchTimeout = setTimeout(() => {
-            fetchAnomalies();
-        }, 500);
-    };
+    const chronicalOffenders = computed(() => {
+        // Group by employee name
+        const map = {};
+        rawAnomalies.value.forEach(r => {
+            const key = r.employee_id_number || r.name;
+            if (!map[key]) {
+                map[key] = { name: r.name, employee_id: key, lates: 0, absences: 0, halfDays: 0, lastDate: r.date };
+            }
+            if (r.status === 'Late') map[key].lates++;
+            else if (r.status === 'Absent') map[key].absences++;
+            else if (r.status === 'Half Day') map[key].halfDays++;
+            // Track latest offense date
+            if (r.date > map[key].lastDate) map[key].lastDate = r.date;
+        });
+
+        return Object.values(map)
+            .map(o => {
+                const total = o.lates + o.absences + o.halfDays;
+                const level = total >= 5 ? 'critical' : total >= 3 ? 'notice' : 'watch';
+                const d = new Date(o.lastDate);
+                const lastSeen = isNaN(d) ? o.lastDate : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                return { ...o, total, level, lastSeen };
+            })
+            .sort((a, b) => b.total - a.total);
+    });
+
+    const filteredOffenders = computed(() => {
+        if (offenderFilter.value === 'all') return chronicalOffenders.value;
+        return chronicalOffenders.value.filter(o => o.level === offenderFilter.value);
+    });
 
     const fetchAnomalies = async () => {
         loadingAnomalies.value = true;
         try {
-            const { data } = await axios.get('/api/attendance-anomalies', { 
-                params: { 
-                    limit: 15,
-                    search: anomalySearch.value 
-                } 
-            });
-            
-            let filteredData = data.map(r => {
-                return {
-                    id: r.id,
-                    name: r.employee_name,
-                    initials: getInitials(r.employee_name),
-                    avatar: r.avatar,
-                    date: new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                    timeIn: r.time_in,
-                    timeOut: r.time_out,
-                    // Normalize statuses: if it is explicitly 'Half Day', keep it. Otherwise, follow anomaly logic.
-                    status: (r.status === 'Half Day') ? 'Half Day' : ((r.status === 'Absent' || r.time_in === '-' || r.time_out === '-') && r.status !== 'Late' ? 'Absent' : 'Late')
-                };
-            });
-
-            if (anomalyFilter.value !== 'all') {
-                filteredData = filteredData.filter(r => r.status === anomalyFilter.value);
-            }
-
-            recentAnomalies.value = filteredData;
+            // Fetch a big batch so we can aggregate repeat offenses
+            const { data } = await axios.get('/api/attendance-anomalies', { params: { limit: 500 } });
+            rawAnomalies.value = data.map(r => ({
+                id: r.id,
+                name: r.employee_name,
+                employee_id_number: r.employee_id_number,
+                date: r.date,
+                status: (r.status === 'Half Day') ? 'Half Day'
+                    : ((r.status === 'Absent' || r.time_in === '-' || r.time_out === '-') && r.status !== 'Late' ? 'Absent' : 'Late')
+            }));
         } catch (error) {
             console.error('Failed to fetch anomalies:', error);
         } finally {
             loadingAnomalies.value = false;
         }
     };
+    // Old refs kept alive so existing code that references them doesn't break
+    const recentAnomalies = computed(() => rawAnomalies.value.slice(0, 15));
+    const anomalySearch = ref('');
+    const anomalyFilter = ref('all');
+    const debounceAnomalySearch = () => {};
 
     // Recent Leaves Data (From API)
     const recentLeaves = computed(() => {

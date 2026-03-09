@@ -10,6 +10,14 @@
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800">{{ employee?.employee_name }}</h2>
                         <p class="text-sm text-gray-500">{{ employee?.employee_id }} • {{ employee?.department }}</p>
+                        <p v-if="employee?.working_hours" class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-700 text-xs font-semibold">
+                            <i class="pi pi-clock text-xs"></i>
+                            {{ employee.working_hours }}
+                        </p>
+                        <p v-else class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500 text-xs font-medium">
+                            <i class="pi pi-clock text-xs"></i>
+                            No schedule set
+                        </p>
                     </div>
                 </div>
                 <button 

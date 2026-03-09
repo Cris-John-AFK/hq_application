@@ -12,10 +12,12 @@
                     <div class="flex items-center gap-3">
                         <button 
                             @click="downloadExcel"
-                            class="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium shadow-sm shadow-emerald-200 transition-all flex items-center gap-2 cursor-pointer"
+                            :disabled="isExporting"
+                            class="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium shadow-sm shadow-emerald-200 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            <i class="pi pi-file-excel"></i>
-                            Export to Excel
+                            <i v-if="isExporting" class="pi pi-spin pi-spinner text-sm"></i>
+                            <i v-else class="pi pi-file-excel"></i>
+                            {{ isExporting ? 'Preparing Excel...' : 'Export to Excel' }}
                         </button>
                     </div>
                 </div>
@@ -179,8 +181,9 @@
                                     <th class="px-4 py-3 font-semibold border-r border-gray-700 w-36" title="Formula: (Present Days + Undertimes) ÷ (Headcount × Working Days)">Attendance Rate<br>(%)</th>
                                     <th class="px-4 py-3 font-semibold border-r border-gray-700 w-32" title="Total days no record is found or explicitly marked absent for active employees.">Total Absent<br>Days</th>
                                     <th class="px-4 py-3 font-semibold border-r border-gray-700 w-36" title="Formula: (Absent Days) ÷ (Headcount × Working Days)">Absenteeism<br>Rate (%)</th>
-                                    <th class="px-4 py-3 font-semibold border-r border-gray-700 w-36" title="Count of times employees clocked in past their scheduled standard shift time.">No. of employees<br>late</th>
-                                    <th class="px-4 py-3 font-semibold border-r border-gray-700 w-36" title="Formula: (Employees Late) ÷ (Headcount × Working Days)">Tardiness<br>Frequency (%)</th>
+                                     <th class="px-4 py-3 font-semibold border-r border-gray-700 w-36" title="Count of times employees clocked in past their scheduled standard shift time.">No. of employees<br>late</th>
+                                     <th class="px-4 py-3 font-semibold border-r border-gray-700 w-36" title="Sum of all minutes late across all employees. Formula: Σ (Actual Time-In − Scheduled Start) per late record. Capped at 480 mins per incident.">Total Late<br>(mins)</th>
+                                     <th class="px-4 py-3 font-semibold border-r border-gray-700 w-36" title="Formula: (Employees Late) ÷ (Headcount × Working Days)">Tardiness<br>Frequency (%)</th>
                                     <th class="px-4 py-3 font-semibold border-r border-gray-700 w-36" title="Count of times employees clocked out early or only fulfilled Half Day hours.">No. of employees<br>undertime/half day</th>
                                     <th class="px-4 py-3 font-semibold w-40" title="Formula: (Employees Undertime) ÷ (Headcount × Working Days)">Undertime / Half<br>day Frequency<br>(%)</th>
                                 </tr>
@@ -207,9 +210,13 @@
                                     <td class="px-4 py-2 border-r border-gray-200 font-medium">
                                         {{ annualData.find(d => d.month === m)?.total_working_days ? annualData.find(d => d.month === m).absenteeism_rate : '-' }}
                                     </td>
-                                    <td class="px-4 py-2 border-r border-gray-200">
-                                        {{ annualData.find(d => d.month === m)?.employees_late || '0' }}
-                                    </td>
+                                     <td class="px-4 py-2 border-r border-gray-200">
+                                         {{ annualData.find(d => d.month === m)?.employees_late || '0' }}
+                                     </td>
+                                     <td class="px-4 py-2 border-r border-gray-200 font-medium text-orange-600"
+                                         title="Sum of all exact minutes late for this month. Capped at 480 mins per incident.">
+                                         {{ annualData.find(d => d.month === m)?.total_working_days ? (annualData.find(d => d.month === m)?.total_late_mins || 0) : '-' }}
+                                     </td>
                                     <td class="px-4 py-2 border-r border-gray-200 font-medium bg-gray-50">
                                         {{ annualData.find(d => d.month === m)?.total_working_days ? annualData.find(d => d.month === m).tardiness_frequency : '-' }}
                                     </td>
@@ -249,6 +256,7 @@ const { user } = storeToRefs(authStore);
 const activeTab = ref('annual');
 const selectedYear = ref(new Date().getFullYear());
 const selectedMonth = ref(new Date().getMonth() + 1); // current month
+const isExporting = ref(false);
 
 const months = [
     'January', 'February', 'March', 'April', 'May', 'June', 
@@ -360,8 +368,30 @@ const getRateColor = (rateStr) => {
     return 'text-red-600';
 };
 
-const downloadExcel = () => {
-    const url = `/api/reports/attendance/export?year=${selectedYear.value}&month=${selectedMonth.value}`;
-    window.location.href = url;
+const downloadExcel = async () => {
+    if (isExporting.value) return;
+    
+    isExporting.value = true;
+    try {
+        const url = `/api/reports/attendance/export?year=${selectedYear.value}&month=${selectedMonth.value}`;
+        const response = await axios({
+            url: url,
+            method: 'GET',
+            responseType: 'blob',
+        });
+
+        const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = `HatQ_Reports_${selectedYear.value}_${months[selectedMonth.value-1]}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (error) {
+        console.error('Export failed:', error);
+        alert('Failed to generate export. Please try again.');
+    } finally {
+        isExporting.value = false;
+    }
 };
 </script>

@@ -22,7 +22,8 @@ class AttendanceController extends Controller
                 'attendance_records.status',
                 'departments.name as employee_department',
                 'employees.position as employee_position',
-                'employees.avatar as avatar'
+                'employees.avatar as avatar',
+                'employees.working_hours as employee_working_hours'
             );
 
         if ($request->has('start_date')) {

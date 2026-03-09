@@ -355,6 +355,7 @@ const fetchAttendanceRecords = async () => {
                 employee_id: r.employee_id_number,
                 department: r.employee_department || r.department || '--',
                 position: r.employee_position || r.position || '--',
+                working_hours: r.employee_working_hours || null,
             };
         });
     } catch (error) {
@@ -628,7 +629,11 @@ const downloadTemplate = () => {
 };
 
 const viewEmployeeAttendance = (record) => {
-    selectedEmployee.value = record;
+    selectedEmployee.value = {
+        ...record,
+        // ensure working_hours is available on the employee object the modal receives
+        working_hours: record.working_hours || record.employee_working_hours || null,
+    };
     showEmployeeModal.value = true;
 };
 
