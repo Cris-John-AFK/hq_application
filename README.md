@@ -97,5 +97,46 @@ php artisan serve
 ```
 
 ---
+## 📖 Operational Procedures & Calculation Logic
+
+This section defines the strict mathematical rules and processing workflows used by the HatQ HQ-App to ensure "1:1 Data Accuracy" vs. actual employee records.
+
+### 🛡️ 1. Masterlist & Headcount Rules
+The "Total Employees" (Headcount) in any report is not a static number. It is a **historically accurate** calculation that "time travels" based on your data:
+- **Hiring Gatekeeper**: An employee only appears in a report if their `date_hired` is on or before the last day of that reporting month.
+- **Archive Memory**: If you archive an employee on March 1st, they **will still appear** in the February headcount (because they were active in February), but they will vanish from the March headcount.
+- **Dynamic Sync**: Headcount updates automatically every time you view a report—no manual refresh needed.
+
+### ⏱️ 2. Attendance & Absence Logic
+The system follows a "Cold Fact" rule for every workday (dates with at least one record captured):
+- **Present**: Recorded when an employee has BOTH a valid `Time-In` and `Time-Out`.
+- **Strict Absence Rule**: An employee is automatically flagged as **Absent** if:
+    1. They have **zero** attendance records for a scheduled working day.
+    2. They have a `Time-In` but **NO `Time-Out`** (or vice versa). Missing half the log equates to a failed shift.
+- **Half-Day Status**: Triggered if the `Hours Worked` is greater than 0 but less than 5.0 hours. This is automatically capped at **240 minutes** of lost time (Undertime).
+
+### 🚨 3. Tardiness (Lateness) Process
+Lately, the system treats every minute as a fact based on **Individualized Working Hours**:
+- **The Comparison**: `Actual Time-In` vs. `Expected Start Time` (from the Masterlist).
+- **Grace Period**: There is **0 minutes** of grace. 07:01 AM is 1 minute late for a 07:00 AM shift.
+- **Minute Summation**: Every single minute is summed into the "Total Tardiness (mins)" column.
+- **Anomaly Protection (8-Hour Cap)**: To prevent night-shift workers or data errors from creating 700+ minute spikes, any single instance of lateness is **capped at 480 minutes (8 hours)**.
+- **Formula**: `(Actual Time - Scheduled Start) = Tardiness Mins`.
+
+### 📉 4. Report Formula Definitions
+You can hover over any header in the web reports to see these, but here is the technical breakdown:
+- **Attendance Rate (%)**: `(Present Days + Undertimes) ÷ (Headcount × Working Days)`.
+- **Absenteeism Rate (%)**: `(Total Absent Days) ÷ (Headcount × Working Days)`.
+- **Tardiness Frequency (%)**: `(Number of Late Instances) ÷ (Headcount × Working Days)`.
+- **Undertime Frequency (%)**: `(Number of Undertime/Half-Day Instances) ÷ (Headcount × Working Days)`.
+- **Total Scheduled Hrs**: `Σ (Employee Shift Length × Working Days)`. (Example: A 9-hour shift employee scheduled for 20 days = 180 scheduled hours).
+
+### 🏢 5. Departmental Performance
+The **Monthly Department Report** compares the performance of specific teams:
+- **Actual Working Days**: Counts the unique dates where **that specific department** had at least one employee on site.
+- **Actual vs. Scheduled**: Tracks how many hours were rendered vs. how many were expected based on the unique shifts of that team's personnel.
+
+---
+
 *Created by Cris John M. Cañales & Jessica Roque*
 *Support: crisjohn.canales@gmail.com | jessicaroque12@gmail.com*

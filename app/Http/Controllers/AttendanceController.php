@@ -47,12 +47,19 @@ class AttendanceController extends Controller
             return response()->json($query->orderBy('attendance_records.date', 'desc')->take($limit)->get());
         }
 
-        // If no filters and no limit, default to 100 to prevent massive payloads
-        if (!$request->hasAny(['start_date', 'end_date', 'department', 'status', 'employee_id'])) {
-            return response()->json($query->orderBy('attendance_records.date', 'desc')->take(100)->get());
-        }
-
+        // Return all matching records (ordered by date desc)
         return response()->json($query->orderBy('attendance_records.date', 'desc')->get());
+    }
+
+    public function availableDates()
+    {
+        $dates = AttendanceRecord::select('date')
+            ->distinct()
+            ->orderBy('date', 'desc')
+            ->get()
+            ->pluck('date');
+
+        return response()->json($dates);
     }
 
     public function bulkStore(Request $request)
@@ -61,13 +68,14 @@ class AttendanceController extends Controller
         $reportService = new \App\Services\AttendanceReportService();
 
         foreach ($records as $record) {
-            $status = $record['status'];
-
-            // Re-verify lateness based on individual working hours
-            if ($status === 'Present' || $status === 'Late') {
-                $isActuallyLate = $reportService->isLate($record['time_in'], $status, $record['employee_id_number']);
-                $status = $isActuallyLate ? 'Late' : 'Present';
-            }
+            // Calculate exact status based on working hours AND approved leaves
+            $status = $reportService->calculateStatus(
+                $record['time_in'],
+                $record['time_out'],
+                $record['hours_worked'],
+                $record['employee_id_number'],
+                $record['date']
+            );
 
             AttendanceRecord::updateOrCreate(
                 [

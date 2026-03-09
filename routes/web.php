@@ -84,6 +84,7 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
         Route::post('/api/leave-requests/{id}/unarchive', [\App\Http\Controllers\LeaveRequestController::class, 'unarchive']);
         Route::post('/api/leave-requests/bulk-archive', [\App\Http\Controllers\LeaveRequestController::class, 'bulkArchive']);
         Route::get('/api/leave-requests/archive-index', [\App\Http\Controllers\LeaveRequestController::class, 'getArchiveIndex']);
+        Route::get('/api/attendance-records/dates', [\App\Http\Controllers\AttendanceController::class, 'availableDates']);
         Route::get('/api/attendance-records', [\App\Http\Controllers\AttendanceController::class, 'index']);
         Route::get('/api/attendance-stats/graph', [\App\Http\Controllers\AttendanceController::class, 'stats']);
         Route::post('/api/attendance-records/bulk', [\App\Http\Controllers\AttendanceController::class, 'bulkStore']);

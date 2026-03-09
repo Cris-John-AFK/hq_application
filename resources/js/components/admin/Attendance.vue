@@ -62,6 +62,13 @@
                             <option value="Absent">Absent</option>
                             <option value="Late">Late</option>
                             <option value="Half Day">Half Day</option>
+                            <option disabled>--- Leaves ---</option>
+                            <option value="Vacation Leave">Vacation Leave</option>
+                            <option value="Sick Leave">Sick Leave</option>
+                            <option value="Paternity Leave">Paternity Leave</option>
+                            <option value="Solo Parent Leave">Solo Parent Leave</option>
+                            <option value="Bereavement Leave">Bereavement Leave</option>
+                            <option value="VAWC Leave">VAWC Leave</option>
                         </select>
                     </div>
 
@@ -73,6 +80,35 @@
                             placeholder="Search employee..." 
                             class="h-9 pl-10 pr-3 w-full border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
                         >
+                    </div>
+                </div>
+                
+                <!-- Imported Dates Visualization (Quick Filter) -->
+                <div v-if="availableDates.length > 0" class="bg-gray-50 p-4 rounded-2xl border border-dashed border-gray-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-gray-600">
+                            <i class="pi pi-calendar-clock text-teal-600"></i>
+                            <h3 class="text-xs font-black uppercase tracking-widest">Available Imported Records</h3>
+                        </div>
+                        <button 
+                            @click="clearDateFilters" 
+                            class="text-[10px] font-bold text-teal-600 hover:text-teal-700 uppercase tracking-widest flex items-center gap-1 cursor-pointer"
+                        >
+                            <i class="pi pi-history"></i>
+                            Show Everything
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button 
+                            v-for="date in availableDates" 
+                            :key="date"
+                            @click="selectSpecificDate(date)"
+                            :class="isDateSelected(date) ? 'bg-teal-600 text-white border-teal-600 ring-2 ring-teal-100' : 'bg-white text-gray-600 border-gray-200 hover:border-teal-300'"
+                            class="px-3 py-1.5 border rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm flex items-center gap-2"
+                        >
+                            <span class="w-1.5 h-1.5 rounded-full" :class="isDateSelected(date) ? 'bg-white' : 'bg-teal-400'"></span>
+                            {{ formatDate(date) }}
+                        </button>
                     </div>
                 </div>
 
@@ -121,7 +157,8 @@
                                                 'bg-green-100 text-green-700': record.status === 'Present',
                                                 'bg-red-100 text-red-700': record.status === 'Absent',
                                                 'bg-orange-100 text-orange-700': record.status === 'Late',
-                                                'bg-yellow-100 text-yellow-700': record.status === 'Half Day'
+                                                'bg-yellow-100 text-yellow-700': record.status === 'Half Day',
+                                                'bg-blue-100 text-blue-700': !['Present', 'Absent', 'Late', 'Half Day'].includes(record.status)
                                             }"
                                             class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                                         >
@@ -299,6 +336,7 @@ const filters = ref({
 
 // Attendance records - will be populated from Excel import
 const attendanceRecords = ref([]);
+const availableDates = ref([]);
 
 const isLoadingRecords = ref(false);
 const fetchAttendanceRecords = async () => {
@@ -326,12 +364,22 @@ const fetchAttendanceRecords = async () => {
     }
 };
 
+const fetchAvailableDates = async () => {
+    try {
+        const { data } = await axios.get('/api/attendance-records/dates');
+        availableDates.value = data;
+    } catch (error) {
+        console.error('Failed to fetch available dates:', error);
+    }
+};
+
 // Fetch employees from database
 // Fetch light data (departments) from store
 const fetchInitData = async () => {
     try {
         await employeeStore.fetchDepartments(); // Lightweight department fetch
         fetchAttendanceRecords();
+        fetchAvailableDates();
     } catch (error) {
         console.error('Failed to fetch initial data:', error);
     }
@@ -379,6 +427,24 @@ const employeeRecords = computed(() => {
 });
 
 // Methods
+const isDateSelected = (date) => {
+    return filters.value.startDate === date && filters.value.endDate === date;
+};
+
+const selectSpecificDate = (date) => {
+    if (isDateSelected(date)) {
+        filters.value.startDate = '';
+        filters.value.endDate = '';
+    } else {
+        filters.value.startDate = date;
+        filters.value.endDate = date;
+    }
+};
+
+const clearDateFilters = () => {
+    filters.value.startDate = '';
+    filters.value.endDate = '';
+};
 const formatDate = (dateStr) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -517,6 +583,7 @@ const importFile = async () => {
             try {
                 await axios.post('/api/attendance-records/bulk', { records: recordsToUpload });
                 await fetchAttendanceRecords();
+                await fetchAvailableDates();
                 importProgress.value = 100;
                 importStatus.value = 'Done!';
                 setTimeout(() => {

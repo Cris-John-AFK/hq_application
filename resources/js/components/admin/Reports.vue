@@ -73,126 +73,155 @@
                 <!-- Tab Content wrapped in WIP overlay -->
                 <div class="relative">
 
-
-                    <!-- Annual Report Table -->
+                    <!-- Annual Report Table (Format 1: Rows=Metrics, Cols=Months) -->
                     <div v-if="activeTab === 'annual'" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in fade-in duration-300">
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse text-sm">
                                 <thead>
-                                    <tr class="bg-gray-900 text-white uppercase tracking-wider text-xs">
-                                        <th class="px-6 py-4 font-semibold w-32 border-r border-gray-800">Month</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Headcount</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Working<br>Days</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Person-Days<br>Present</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Attendance<br>Rate (%)</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Person-Days<br>Absent</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Absenteeism<br>Rate (%)</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Late<br>Count</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Tardiness<br>Freq (%)</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Undertime /<br>Half Day</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Undertime<br>(mins)</th>
-                                        <th class="px-4 py-4 text-center">Undertime<br>Freq (%)</th>
+                                    <tr>
+                                        <th colspan="2" class="px-6 py-4 font-bold text-center border border-gray-800 bg-gray-900 text-white">YEAR</th>
+                                        <th colspan="12" class="px-6 py-4 font-bold text-center border border-gray-800 bg-gray-900 text-yellow-500">{{ selectedYear }}</th>
+                                    </tr>
+                                    <tr class="bg-gray-800 text-gray-200 text-xs text-center border border-gray-700">
+                                        <th class="px-4 py-3 font-semibold w-48 border-r border-gray-700">Metric</th>
+                                        <th class="px-4 py-3 font-semibold w-72 border-r border-gray-700">Details</th>
+                                        <th v-for="m in months" :key="m" class="px-3 py-3 font-semibold border-r border-gray-700">{{ m }}</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    <tr v-for="row in annualData" :key="row.month" class="hover:bg-gray-50">
-                                        <td class="px-6 py-3 font-medium text-gray-800 border-r border-gray-100">{{ row.month }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.headcount }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.total_working_days }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.total_present_days }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100 font-bold" :class="getRateColor(row.attendance_rate)">{{ row.attendance_rate }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.total_absent_days }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100 font-medium">{{ row.absenteeism_rate }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.employees_late }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.tardiness_frequency }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.employees_undertime }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.total_undertime_mins }}</td>
-                                        <td class="px-4 py-3 text-center">{{ row.undertime_frequency }}</td>
+                                <tbody class="divide-y divide-gray-200 border border-gray-200">
+                                    <tr class="hover:bg-gray-50 border-b border-gray-200" title="Total number of unique dates where at least one attendance record was logged.">
+                                        <td class="px-4 py-3 font-bold text-gray-800 border-r border-gray-200 bg-gray-100/50">Total Working Days</td>
+                                        <td class="px-4 py-3 text-gray-600 text-xs border-r border-gray-200 bg-gray-100/50">Calendar working days - official holidays</td>
+                                        <td v-for="m in months" :key="m" class="px-3 py-3 text-center border-r border-gray-200">
+                                            {{ annualData.find(d => d.month === m)?.total_working_days || '' }}
+                                        </td>
                                     </tr>
-                                    <!-- Yearly Total Row -->
-                                    <tr v-if="annualTotals" class="bg-gray-900 text-white font-bold border-t-2 border-gray-900">
-                                        <td class="px-6 py-3 font-bold text-white border-r border-gray-800">TOTAL</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.headcount }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.total_working_days }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.total_present_days }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.attendance_rate }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.total_absent_days }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.absenteeism_rate }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.employees_late }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.tardiness_frequency }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.employees_undertime }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-800">{{ annualTotals.total_undertime_mins }}</td>
-                                        <td class="px-4 py-3 text-center">{{ annualTotals.undertime_frequency }}</td>
+                                    <tr class="hover:bg-gray-50 border-b border-gray-200" title="Count of regular employees hired on or before the end of this month and not archived before start of month.">
+                                        <td class="px-4 py-3 font-bold text-gray-800 border-r border-gray-200 bg-gray-100/50">Total Employees</td>
+                                        <td class="px-4 py-3 text-gray-600 text-xs border-r border-gray-200 bg-gray-100/50">Headcount at start of period</td>
+                                        <td v-for="m in months" :key="m" class="px-3 py-3 text-center border-r border-gray-200">
+                                            {{ annualData.find(d => d.month === m)?.headcount || '' }}
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50 border-b border-gray-200" title="Sum of all instances an employee was logged as Present or Late.">
+                                        <td class="px-4 py-3 font-bold text-gray-800 border-r border-gray-200 bg-gray-100/50">Total Present Days</td>
+                                        <td class="px-4 py-3 text-gray-600 text-xs border-r border-gray-200 bg-gray-100/50">&Sigma; Present days for all employees</td>
+                                        <td v-for="m in months" :key="m" class="px-3 py-3 text-center border-r border-gray-200">
+                                            {{ annualData.find(d => d.month === m)?.total_present_days || '' }}
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50 border-b border-gray-200" title="Formula: (Headcount × Total Working Days) - Actual Recorded Days. Also includes days with only a Time-In or Time-Out.">
+                                        <td class="px-4 py-3 font-bold text-gray-800 border-r border-gray-200 bg-gray-100/50">Total Absent Days</td>
+                                        <td class="px-4 py-3 text-gray-600 text-xs border-r border-gray-200 bg-gray-100/50">&Sigma; Absent days for all employees</td>
+                                        <td v-for="m in months" :key="m" class="px-3 py-3 text-center border-r border-gray-200">
+                                            {{ annualData.find(d => d.month === m)?.total_absent_days || '' }}
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50 border-b border-gray-200" title="Sum of exact minutes past the employee's specific scheduled start time.">
+                                        <td class="px-4 py-3 font-bold text-gray-800 border-r border-gray-200 bg-gray-100/50">Total Tardiness (mins)</td>
+                                        <td class="px-4 py-3 text-gray-600 text-xs border-r border-gray-200 bg-gray-100/50">&Sigma; minutes late for all employees</td>
+                                        <td v-for="m in months" :key="m" class="px-3 py-3 text-center border-r border-gray-200">
+                                            {{ annualData.find(d => d.month === m)?.total_late_mins || '' }}
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50" title="Sum of exact minutes clocked out before the employee's scheduled end time. (Half Day counts as 240 lost mins).">
+                                        <td class="px-4 py-3 font-bold text-gray-800 border-r border-gray-200 bg-gray-100/50">Total Undertimes/Half day (mins)</td>
+                                        <td class="px-4 py-3 text-gray-600 text-xs border-r border-gray-200 bg-gray-100/50">&Sigma; minutes early departure</td>
+                                        <td v-for="m in months" :key="m" class="px-3 py-3 text-center border-r border-gray-200">
+                                            {{ annualData.find(d => d.month === m)?.total_undertime_mins || '' }}
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    <!-- Department Report Table -->
+                    <!-- Department Report Table (Not entirely specified in current images, keeping closest format but simplifying) -->
                     <div v-else-if="activeTab === 'department'" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in fade-in duration-300">
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse text-sm">
                                 <thead>
-                                    <tr class="bg-gray-900 text-white uppercase tracking-wider text-xs">
-                                        <th class="px-6 py-4 font-semibold w-48 border-r border-gray-800">Department</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total<br>Employees</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Actual<br>Working Days</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total<br>Scheduled Hrs</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total<br>Actual Hrs</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800 bg-gray-800">Regular<br>Actual Hrs</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800 bg-gray-800">Overtime<br>Hours</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800 bg-gray-800">Excess<br>Hours (>2)</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800 bg-gray-800"># Emp w/<br>Excess OT</th>
-                                        <th class="px-4 py-4 text-center">Avg Daily<br>Hrs / Emp</th>
+                                    <tr class="bg-gray-900 text-white uppercase tracking-wider text-xs border border-gray-800">
+                                        <th class="px-6 py-4 font-semibold w-48 border-r border-gray-800 text-center">Department</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center" title="Count of regular employees hired on or before the end of this month inside this department.">Total Employees</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center" title="Total number of unique dates where at least one attendance record was logged.">Actual Working Days</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center" title="Formula: (Total Employees × Actual Working Days) × 8 Hours">Total Scheduled Hrs</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center" title="Sum of all actual hours rendered by employees via time records.">Total Actual Hrs</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-100">
+                                <tbody class="divide-y divide-gray-200 border border-gray-200">
                                     <tr v-for="row in departmentData" :key="row.department" class="hover:bg-gray-50">
-                                        <td class="px-6 py-3 font-medium text-gray-800 border-r border-gray-100">{{ row.department }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.total_employees }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.total_working_days }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100 text-gray-500">{{ row.total_scheduled_hours }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100 font-bold text-teal-600">{{ row.total_actual_hours }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100 text-gray-600">{{ row.regular_actual_hours }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100 bg-yellow-50/50 font-medium">{{ row.overtime_actual_hours }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100 bg-red-50/50 text-red-600">{{ row.excess_hours_worked }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100">{{ row.employees_with_excess_ot }}</td>
-                                        <td class="px-4 py-3 text-center font-mono text-xs">{{ row.avg_daily_working_hours }}</td>
+                                        <td class="px-6 py-3 font-medium text-gray-800 border-r border-gray-200">{{ row.department }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200">{{ row.total_employees }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200">{{ row.total_working_days }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200 text-gray-500">{{ row.total_scheduled_hours }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200 font-bold text-teal-600">{{ row.total_actual_hours }}</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    <!-- Yearly Summary Table -->
-                    <div v-else-if="activeTab === 'yearly'" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in fade-in duration-300">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse text-sm">
-                                <thead>
-                                    <tr class="bg-gray-900 text-white uppercase tracking-wider text-xs">
-                                        <th class="px-6 py-4 font-semibold w-32 border-r border-gray-800">Month</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Actual Working<br>Days</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total<br>Employees</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Person-Days<br>Present</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Person-Days<br>Absent</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800">Total Tardiness<br>(mins)</th>
-                                        <th class="px-4 py-4 text-center">Total Undertime<br>(mins)</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    <tr v-for="row in annualData" :key="row.month" class="hover:bg-gray-50">
-                                        <td class="px-6 py-3 font-medium text-gray-800 border-r border-gray-100">{{ row.month }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100 font-bold text-teal-600">{{ row.total_working_days }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100 font-bold text-teal-600">{{ row.headcount }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100 font-bold text-green-600">{{ row.total_present_days }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100 font-bold text-red-600">{{ row.total_absent_days }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-100 font-bold text-orange-600">{{ row.employees_late * 2 }}</td>
-                                        <td class="px-4 py-3 text-center font-bold text-purple-600">{{ row.total_undertime_mins }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                    <!-- Yearly Summary Table (Format 2 and 3 style) -->
+                    <div v-else-if="activeTab === 'yearly'" class="bg-white rounded-2xl shadow-sm overflow-hidden animate-in fade-in duration-300 overflow-x-auto">
+                        <table class="w-[1200px] max-w-none text-left border-collapse text-sm">
+                            <thead>
+                                <tr>
+                                    <th colspan="2" class="px-5 py-3 font-bold text-center border border-gray-800 bg-gray-900 text-white">YEAR</th>
+                                    <th colspan="1" class="px-5 py-3 font-bold text-center border border-gray-800 bg-gray-900 text-yellow-500">{{ selectedYear }}</th>
+                                    <th colspan="7" class="border border-white bg-white"></th>
+                                </tr>
+                                <tr class="bg-gray-800 text-gray-200 text-xs text-center border border-gray-700">
+                                    <th class="px-4 py-3 font-semibold border-r border-gray-700 w-32">Month</th>
+                                    <th class="px-4 py-3 font-semibold border-r border-gray-700 w-32" title="Active regular employees by end of month.">Headcount</th>
+                                    <th class="px-4 py-3 font-semibold border-r border-gray-700 w-32" title="Total instances an employee was marked Present or Late.">Total Present<br>Days</th>
+                                    <th class="px-4 py-3 font-semibold border-r border-gray-700 w-32" title="Total unique dates with records for the company.">Total Working<br>Days</th>
+                                    <th class="px-4 py-3 font-semibold border-r border-gray-700 w-36" title="Formula: (Present Days + Undertimes) ÷ (Headcount × Working Days)">Attendance Rate<br>(%)</th>
+                                    <th class="px-4 py-3 font-semibold border-r border-gray-700 w-32" title="Total days no record is found or explicitly marked absent for active employees.">Total Absent<br>Days</th>
+                                    <th class="px-4 py-3 font-semibold border-r border-gray-700 w-36" title="Formula: (Absent Days) ÷ (Headcount × Working Days)">Absenteeism<br>Rate (%)</th>
+                                    <th class="px-4 py-3 font-semibold border-r border-gray-700 w-36" title="Count of times employees clocked in past their scheduled standard shift time.">No. of employees<br>late</th>
+                                    <th class="px-4 py-3 font-semibold border-r border-gray-700 w-36" title="Formula: (Employees Late) ÷ (Headcount × Working Days)">Tardiness<br>Frequency (%)</th>
+                                    <th class="px-4 py-3 font-semibold border-r border-gray-700 w-36" title="Count of times employees clocked out early or only fulfilled Half Day hours.">No. of employees<br>undertime/half day</th>
+                                    <th class="px-4 py-3 font-semibold w-40" title="Formula: (Employees Undertime) ÷ (Headcount × Working Days)">Undertime / Half<br>day Frequency<br>(%)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 border border-gray-200">
+                                <tr v-for="m in months" :key="m" class="hover:bg-gray-50 border-b border-gray-200 text-center">
+                                    <td class="px-4 py-2 font-medium text-gray-800 border-r border-gray-200 text-left bg-gray-100/30">{{ m }}</td>
+                                    
+                                    <td class="px-4 py-2 border-r border-gray-200">
+                                        {{ annualData.find(d => d.month === m)?.headcount || '0' }}
+                                    </td>
+                                    <td class="px-4 py-2 border-r border-gray-200">
+                                        {{ annualData.find(d => d.month === m)?.total_present_days || '0' }}
+                                    </td>
+                                    <td class="px-4 py-2 border-r border-gray-200">
+                                        {{ annualData.find(d => d.month === m)?.total_working_days || '0' }}
+                                    </td>
+                                    <td class="px-4 py-2 border-r border-gray-200 font-medium">
+                                        {{ annualData.find(d => d.month === m)?.total_working_days ? annualData.find(d => d.month === m).attendance_rate : '-' }}
+                                    </td>
+                                    <td class="px-4 py-2 border-r border-gray-200">
+                                        {{ annualData.find(d => d.month === m)?.total_absent_days || '0' }}
+                                    </td>
+                                    <td class="px-4 py-2 border-r border-gray-200 font-medium">
+                                        {{ annualData.find(d => d.month === m)?.total_working_days ? annualData.find(d => d.month === m).absenteeism_rate : '-' }}
+                                    </td>
+                                    <td class="px-4 py-2 border-r border-gray-200">
+                                        {{ annualData.find(d => d.month === m)?.employees_late || '0' }}
+                                    </td>
+                                    <td class="px-4 py-2 border-r border-gray-200 font-medium bg-gray-50">
+                                        {{ annualData.find(d => d.month === m)?.total_working_days ? annualData.find(d => d.month === m).tardiness_frequency : '-' }}
+                                    </td>
+                                    <td class="px-4 py-2 border-r border-gray-200">
+                                        {{ annualData.find(d => d.month === m)?.employees_undertime || '0' }}
+                                    </td>
+                                    <td class="px-4 py-2 font-medium bg-gray-50">
+                                        {{ annualData.find(d => d.month === m)?.total_working_days ? annualData.find(d => d.month === m).undertime_frequency : '-' }}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -218,8 +247,8 @@ const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
 const activeTab = ref('annual');
-const selectedYear = ref(2026);
-const selectedMonth = ref(1);
+const selectedYear = ref(new Date().getFullYear());
+const selectedMonth = ref(new Date().getMonth() + 1); // current month
 
 const months = [
     'January', 'February', 'March', 'April', 'May', 'June', 
@@ -284,6 +313,10 @@ const annualTotals = computed(() => {
     };
 });
 
+const calculateDividendPerZero = (a, b) => {
+    return b > 0 ? (a/b*100).toFixed(1) + '%' : '-';
+};
+
 const fetchAnnualReport = async () => {
     try {
         const response = await axios.get(`/api/reports/annual?year=${selectedYear.value}`);
@@ -309,13 +342,13 @@ onMounted(() => {
 });
 
 watch([selectedYear, selectedMonth], () => {
-    if (activeTab.value === 'annual') fetchAnnualReport();
-    else fetchDepartmentReport();
+    fetchAnnualReport();
+    fetchDepartmentReport();
 });
 
 watch(activeTab, () => {
-    if (activeTab.value === 'annual') fetchAnnualReport();
-    else fetchDepartmentReport();
+    fetchAnnualReport();
+    fetchDepartmentReport();
 });
 
 const getRateColor = (rateStr) => {

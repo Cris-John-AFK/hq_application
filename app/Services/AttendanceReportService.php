@@ -26,68 +26,80 @@ class AttendanceReportService
         ];
 
         $data = [];
-        $totalCompanyEmployees = Employee::count();
 
         foreach ($months as $index => $monthName) {
             $monthNum = $index + 1;
+            $startDate = \Carbon\Carbon::create($year, $monthNum, 1)->startOfMonth();
+            $endDate = $startDate->copy()->endOfMonth();
 
-            $records = AttendanceRecord::whereYear('date', $year)
-                ->whereMonth('date', $monthNum)
-                ->get();
+            // Headcount: hired on or before end of this month, and active (or archived AFTER the start of the month)
+            $headcount = Employee::where('date_hired', '<=', $endDate->format('Y-m-d'))
+                ->where(function ($query) use ($startDate) {
+                    $query->where('is_archived', false)
+                        ->orWhere('archived_at', '>=', $startDate->format('Y-m-d H:i:s'));
+                })
+                ->count();
 
-            // Distinct dates with attendance in this month (actual working days)
+            $records = AttendanceRecord::whereBetween('date', [
+                $startDate->format('Y-m-d'),
+                $endDate->format('Y-m-d')
+            ])->get();
+
             $actualWorkingDays = $records->pluck('date')->unique()->count();
 
-            // More realistic possible days based on actual records plus explicit absent records
-            $explicitAbsences = $records->where('status', 'Absent')->count();
+            $explicitAbsences = 0;
+            $presentDays = 0;
+            $latesCount = 0;
+            $totalLateMins = 0;
+            $undertimesCount = 0;
+            $totalUndertimeMins = 0;
 
-            $presentDays = $records->filter(function ($r) {
-                return in_array($r->status, ['Present', 'Late']);
-            })->count();
+            foreach ($records as $record) {
+                // If they lack a clock-in or clock-out, strictly count them as absent
+                if ($record->status === 'Absent' || empty($record->time_in) || empty($record->time_out) || $record->time_in === '-' || $record->time_out === '-') {
+                    $explicitAbsences++;
+                    continue; // Skip tardiness and undertime points if absent
+                }
 
-            $undertimesCount = $records->whereIn('status', ['Half Day', 'Undertime'])->count();
+                // They are present and have valid times
+                if (in_array($record->status, ['Half Day', 'Undertime'])) {
+                    $undertimesCount++;
+                    $totalUndertimeMins += $this->calculateUndertimeMinutes($record->time_out, $record->hours_worked, $record->employee_id_number);
+                } elseif (in_array($record->status, ['Present', 'Late']) || $record->hours_worked > 0) {
+                    $presentDays++;
+                }
 
-            // Re-calculate absent days properly.
-            // If the user's data does not contain every employee every day, 
-            // relying on $totalCompanyEmployees * $actualWorkingDays gives a huge false number for "Absent"
-            // We use the recorded days + known absences to base our calculations on explicit data.
+                // Check Lateness Separately
+                if ($this->isLate($record->time_in, $record->status, $record->employee_id_number)) {
+                    $latesCount++;
+                    $totalLateMins += $this->calculateLatenessMinutes($record->time_in, $record->employee_id_number);
+                }
+            }
+
             $recordedPersonDays = $records->count();
-            $totalPossibleDays = $recordedPersonDays; // Using actual records as base
-
-            // If you want to assume all employees should have worked $actualWorkingDays:
-            $expectedPersonDays = $totalCompanyEmployees * $actualWorkingDays;
-
-            // To fix the user issue ("6200+ working days"), we will use $expectedPersonDays as possible days, 
-            // but ONLY if it seems realistic. Actually, let's use the explicit records for accurate metrics if imports are partial.
-            // But usually "Total Working Days" means the distinct days.
-            // "Possible Person Days" = Total Employees * Total Working Days.
-            $totalPossibleDays = $expectedPersonDays;
-
-            $inferredAbsences = max(0, $totalPossibleDays - $recordedPersonDays);
+            $expectedPersonDays = $headcount * $actualWorkingDays;
+            $inferredAbsences = max(0, $expectedPersonDays - $recordedPersonDays);
             $absentDays = $explicitAbsences + $inferredAbsences;
+
+            $totalPossibleDays = $expectedPersonDays;
 
             $attendanceRate = $totalPossibleDays > 0 ? round((($presentDays + $undertimesCount) / $totalPossibleDays) * 100, 2) : 0;
             $absenteeismRate = $totalPossibleDays > 0 ? round(($absentDays / $totalPossibleDays) * 100, 2) : 0;
 
-            $latesCount = $records->filter(function ($r) {
-                return $this->isLate($r->time_in, $r->status, $r->employee_id_number);
-            })->count();
-
-            $undertimesCount = $records->whereIn('status', ['Half Day', 'Undertime'])->count();
-
             $data[] = [
                 'month' => $monthName,
-                'headcount' => $totalCompanyEmployees,
+                'headcount' => $headcount,
                 'total_present_days' => $presentDays,
-                'total_working_days' => $actualWorkingDays, // Actual chronological days (e.g., 5 or 20)
-                'possible_person_days' => $totalPossibleDays, // Person-days for rate calculations
+                'total_working_days' => $actualWorkingDays,
+                'possible_person_days' => $totalPossibleDays,
                 'attendance_rate' => $attendanceRate . '%',
                 'total_absent_days' => $absentDays,
                 'absenteeism_rate' => $absenteeismRate . '%',
                 'employees_late' => $latesCount,
+                'total_late_mins' => $totalLateMins,
                 'tardiness_frequency' => $totalPossibleDays > 0 ? round(($latesCount / $totalPossibleDays) * 100, 2) . '%' : '0%',
                 'employees_undertime' => $undertimesCount,
-                'total_undertime_mins' => $undertimesCount * 240,
+                'total_undertime_mins' => $totalUndertimeMins,
                 'undertime_frequency' => $totalPossibleDays > 0 ? round(($undertimesCount / $totalPossibleDays) * 100, 2) . '%' : '0%'
             ];
         }
@@ -99,111 +111,246 @@ class AttendanceReportService
     {
         $departments = Department::all();
         $data = [];
+        $startDate = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate = $startDate->copy()->endOfMonth();
+
+        // Company-wide distinct working days (dates that have ANY record)
+        $companyWorkingDays = AttendanceRecord::whereBetween('date', [
+            $startDate->format('Y-m-d'),
+            $endDate->format('Y-m-d')
+        ])
+            ->pluck('date')
+            ->unique()
+            ->count();
 
         foreach ($departments as $dept) {
-            // Fetch records for employees belonging to this department
-            $records = AttendanceRecord::whereYear('date', $year)
-                ->whereMonth('date', $month)
+            // Only load records for employees in this department
+            $records = AttendanceRecord::whereBetween('date', [
+                $startDate->format('Y-m-d'),
+                $endDate->format('Y-m-d')
+            ])
                 ->whereHas('employee', function ($query) use ($dept) {
                     $query->where('department_id', $dept->id);
                 })
+                ->with('employee')
                 ->get();
 
-            $empCount = Employee::where('department_id', $dept->id)->count();
+            // Active employees in this department for this reporting month
+            $employees = Employee::where('department_id', $dept->id)
+                ->where('date_hired', '<=', $endDate->format('Y-m-d'))
+                ->where(function ($query) use ($startDate) {
+                    $query->where('is_archived', false)
+                        ->orWhere('archived_at', '>=', $startDate->format('Y-m-d H:i:s'));
+                })
+                ->get();
 
-            // Distinct dates with attendance in this month for this department
-            $actualWorkingDays = AttendanceRecord::whereYear('date', $year)
-                ->whereMonth('date', $month)
-                ->pluck('date')
-                ->unique()
-                ->count();
+            $empCount = $employees->count();
 
-            $recordedPersonDays = $records->count();
-            // Expected
-            $expectedPersonDays = $empCount * $actualWorkingDays;
+            // Actual working days = unique dates with records for THIS department
+            $deptWorkingDays = $records->pluck('date')->unique()->count();
+            // If dept has no records yet, fall back to company calendar
+            $actualWorkingDays = $deptWorkingDays > 0 ? $deptWorkingDays : $companyWorkingDays;
 
-            // To fix inflated rates:
-            $totalPossibleDays = $expectedPersonDays;
+            // Scheduled hours: sum each employee's individual shift length × working days
+            $totalScheduledHours = 0;
+            foreach ($employees as $emp) {
+                $shiftHours = 8; // default
+                if ($emp->working_hours) {
+                    $parts = explode('-', $emp->working_hours);
+                    if (count($parts) === 2) {
+                        try {
+                            $start = \Carbon\Carbon::parse(trim($parts[0]));
+                            $end = \Carbon\Carbon::parse(trim($parts[1]));
+                            // Handle overnight shifts (end < start)
+                            if ($end->lt($start))
+                                $end->addDay();
+                            $shiftHours = round($start->diffInMinutes($end) / 60, 2);
+                        } catch (\Exception $e) {
+                        }
+                    }
+                }
+                $totalScheduledHours += $shiftHours * $actualWorkingDays;
+            }
 
             $actualHours = $records->sum('hours_worked');
-            // Assuming 8 hours scheduled for possible days
-            $scheduledHours = $totalPossibleDays * 8;
 
-            // Calculate regular vs overtime hours
-            $recordsWithOvertime = $records->map(function ($record) {
-                $hours = (float) $record->hours_worked;
-                return [
-                    'employee_id' => $record->employee_id_number,
-                    'is_overtime' => $hours > 8,
-                    'excess_hours' => max(0, $hours - 8)
-                ];
-            });
+            // Per-record overtime calculation
+            $overtimeHours = 0;
+            $excessOtHours = 0;
+            $excessOtEmpIds = [];
 
-            $overtimeHours = $recordsWithOvertime->sum('excess_hours');
+            foreach ($records as $record) {
+                $emp = $record->employee;
+                $shiftHours = 8;
+                if ($emp && $emp->working_hours) {
+                    $parts = explode('-', $emp->working_hours);
+                    if (count($parts) === 2) {
+                        try {
+                            $s = \Carbon\Carbon::parse(trim($parts[0]));
+                            $e = \Carbon\Carbon::parse(trim($parts[1]));
+                            if ($e->lt($s))
+                                $e->addDay();
+                            $shiftHours = round($s->diffInMinutes($e) / 60, 2);
+                        } catch (\Exception $ex) {
+                        }
+                    }
+                }
+                $worked = (float) $record->hours_worked;
+                $excess = max(0, $worked - $shiftHours);
+                $overtimeHours += $excess;
+                if ($excess > 2) {
+                    $excessOtHours += $excess;
+                    $excessOtEmpIds[] = $record->employee_id_number;
+                }
+            }
+
             $regularActualHours = max(0, $actualHours - $overtimeHours);
-            $excessOvertimeHours = $recordsWithOvertime->where('excess_hours', '>', 2)->sum('excess_hours');
-            $employeesWithExcessOt = $recordsWithOvertime->where('excess_hours', '>', 2)->pluck('employee_id')->unique()->count();
+            $employeesWithExcessOt = count(array_unique($excessOtEmpIds));
+            $totalPossibleDays = $empCount * $actualWorkingDays;
 
             $data[] = [
                 'department' => $dept->name,
                 'total_employees' => $empCount,
-                'total_working_days' => $actualWorkingDays, // Actual chronological days
+                'total_working_days' => $actualWorkingDays,
                 'possible_person_days' => $totalPossibleDays,
-                'total_scheduled_hours' => $scheduledHours,
+                'total_scheduled_hours' => round($totalScheduledHours, 2),
                 'total_actual_hours' => round($actualHours, 2),
                 'regular_actual_hours' => round($regularActualHours, 2),
                 'overtime_actual_hours' => round($overtimeHours, 2),
-                'excess_hours_worked' => round($excessOvertimeHours, 2),
+                'excess_hours_worked' => round($excessOtHours, 2),
                 'employees_with_excess_ot' => $employeesWithExcessOt,
-                'avg_daily_working_hours' => $totalPossibleDays > 0 ? round($actualHours / $totalPossibleDays, 2) : 0
+                'avg_daily_working_hours' => $totalPossibleDays > 0
+                    ? round($actualHours / $totalPossibleDays, 2)
+                    : 0
             ];
         }
 
         return $data;
     }
 
-    public function isLate($timeIn, $status, $employeeIdNumber = null)
+    public function calculateLatenessMinutes($timeIn, $employeeIdNumber)
     {
-        if ($status === 'Late')
-            return true;
         if (!$timeIn || $timeIn === '-')
-            return false;
+            return 0;
 
         try {
-            $time = \Carbon\Carbon::createFromFormat('h:i A', $timeIn);
+            $time = \Carbon\Carbon::parse($timeIn);
+            $cutoff = null;
 
-            // Try to find the exact schedule for this employee
             if ($employeeIdNumber) {
-                // Since employee_id in AttendanceRecord matches employee_id in Employee
                 $employee = Employee::where('employee_id', $employeeIdNumber)->first();
                 if ($employee && $employee->working_hours) {
-                    // Extract the "7:00 AM" side of "7:00 AM - 3:00 PM"
                     $parts = explode('-', $employee->working_hours);
                     if (count($parts) > 0) {
-                        $startTimeStr = trim($parts[0]);
-                        try {
-                            // Trim and ensure format like "7:00 AM" maps to "g:i A", string could be "07:00 AM" ("h:i A")
-                            // We use parse to be more flexible against variations like 7:00AM vs 07:00 AM
-                            $cutoff = \Carbon\Carbon::parse($startTimeStr);
-
-                            // Align date part just for comparison ease (same day)
-                            $cutoff->setDate($time->year, $time->month, $time->day);
-
-                            // Lateness grace period: let's stick to exact cutoff or 1 min grace to be safe
-                            return $time->gt($cutoff);
-                        } catch (\Exception $e) {
-                            // Fallthrough on format error
-                        }
+                        $cutoff = \Carbon\Carbon::parse(trim($parts[0]));
                     }
                 }
             }
 
-            // Fallback: Default schedule cutoff (08:30 AM)
-            $cutoff = \Carbon\Carbon::createFromFormat('H:i', '08:30');
+            if (!$cutoff) {
+                $cutoff = \Carbon\Carbon::parse('08:30 AM');
+            }
+
             $cutoff->setDate($time->year, $time->month, $time->day);
-            return $time->gt($cutoff);
+
+            if ($time->gt($cutoff)) {
+                $mins = (int) abs($time->diffInMinutes($cutoff, false));
+                // Cap late physical minutes to 480 (8 hours) so night-shift/anomalies don't generate 700+ mins.
+                return min(480, $mins);
+            }
         } catch (\Exception $e) {
-            return false;
         }
+
+        return 0;
+    }
+
+    public function calculateUndertimeMinutes($timeOut, $hoursWorked, $employeeIdNumber)
+    {
+        // If they worked 0 hours, it's 8 hours (480 mins) orhandled as absence? 
+        // Image logic: "Undertimes/Half day (mins)" usually refers to the lost time.
+        // If Half Day (worked < 5 hrs), we assume they missed 4 hours (240 mins).
+        // If clocked out early, we check against their schedule end.
+
+        if ($hoursWorked > 0 && $hoursWorked < 5.0) {
+            return 240; // 4 hours loss for Half Day
+        }
+
+        if (!$timeOut || $timeOut === '-')
+            return 0;
+
+        try {
+            $time = \Carbon\Carbon::parse($timeOut);
+            $finish = null;
+
+            if ($employeeIdNumber) {
+                $employee = Employee::where('employee_id', $employeeIdNumber)->first();
+                if ($employee && $employee->working_hours) {
+                    $parts = explode('-', $employee->working_hours);
+                    if (count($parts) > 1) {
+                        $finish = \Carbon\Carbon::parse(trim($parts[1]));
+                    }
+                }
+            }
+
+            if (!$finish) {
+                $finish = \Carbon\Carbon::parse('05:30 PM');
+            }
+
+            $finish->setDate($time->year, $time->month, $time->day);
+
+            if ($time->lt($finish)) {
+                $mins = (int) abs($finish->diffInMinutes($time, false));
+                // Cap undertime to 480 (8 hours max)
+                return min(480, $mins);
+            }
+        } catch (\Exception $e) {
+        }
+
+        return 0;
+    }
+
+    public function isLate($timeIn, $status, $employeeIdNumber = null)
+    {
+        return $this->calculateLatenessMinutes($timeIn, $employeeIdNumber) > 0;
+    }
+
+    public function calculateStatus($timeIn, $timeOut, $hoursWorked, $employeeIdNumber, $date)
+    {
+        $employee = Employee::where('employee_id', $employeeIdNumber)->first();
+        $hoursWorked = (float) $hoursWorked;
+
+        // 1. Check for Approved Leaves
+        $leave = null;
+        if ($employee) {
+            $leave = \App\Models\LeaveRequest::where('employee_id', $employee->id)
+                ->where('status', 'Approved')
+                ->where('from_date', '<=', $date)
+                ->where('to_date', '>=', $date)
+                ->first();
+        }
+
+        if ($hoursWorked <= 0 || $timeIn === '-' || $timeOut === '-') {
+            if ($leave) {
+                $typeMap = [
+                    'vacation_leave' => 'Vacation Leave',
+                    'sick_leave' => 'Sick Leave',
+                    'paternity_leave' => 'Paternity Leave',
+                    'solo_parent_leave' => 'Solo Parent Leave',
+                    'bereavement_leave' => 'Bereavement Leave',
+                    'vawc_leave' => 'VAWC Leave'
+                ];
+                return $typeMap[$leave->leave_type] ?? 'On Leave';
+            }
+            return 'Absent';
+        }
+
+        if ($hoursWorked > 0 && $hoursWorked < 5.0) {
+            return 'Half Day';
+        }
+        if ($this->calculateLatenessMinutes($timeIn, $employeeIdNumber) > 0) {
+            return 'Late';
+        }
+
+        return 'Present';
     }
 }
