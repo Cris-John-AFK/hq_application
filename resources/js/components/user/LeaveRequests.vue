@@ -16,17 +16,14 @@
                     </button>
                 </div>
 
-                <!-- Leave Balance Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-500">Leave Credits</p>
-                                <p class="text-3xl font-bold text-gray-800 mt-1">{{ Number(user.leave_credits || 0) }}</p>
-                                <p class="text-xs text-gray-400 mt-1">days remaining</p>
-                            </div>
-
-                        </div>
+                <!-- Leave Balance Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-9 gap-3">
+                    <div v-for="type in leaveTypesList" :key="type.key" 
+                        :class="[type.bg, type.border, 'p-3 rounded-xl border shadow-sm text-center transition-all hover:shadow-md group flex flex-col justify-center min-h-[70px]']">
+                        <p class="text-[9px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-gray-600 transition-colors">{{ type.label }}</p>
+                        <p :class="[type.color, 'text-xl font-black mt-1']">
+                            {{ user.employee?.[type.key] ?? '0' }}
+                        </p>
                     </div>
                 </div>
 
@@ -140,6 +137,18 @@ const isEditMode = ref(false);
 const editingRequest = ref(null);
 const leaveRequests = ref([]);
 const loading = ref(false);
+
+const leaveTypesList = [
+    { key: 'vacation_leave', label: 'VL', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+    { key: 'sick_leave', label: 'SL', color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100' },
+    { key: 'paternity_leave', label: 'PL', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { key: 'solo_parent_leave', label: 'Solo', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { key: 'bereavement_leave', label: 'BER.', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200' },
+    { key: 'vawc_leave', label: 'VAWC', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
+    { key: 'maternity_leave', label: 'MAT.', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { key: 'magna_carta_leave', label: 'MC.', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+    { key: 'emergency_leave', label: 'EMG.', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
+];
 
 const formatDate = (dateString) => {
     if (!dateString) return '';

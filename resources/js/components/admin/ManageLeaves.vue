@@ -394,11 +394,29 @@
                         </div>
 
                         <!-- Modal Content -->
-                        <div class="flex-1 overflow-y-auto p-6 bg-gray-50/30">
+                        <div class="flex-1 overflow-y-auto p-6 bg-gray-50/30" @scroll="handleScrollEffect">
                             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                                 
-                                <!-- Left Panel: Context & Analysis (New) -->
-                                <div class="lg:col-span-4 space-y-4">
+                                <!-- Left Panel: Context & Analysis -->
+                                <div class="lg:col-span-4 space-y-4 lg:sticky lg:top-0 lg:self-start transition-all duration-300 ease-out will-change-transform"
+                                    :class="[isScrolling ? 'scale-[1.01] -translate-y-0.5' : 'scale-100 translate-y-0']">
+                                    
+                                    <!-- Cyberpunk Neon Neural Aura & Trails (Ported from Portal) -->
+                                    <div class="absolute inset-0 -z-10 pointer-events-none transition-opacity duration-500" :class="isScrolling ? 'opacity-100' : 'opacity-0'">
+                                        <!-- If scrolling DOWN, trails shoot UP -->
+                                        <template v-if="scrollDirection === 'down'">
+                                            <div class="admin-neon-trail admin-neon-trail-cyan-up"></div>
+                                            <div class="admin-neon-trail admin-neon-trail-magenta-up delay-75"></div>
+                                        </template>
+                                        <!-- If scrolling UP, trails shoot DOWN -->
+                                        <template v-if="scrollDirection === 'up'">
+                                            <div class="admin-neon-trail admin-neon-trail-cyan-down"></div>
+                                            <div class="admin-neon-trail admin-neon-trail-magenta-down delay-100"></div>
+                                        </template>
+                                        
+                                        <!-- Neural Aura -->
+                                        <div class="absolute -inset-4 rounded-[32px] bg-[radial-gradient(circle_at_center,rgba(0,128,128,0.1)_0%,rgba(103,58,183,0.05)_50%,transparent_80%)] blur-2xl animate-neural-pulse"></div>
+                                    </div>
                                     <!-- User Card -->
                                     <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-3">
                                         <div class="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold overflow-hidden">
@@ -410,6 +428,22 @@
                                             <p v-if="selectedRequest.user?.position || selectedRequest.user?.department" class="text-xs text-gray-500">
                                                 {{ [selectedRequest.user?.position, selectedRequest.user?.department].filter(Boolean).join(' • ') }}
                                             </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Employee Leave Balances (New) -->
+                                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col">
+                                        <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                            <i class="pi pi-wallet text-teal-600"></i> Employee Leave Balances
+                                        </h4>
+                                        <div class="grid grid-cols-3 gap-2">
+                                            <div v-for="type in leaveTypesList" :key="type.key" 
+                                                :class="[type.bg, type.border, 'p-2 rounded-lg border text-center transition-all hover:scale-105']">
+                                                <p class="text-[8px] font-black uppercase text-gray-400 leading-none">{{ type.label }}</p>
+                                                <p :class="[type.color, 'text-sm font-black mt-1']">
+                                                    {{ selectedRequest.user?.employee?.[type.key] ?? selectedRequest.employee?.[type.key] ?? '0' }}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -929,6 +963,18 @@ const { user } = storeToRefs(authStore);
 const { stats } = storeToRefs(leaveStore);
 const departmentNames = computed(() => employeeStore.departmentNames);
 
+const leaveTypesList = [
+    { key: 'vacation_leave', label: 'VL', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+    { key: 'sick_leave', label: 'SL', color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100' },
+    { key: 'paternity_leave', label: 'PL', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { key: 'solo_parent_leave', label: 'Solo', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { key: 'bereavement_leave', label: 'BER.', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200' },
+    { key: 'vawc_leave', label: 'VAWC', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
+    { key: 'maternity_leave', label: 'MAT.', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { key: 'magna_carta_leave', label: 'MC.', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+    { key: 'emergency_leave', label: 'EMG.', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
+];
+
 const showAdminApplyModal = ref(false);
 
 const requests = ref([]);
@@ -1056,6 +1102,38 @@ const formatTime = (t) => {
     const date = new Date();
     date.setHours(h, m);
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+};
+
+// Throttled Scroll Effects for Performance
+const isScrolling = ref(false);
+const scrollDirection = ref('down');
+let scrollStopTimeout = null;
+let lastScrollTop = 0;
+let ticking = false;
+
+const handleScrollEffect = (e) => {
+    if (!ticking) {
+        window.requestAnimationFrame(() => {
+            const st = e.target.scrollTop;
+            
+            // Only update direction if it actually changed to save re-renders
+            const newDir = st > lastScrollTop ? 'down' : 'up';
+            if (scrollDirection.value !== newDir) {
+                scrollDirection.value = newDir;
+            }
+            
+            lastScrollTop = st <= 0 ? 0 : st;
+            isScrolling.value = true;
+            
+            if (scrollStopTimeout) clearTimeout(scrollStopTimeout);
+            scrollStopTimeout = setTimeout(() => {
+                isScrolling.value = false;
+            }, 100);
+            
+            ticking = false;
+        });
+        ticking = true;
+    }
 };
 
 // New Modal Logic
@@ -1220,3 +1298,54 @@ const exportReport = () => {
     window.location.href = `/api/leave-requests/export?${params.toString()}`;
 };
 </script>
+
+<style scoped>
+/* Cyberpunk Neon Neural Trails & Aura (Specific to Admin Modal) */
+.admin-neon-trail {
+    position: absolute;
+    width: 2px;
+    height: 80px;
+    border-radius: 100px;
+    filter: blur(1px);
+    opacity: 0.8;
+    z-index: -1;
+}
+
+.admin-neon-trail-cyan-up { right: -4px; top: -20px; background: linear-gradient(to top, transparent, #00f3ff, #fff); animation: admin-neural-up 0.6s infinite ease-out; }
+.admin-neon-trail-magenta-up { left: -4px; top: -40px; background: linear-gradient(to top, transparent, #ff00ff, #fff); animation: admin-neural-up 0.5s infinite ease-out; }
+.admin-neon-trail-cyan-down { left: -4px; bottom: -20px; background: linear-gradient(to bottom, transparent, #00f3ff, #fff); animation: admin-neural-down 0.6s infinite ease-out; }
+.admin-neon-trail-magenta-down { right: -4px; bottom: -40px; background: linear-gradient(to bottom, transparent, #ff00ff, #fff); animation: admin-neural-down 0.5s infinite ease-out; }
+
+@keyframes admin-neural-up {
+    0% { transform: translateY(0) scaleY(1); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translateY(-100px) scaleY(1.4); opacity: 0; }
+}
+@keyframes admin-neural-down {
+    0% { transform: translateY(0) scaleY(1); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translateY(100px) scaleY(1.4); opacity: 0; }
+}
+
+@keyframes neural-pulse {
+    from { transform: scale(0.98); opacity: 0.4; }
+    to { transform: scale(1.02); opacity: 0.8; }
+}
+
+.animate-neural-pulse {
+    animation: neural-pulse 1.5s infinite alternate ease-in-out;
+}
+
+.delay-75 { animation-delay: 150ms; }
+.delay-100 { animation-delay: 200ms; }
+
+/* Modal Entrance */
+.animate-in {
+    animation-duration: 0.3s;
+    animation-fill-mode: both;
+}
+
+.will-change-transform {
+    will-change: transform;
+}
+</style>

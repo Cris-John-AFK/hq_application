@@ -213,6 +213,22 @@
                         </div>
                     </div>
 
+                    <!-- Leave Credits Preview (Admin Only to avoid redundancy in Portal) -->
+                    <div v-if="displayUser && isAdminMode" class="mt-4 p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5 leading-none">
+                            <i class="pi pi-wallet text-teal-600"></i> Available Leave Credits
+                        </p>
+                        <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
+                             <div v-for="type in leaveTypesList" :key="type.key" 
+                                class="bg-white p-2 rounded-xl border border-gray-100 text-center transition-all hover:border-teal-200 group relative">
+                                <p class="text-[8px] font-black uppercase text-gray-400 leading-none mb-1">{{ type.label }}</p>
+                                <p :class="[type.color, 'text-sm font-black leading-none']">
+                                    {{ (displayUser?.employee?.[type.key] ?? displayUser?.[type.key]) ?? '0' }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="text-xs text-[#d93025]" v-if="formError">* {{ formError }}</div>
                     <div class="text-xs text-gray-500" v-else>* Indicates required fields</div>
                 </div>
@@ -1037,6 +1053,18 @@ const { requestTypes, leaveTypes, attendanceCategories } = storeToRefs(settingsS
 // Admin Mode State
 import axios from 'axios';
 // State
+const leaveTypesList = [
+    { key: 'vacation_leave', label: 'VL', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+    { key: 'sick_leave', label: 'SL', color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100' },
+    { key: 'paternity_leave', label: 'PL', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { key: 'solo_parent_leave', label: 'Solo', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { key: 'bereavement_leave', label: 'BER.', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200' },
+    { key: 'vawc_leave', label: 'VAWC', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
+    { key: 'maternity_leave', label: 'MAT.', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { key: 'magna_carta_leave', label: 'MC.', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+    { key: 'emergency_leave', label: 'EMG.', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
+];
+
 const showErrors = ref(false);
 const formError = ref('');
 const loading = ref(false);

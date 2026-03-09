@@ -259,17 +259,57 @@
                     </div>
                 </div>
             </details>
+
+            <!-- My Own Credits (For Dept Head as well) -->
+            <div class="mt-8 pt-8 border-t border-gray-100">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="pi pi-user-circle text-gray-400"></i>
+                    <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest">My Personal Leave Credits</h3>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-9 gap-3">
+                    <div v-for="type in leaveTypesList" :key="type.key" 
+                        :class="[type.bg, type.border, 'p-3 rounded-xl border border-dashed text-center opacity-80 hover:opacity-100 transition-opacity']">
+                        <p class="text-[8px] font-black uppercase tracking-widest text-gray-400">{{ type.label }}</p>
+                        <p :class="[type.color, 'text-xl font-black mt-0.5']">
+                            {{ user.employee?.[type.key] ?? '0' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- For regular users (non dept_head): show their own leave summary only -->
-        <div v-else-if="user" class="space-y-4">
-            <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-8 text-center">
-                <i class="pi pi-calendar-times text-5xl text-teal-200 mb-4 block"></i>
-                <h2 class="text-lg font-black text-gray-700">Your Leave Dashboard</h2>
-                <p class="text-sm text-gray-400 mt-1 mb-6">View and manage your leave requests from the Leave Requests page.</p>
-                <button @click="$router.push('/leave-requests')"
-                    class="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-lg shadow-teal-100 active:scale-95">
-                    <i class="pi pi-arrow-right mr-2"></i> Go to Leave Requests
+        <!-- For regular users (non dept_head): show their own leave highlights -->
+        <div v-else-if="user" class="space-y-6">
+            <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-xl font-black text-gray-800">My Leave Credits</h2>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Real-time balances from HR masterlist</p>
+                    </div>
+                    <button @click="$router.push('/leave-requests')" class="text-xs font-black text-teal-600 uppercase tracking-widest hover:text-teal-700 transition-colors">
+                        View Details <i class="pi pi-arrow-right ml-1 text-[8px]"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
+                    <div v-for="type in leaveTypesList" :key="type.key" 
+                        :class="[type.bg, type.border, 'p-4 rounded-xl border shadow-sm text-center group transition-all hover:scale-105']">
+                        <p class="text-[9px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-gray-600">{{ type.label }}</p>
+                        <p :class="[type.color, 'text-2xl font-black mt-1']">
+                            {{ user.employee?.[type.key] ?? '0' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Action -->
+            <div class="bg-teal-600 rounded-2xl p-8 text-center text-white shadow-xl shadow-teal-100">
+                 <i class="pi pi-calendar-plus text-5xl mb-4 opacity-50 block"></i>
+                 <h3 class="text-xl font-black">Plan your next time off?</h3>
+                 <p class="text-teal-50 mt-2 mb-6 max-w-sm mx-auto opacity-80">Submit a new leave request or check your filing history with just one click.</p>
+                 <button @click="$router.push('/leave-requests')"
+                    class="px-8 py-3 bg-white text-teal-600 rounded-xl font-black uppercase tracking-widest text-sm transition-all hover:bg-teal-50 active:scale-95 shadow-lg">
+                    Request Leave Now
                 </button>
             </div>
         </div>
@@ -298,6 +338,18 @@ const remarksMap    = ref({});
 
 const now = new Date();
 const reportMonth = ref(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+
+const leaveTypesList = [
+    { key: 'vacation_leave', label: 'VL', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+    { key: 'sick_leave', label: 'SL', color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100' },
+    { key: 'paternity_leave', label: 'PL', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { key: 'solo_parent_leave', label: 'Solo', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { key: 'bereavement_leave', label: 'BER.', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200' },
+    { key: 'vawc_leave', label: 'VAWC', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
+    { key: 'maternity_leave', label: 'MAT.', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { key: 'magna_carta_leave', label: 'MC.', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+    { key: 'emergency_leave', label: 'EMG.', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
+];
 
 const getInitials = (name) => {
     if (!name) return '??';

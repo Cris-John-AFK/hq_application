@@ -149,8 +149,8 @@
 </template>
 
 <script setup>
-    import { ref } from 'vue';
     import { useRouter } from 'vue-router';
+    import { onMounted, ref } from 'vue';
     import axios from 'axios';
     import { useAuthStore } from '../../stores/auth';
     import Loader from '../../components/Loader.vue';
@@ -180,6 +180,15 @@
         empDob.value = val;
         e.target.value = val;
     };
+
+    onMounted(() => {
+        // PROACTIVE PROTECTION: Clear any existing portal session when landing on login page
+        // This prevents the "Back and Forward" history trick from re-logging in the last user
+        sessionStorage.removeItem('hq_employee_portal_id');
+        sessionStorage.removeItem('hq_employee_portal_bd');
+        localStorage.removeItem('hq_employee_portal_id'); // Just in case of legacy
+        localStorage.removeItem('hq_employee_portal_bd');
+    });
 
     const submitForm = async () => {
         error.value = '';
@@ -220,8 +229,9 @@
             });
 
             // Store minimally required session tokens loosely for the portal layout to verify
-            localStorage.setItem('hq_employee_portal_id', empId.value);
-            localStorage.setItem('hq_employee_portal_bd', empDob.value);
+            // Use sessionStorage for better protection (clears on tab close, not shared)
+            sessionStorage.setItem('hq_employee_portal_id', empId.value);
+            sessionStorage.setItem('hq_employee_portal_bd', empDob.value);
             
             showEmployeeModal.value = false;
             window.location.href = '/portal';

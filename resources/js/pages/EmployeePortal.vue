@@ -373,8 +373,8 @@ const handleScrollEffect = () => {
 };
 
 const fetchPortalData = async () => {
-    const activeEmp = localStorage.getItem('hq_employee_portal_id');
-    const bdCheck = localStorage.getItem('hq_employee_portal_bd');
+    const activeEmp = sessionStorage.getItem('hq_employee_portal_id') || localStorage.getItem('hq_employee_portal_id');
+    const bdCheck = sessionStorage.getItem('hq_employee_portal_bd') || localStorage.getItem('hq_employee_portal_bd');
     
     if (!activeEmp || !bdCheck) {
         logout();
@@ -444,6 +444,8 @@ const formatTimeLeft = (seconds) => {
 };
 
 const logout = () => {
+    sessionStorage.removeItem('hq_employee_portal_id');
+    sessionStorage.removeItem('hq_employee_portal_bd');
     localStorage.removeItem('hq_employee_portal_id');
     localStorage.removeItem('hq_employee_portal_bd');
     window.location.href = '/login';

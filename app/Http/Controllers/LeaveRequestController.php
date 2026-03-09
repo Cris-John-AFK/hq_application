@@ -37,7 +37,7 @@ class LeaveRequestController extends Controller
         session_write_close();
         $user = Auth::user();
         $query = LeaveRequest::with([
-            'user:id,name,department,avatar,employment_status,vacation_leave,paternity_leave,solo_parent_leave,bereavement_leave,vawc_leave,department_id',
+            'user.employee',
             'employee.department',
             'deptHead:id,name',
             'hrApprover:id,name',
