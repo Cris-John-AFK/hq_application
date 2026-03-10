@@ -68,12 +68,6 @@ const routes = [
         meta: { title: 'HQ Inc. - Manage Leaves', requiresAuth: true, requiresAdmin: true }
     },
     {
-        path: '/leave-credits',
-        name: 'LeaveCredits',
-        component: () => import('../components/admin/LeaveCredits.vue'),
-        meta: { title: 'HQ Inc. - Leave Credit Setup', requiresAuth: true, requiresAdmin: true }
-    },
-    {
         path: '/archive-leaves',
         name: 'ArchiveLeaves',
         component: ArchiveLeaves,

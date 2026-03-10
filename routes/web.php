@@ -42,6 +42,7 @@ Route::get('/portal', function () {
 Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/api/user', [AuthController::class, 'user']);
+    Route::get('/api/omni-search', [\App\Http\Controllers\OmniSearchController::class, 'search'])->middleware('throttle:120,1');
     Route::post('/api/user/avatar', [\App\Http\Controllers\UserController::class, 'uploadAvatar']);
     Route::put('/api/user', [\App\Http\Controllers\UserController::class, 'update']);
     // Admin Only Functional Routes
@@ -81,9 +82,10 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
         Route::delete('/api/announcements/{id}', [\App\Http\Controllers\AnnouncementController::class, 'destroy']);
         Route::patch('/api/announcements/{id}/toggle', [\App\Http\Controllers\AnnouncementController::class, 'toggle']);
 
-        Route::post('/api/leave-requests/{id}/archive', [\App\Http\Controllers\LeaveRequestController::class, 'archive']);
-        Route::post('/api/leave-requests/{id}/unarchive', [\App\Http\Controllers\LeaveRequestController::class, 'unarchive']);
-        Route::post('/api/leave-requests/bulk-archive', [\App\Http\Controllers\LeaveRequestController::class, 'bulkArchive']);
+        Route::post('/api/leave-requests/{id}/archive', [\App\Http\Controllers\LeaveRequestController::class, 'archive'])->middleware('throttle:30,1');
+        Route::post('/api/leave-requests/{id}/unarchive', [\App\Http\Controllers\LeaveRequestController::class, 'unarchive'])->middleware('throttle:30,1');
+        Route::post('/api/leave-requests/bulk-archive', [\App\Http\Controllers\LeaveRequestController::class, 'bulkArchive'])->middleware('throttle:5,1');
+        Route::post('/api/leave-requests/bulk-action', [\App\Http\Controllers\LeaveRequestController::class, 'bulkAction'])->middleware('throttle:15,1');
         Route::get('/api/leave-requests/archive-index', [\App\Http\Controllers\LeaveRequestController::class, 'getArchiveIndex']);
         Route::get('/api/attendance-records/dates', [\App\Http\Controllers\AttendanceController::class, 'availableDates']);
         Route::get('/api/attendance-records', [\App\Http\Controllers\AttendanceController::class, 'index']);
@@ -121,6 +123,7 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     Route::get('/api/dept-head/report/export', [\App\Http\Controllers\LeaveRequestController::class, 'deptHeadReportExport']);
 
     Route::get('/api/leave-requests/{id}/analysis', [\App\Http\Controllers\LeaveRequestController::class, 'getAnalysis']);
+    Route::get('/api/leave-requests/{id}', [\App\Http\Controllers\LeaveRequestController::class, 'show']);
     Route::get('/api/users/{id}/forecast', [\App\Http\Controllers\LeaveRequestController::class, 'getUserForecast']);
 
     Route::get('/api/leave-requests', [\App\Http\Controllers\LeaveRequestController::class, 'index']);

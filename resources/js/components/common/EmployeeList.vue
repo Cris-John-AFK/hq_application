@@ -137,11 +137,7 @@
                     <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">With Balance In</label>
                     <select v-model="filterHasBalance" class="w-full h-9 px-3 border border-gray-200 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-teal-500">
                         <option value="All">Any / All</option>
-                        <option value="vl">Vacation Leave (VL)</option>
-                        <option value="pl">Paternity Leave (PL)</option>
-                        <option value="sp">Solo Parent (SP)</option>
-                        <option value="bl">Bereavement (BL)</option>
-                        <option value="vawc">VAWC Leave (VW)</option>
+                        <option v-for="col in activeLeaveColumns" :key="col.col" :value="col.col">{{ col.label }}</option>
                     </select>
                 </div>
             </div>
@@ -212,26 +208,10 @@
                         <td class="px-6 py-4 text-sm text-gray-600">{{ employee.department?.name || 'N/A' }}</td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ employee.position }}</td>
                         <td class="px-6 py-4">
-                            <div class="grid grid-cols-5 gap-1 text-center w-[120px]">
-                                <div class="flex flex-col border border-gray-100 rounded p-1 bg-white" title="Vacation">
-                                    <span class="text-[8px] font-bold text-gray-400">VL</span>
-                                    <span class="text-[10px] font-black" :class="employee.vacation_leave > 0 ? 'text-teal-600' : 'text-gray-300'">{{ Number(employee.vacation_leave) || 0 }}</span>
-                                </div>
-                                <div class="flex flex-col border border-gray-100 rounded p-1 bg-white" title="Paternity">
-                                    <span class="text-[8px] font-bold text-gray-400">PL</span>
-                                    <span class="text-[10px] font-black" :class="employee.paternity_leave > 0 ? 'text-blue-600' : 'text-gray-300'">{{ Number(employee.paternity_leave) || 0 }}</span>
-                                </div>
-                                <div class="flex flex-col border border-gray-100 rounded p-1 bg-white" title="Solo Parent">
-                                    <span class="text-[8px] font-bold text-gray-400">SP</span>
-                                    <span class="text-[10px] font-black" :class="employee.solo_parent_leave > 0 ? 'text-purple-600' : 'text-gray-300'">{{ Number(employee.solo_parent_leave) || 0 }}</span>
-                                </div>
-                                <div class="flex flex-col border border-gray-100 rounded p-1 bg-white" title="Bereavement">
-                                    <span class="text-[8px] font-bold text-gray-400">BL</span>
-                                    <span class="text-[10px] font-black" :class="employee.bereavement_leave > 0 ? 'text-amber-600' : 'text-gray-300'">{{ Number(employee.bereavement_leave) || 0 }}</span>
-                                </div>
-                                <div class="flex flex-col border border-gray-100 rounded p-1 bg-white" title="VAWC">
-                                    <span class="text-[8px] font-bold text-gray-400">VW</span>
-                                    <span class="text-[10px] font-black" :class="employee.vawc_leave > 0 ? 'text-rose-600' : 'text-gray-300'">{{ Number(employee.vawc_leave) || 0 }}</span>
+                            <div class="flex flex-wrap gap-1 w-[160px]">
+                                <div v-for="col in activeLeaveColumns" :key="col.col" class="flex flex-col border border-gray-100 rounded p-1 bg-white min-w-[28px] text-center shrink-0" :title="col.label">
+                                    <span class="text-[8px] font-bold text-gray-400">{{ col.abbr }}</span>
+                                    <span class="text-[10px] font-black" :class="Number(employee[col.col]) > 0 ? 'text-teal-600' : 'text-gray-300'">{{ Number(employee[col.col]) || 0 }}</span>
                                 </div>
                             </div>
                         </td>
@@ -447,6 +427,50 @@ const handleCreateAccount = async () => {
 };
 
 // Fetch Data
+const activeLeaveColumns = ref([]);
+
+const loadLeaveSettings = async () => {
+    try {
+        const res = await axios.get('/api/settings/leave_types');
+        const typesList = res.data;
+        activeLeaveColumns.value = typesList.map(label => {
+            let abbr = '';
+            const match = label.match(/\(([^)]+)\)/);
+            if (match) {
+                abbr = match[1];
+            } else {
+                const words = label.replace(/leave/i, '').trim().split(' ');
+                if (words.length > 1) {
+                    abbr = (words[0][0] + words[1][0]).toUpperCase();
+                } else {
+                    abbr = words[0].substring(0, 2).toUpperCase();
+                }
+            }
+            
+            // Generate valid DB column
+            const typeLower = label.toLowerCase();
+            let col = '';
+            if (typeLower.includes('paternity')) col = 'paternity_leave';
+            else if (typeLower.includes('solo')) col = 'solo_parent_leave';
+            else if (typeLower.includes('bereavement')) col = 'bereavement_leave';
+            else if (typeLower.includes('vawc') || typeLower.includes('vaws')) col = 'vawc_leave';
+            else if (typeLower.includes('maternity')) col = 'maternity_leave';
+            else if (typeLower.includes('magna') || typeLower.includes('carta')) col = 'magna_carta_leave';
+            else if (typeLower.includes('emergency')) col = 'emergency_leave';
+            else if (typeLower.includes('sick') || typeLower === 'sl') col = 'sick_leave';
+            else if (typeLower.includes('vacation') || typeLower === 'vl') col = 'vacation_leave';
+            else {
+                col = typeLower.replace(/ *\([^)]*\) */g, "").trim().replace(/ /g, '_');
+                if (!col.endsWith('_leave')) col += '_leave';
+            }
+            
+            return { label, col, abbr };
+        });
+    } catch (error) {
+        console.error('Failed to load leave types settings', error);
+    }
+};
+
 const fetchDepartments = async () => {
     try {
         const response = await axios.get('/api/departments'); // Returns [{id, name, ...}]
@@ -662,8 +686,17 @@ watch([
 });
 
 onMounted(() => {
+    loadLeaveSettings().then(() => {
+        fetchEmployees();
+    });
     fetchDepartments();
     fetchShiftStats();
-    fetchEmployees();
+    
+    // Deep Link from Omni-Search/External
+    const params = new URLSearchParams(window.location.search);
+    const search = params.get('search');
+    if (search) {
+        searchQuery.value = search;
+    }
 });
 </script>

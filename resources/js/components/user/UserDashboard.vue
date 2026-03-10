@@ -339,17 +339,63 @@ const remarksMap    = ref({});
 const now = new Date();
 const reportMonth = ref(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
 
-const leaveTypesList = [
-    { key: 'vacation_leave', label: 'VL', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
-    { key: 'sick_leave', label: 'SL', color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100' },
-    { key: 'paternity_leave', label: 'PL', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-    { key: 'solo_parent_leave', label: 'Solo', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-    { key: 'bereavement_leave', label: 'BER.', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200' },
-    { key: 'vawc_leave', label: 'VAWC', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
-    { key: 'maternity_leave', label: 'MAT.', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-    { key: 'magna_carta_leave', label: 'MC.', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
-    { key: 'emergency_leave', label: 'EMG.', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
+const leaveTypesList = ref([]);
+
+const colorThemes = [
+    { color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+    { color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100' },
+    { color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200' },
+    { color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
+    { color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+    { color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
+    { color: 'text-teal-600', bg: 'bg-teal-50', border: 'border-teal-100' },
 ];
+
+const loadLeaveSettings = async () => {
+    try {
+        const res = await axios.get('/api/settings/leave_types');
+        const typesList = res.data;
+        leaveTypesList.value = typesList.map((label, idx) => {
+            let abbr = '';
+            const match = label.match(/\(([^)]+)\)/);
+            if (match) {
+                abbr = match[1];
+            } else {
+                const words = label.replace(/leave/i, '').trim().split(' ');
+                if (words.length > 1) {
+                    abbr = (words[0][0] + words[1][0]).toUpperCase();
+                } else {
+                    abbr = words[0].substring(0, 2).toUpperCase();
+                }
+            }
+            
+            // Generate valid DB column
+            const typeLower = label.toLowerCase();
+            let col = '';
+            if (typeLower.includes('paternity')) col = 'paternity_leave';
+            else if (typeLower.includes('solo')) col = 'solo_parent_leave';
+            else if (typeLower.includes('bereavement')) col = 'bereavement_leave';
+            else if (typeLower.includes('vawc') || typeLower.includes('vaws')) col = 'vawc_leave';
+            else if (typeLower.includes('maternity')) col = 'maternity_leave';
+            else if (typeLower.includes('magna') || typeLower.includes('carta')) col = 'magna_carta_leave';
+            else if (typeLower.includes('emergency')) col = 'emergency_leave';
+            else if (typeLower.includes('sick') || typeLower === 'sl') col = 'sick_leave';
+            else if (typeLower.includes('vacation') || typeLower === 'vl') col = 'vacation_leave';
+            else {
+                col = typeLower.replace(/ *\([^)]*\) */g, "").trim().replace(/ /g, '_');
+                if (!col.endsWith('_leave')) col += '_leave';
+            }
+            
+            const theme = colorThemes[idx % colorThemes.length];
+            return { key: col, label: abbr, color: theme.color, bg: theme.bg, border: theme.border };
+        });
+    } catch (error) {
+        console.error('Failed to load leave types settings', error);
+    }
+};
 
 const getInitials = (name) => {
     if (!name) return '??';
@@ -404,6 +450,7 @@ const exportReport = (statusFilter = null) => {
 };
 
 onMounted(async () => {
+    await loadLeaveSettings();
     if (!user.value) await authStore.fetchUser();
     if (user.value?.role === 'dept_head') await fetchReport();
 });

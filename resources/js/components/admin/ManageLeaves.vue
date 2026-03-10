@@ -199,15 +199,7 @@
 
                         <select v-model="filters.type" class="cursor-pointer px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 bg-white flex-1">
                             <option value="">All Leave Types</option>
-                            <option value="SIL">SIL (Service Incentive)</option>
-                            <option value="Vacation">Vacation Leave</option>
-                            <option value="Emergency">Emergency Leave</option>
-                            <option value="Maternity">Maternity Leave</option>
-                            <option value="Paternity">Paternity Leave</option>
-                            <option value="Solo Parent">Solo Parent</option>
-                            <option value="VAWS">VAWS</option>
-                            <option value="Magna Carta">Magna Carta</option>
-                            <option value="Others">Others</option>
+                            <option v-for="col in leaveTypesList" :key="col.key" :value="col.fullLabel">{{ col.fullLabel }}</option>
                         </select>
 
                         <div class="flex gap-2">
@@ -233,6 +225,14 @@
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="bg-gray-50/50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                                    <th class="p-4 w-10">
+                                        <input 
+                                            type="checkbox" 
+                                            :checked="selectedIds.length === filteredRequestsForBulk.length && filteredRequestsForBulk.length > 0"
+                                            @change="toggleSelectAll"
+                                            class="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
+                                        >
+                                    </th>
                                     <th class="p-4">Employee</th>
                                     <th class="p-4">Leave Type</th>
                                     <th class="p-4">Dates</th>
@@ -256,9 +256,20 @@
                                     v-for="request in requests" 
                                     :key="request.id" 
                                     class="hover:bg-gray-50/80 transition-colors group cursor-pointer"
-                                    @click="viewDetails(request)"
+                                    :class="{'bg-teal-50/30': selectedIds.includes(request.id)}"
+                                    @click="toggleSelection(request.id)"
                                 >
-                                    <td class="p-4">
+                                    <td class="p-4" @click.stop>
+                                        <input 
+                                            type="checkbox" 
+                                            v-model="selectedIds" 
+                                            :value="request.id"
+                                            :disabled="['Approved', 'Rejected', 'Cancelled'].includes(request.status)"
+                                            :title="['Approved', 'Rejected', 'Cancelled'].includes(request.status) ? 'Processed requests cannot be batch-edited' : 'Select for batch action'"
+                                            class="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                        >
+                                    </td>
+                                    <td class="p-4" @click="viewDetails(request)">
                                         <div class="flex items-center gap-3">
                                             <div class="w-10 h-10 rounded-full bg-gray-100 overflow-hidden ring-2 ring-transparent group-hover:ring-teal-500/20 transition-all">
                                                 <img v-if="request.user?.avatar_url" :src="request.user.avatar_url" class="w-full h-full object-cover">
@@ -347,7 +358,7 @@
                                         </span>
                                     </td>
                                     <td class="p-4 text-right">
-                                        <button class="cursor-pointer p-2 hover:bg-white rounded-full text-gray-400 hover:text-teal-600 transition-colors shadow-sm border border-transparent hover:border-gray-200">
+                                        <button @click.stop="viewDetails(request)" class="cursor-pointer p-2 hover:bg-white rounded-full text-gray-400 hover:text-teal-600 transition-colors shadow-sm border border-transparent hover:border-gray-200">
                                             <i class="pi pi-chevron-right"></i>
                                         </button>
                                     </td>
@@ -380,6 +391,46 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Floating Bulk Actions Toolbar -->
+                <transition name="slide-up">
+                    <div v-if="selectedIds.length > 0" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-full max-w-2xl px-4">
+                        <div class="bg-slate-900/90 backdrop-blur-md border border-slate-700 rounded-2xl shadow-2xl p-4 flex items-center justify-between text-white gap-6 animate-in slide-in-from-bottom-8 duration-300">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-teal-500/20 border border-teal-500/30 flex items-center justify-center text-teal-400">
+                                    <span class="text-sm font-black">{{ selectedIds.length }}</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-black uppercase tracking-tight">Bulk Actions Active</p>
+                                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Select an action for the checked rows</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <button 
+                                    @click="handleBulkAction('Approved')"
+                                    :disabled="processingBulk"
+                                    class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center gap-2"
+                                >
+                                    <i class="pi" :class="processingBulk ? 'pi-spin pi-spinner' : 'pi-check-circle'"></i>
+                                    Approve All
+                                </button>
+                                <button 
+                                    @click="handleBulkAction('Rejected')"
+                                    :disabled="processingBulk"
+                                    class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center gap-2"
+                                >
+                                    <i class="pi pi-times-circle"></i>
+                                    Reject
+                                </button>
+                                <div class="w-px h-8 bg-slate-700 mx-2"></div>
+                                <button @click="selectedIds = []" class="p-2.5 text-slate-400 hover:text-white transition-colors cursor-pointer">
+                                    <i class="pi pi-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
 
                 <!-- Detail Modal -->
                 <div v-if="selectedRequest" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" @click.self="closeModal">
@@ -954,26 +1005,75 @@ import { storeToRefs } from 'pinia';
 import MainLayout from '../../layouts/MainLayout.vue';
 import LeaveRequestModal from '../common/LeaveRequestModal.vue';
 
+import { useRoute } from 'vue-router';
+
 const authStore = useAuthStore();
 const leaveStore = useLeaveStore();
 const employeeStore = useEmployeeStore();
 const settingsStore = useSettingsStore();
+const route = useRoute();
 
 const { user } = storeToRefs(authStore);
 const { stats } = storeToRefs(leaveStore);
 const departmentNames = computed(() => employeeStore.departmentNames);
 
-const leaveTypesList = [
-    { key: 'vacation_leave', label: 'VL', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
-    { key: 'sick_leave', label: 'SL', color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100' },
-    { key: 'paternity_leave', label: 'PL', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-    { key: 'solo_parent_leave', label: 'Solo', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-    { key: 'bereavement_leave', label: 'BER.', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200' },
-    { key: 'vawc_leave', label: 'VAWC', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
-    { key: 'maternity_leave', label: 'MAT.', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-    { key: 'magna_carta_leave', label: 'MC.', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
-    { key: 'emergency_leave', label: 'EMG.', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
+const leaveTypesList = ref([]);
+
+const colorThemes = [
+    { color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+    { color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100' },
+    { color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200' },
+    { color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
+    { color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+    { color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
+    { color: 'text-teal-600', bg: 'bg-teal-50', border: 'border-teal-100' },
 ];
+
+const loadLeaveSettings = async () => {
+    try {
+        const res = await axios.get('/api/settings/leave_types');
+        const typesList = res.data;
+        leaveTypesList.value = typesList.map((label, idx) => {
+            let abbr = '';
+            const match = label.match(/\(([^)]+)\)/);
+            if (match) {
+                abbr = match[1];
+            } else {
+                const words = label.replace(/leave/i, '').trim().split(' ');
+                if (words.length > 1) {
+                    abbr = (words[0][0] + words[1][0]).toUpperCase();
+                } else {
+                    abbr = words[0].substring(0, 2).toUpperCase();
+                }
+            }
+            
+            // Generate valid DB column
+            const typeLower = label.toLowerCase();
+            let col = '';
+            if (typeLower.includes('paternity')) col = 'paternity_leave';
+            else if (typeLower.includes('solo')) col = 'solo_parent_leave';
+            else if (typeLower.includes('bereavement')) col = 'bereavement_leave';
+            else if (typeLower.includes('vawc') || typeLower.includes('vaws')) col = 'vawc_leave';
+            else if (typeLower.includes('maternity')) col = 'maternity_leave';
+            else if (typeLower.includes('magna') || typeLower.includes('carta')) col = 'magna_carta_leave';
+            else if (typeLower.includes('emergency')) col = 'emergency_leave';
+            else if (typeLower.includes('sick') || typeLower === 'sl') col = 'sick_leave';
+            else if (typeLower.includes('vacation') || typeLower === 'vl') col = 'vacation_leave';
+            else {
+                col = typeLower.replace(/ *\([^)]*\) */g, "").trim().replace(/ /g, '_');
+                if (!col.endsWith('_leave')) col += '_leave';
+            }
+            
+            const theme = colorThemes[idx % colorThemes.length];
+            return { key: col, label: abbr, fullLabel: label, color: theme.color, bg: theme.bg, border: theme.border };
+        });
+    } catch (error) {
+        console.error('Failed to load leave types settings', error);
+    }
+};
 
 const showAdminApplyModal = ref(false);
 
@@ -987,6 +1087,61 @@ const totalRecords = ref(0);
 const selectedRequest = ref(null);
 const analysis = ref(null);
 const loadingAnalysis = ref(false);
+
+// Bulk Selection
+const selectedIds = ref([]);
+const processingBulk = ref(false);
+
+const filteredRequestsForBulk = computed(() => {
+    // Only allow selecting records that are not already Approved/Rejected/Cancelled
+    return requests.value.filter(r => !['Approved', 'Rejected', 'Cancelled'].includes(r.status));
+});
+
+const toggleSelection = (id) => {
+    if (['Approved', 'Rejected', 'Cancelled'].includes(requests.value.find(r => r.id === id)?.status)) return;
+    const index = selectedIds.value.indexOf(id);
+    if (index > -1) {
+        selectedIds.value.splice(index, 1);
+    } else {
+        selectedIds.value.push(id);
+    }
+};
+
+const toggleSelectAll = () => {
+    if (selectedIds.value.length === filteredRequestsForBulk.value.length) {
+        selectedIds.value = [];
+    } else {
+        selectedIds.value = filteredRequestsForBulk.value.map(r => r.id);
+    }
+};
+
+const handleBulkAction = async (status) => {
+    if (processingBulk.value) return;
+    
+    const confirmMsg = `Are you sure you want to set ${selectedIds.value.length} requests to ${status}?`;
+    if (!confirm(confirmMsg)) return;
+
+    processingBulk.value = true;
+    try {
+        await axios.post('/api/leave-requests/bulk-action', {
+            ids: selectedIds.value,
+            status: status,
+            remarks: `Batch ${status} via Leave Management Command Center`
+        });
+        
+        // Success
+        selectedIds.value = [];
+        fetchRequests(); // Refresh table
+        fetchMetrics(); // Refresh counters
+        
+        // Trigger success toast if available (assuming one exists based on app patterns)
+    } catch (error) {
+        console.error('Bulk action failed', error);
+        alert(error.response?.data?.message || 'Bulk action failed');
+    } finally {
+        processingBulk.value = false;
+    }
+};
 const justification = ref('');
 const showJustificationError = ref(false);
 const processing = ref(false);
@@ -994,7 +1149,7 @@ const adminRemarks = ref(''); // Keep for backward compat or merge
 
 const filters = ref({
     search: '',
-    status: 'Dept Approved',
+    status: '',
     type: '',
     request_type: '',
     department: '',
@@ -1044,10 +1199,14 @@ const filteredEmployeeData = computed(() => {
 });
 
 onMounted(async () => {
+    await loadLeaveSettings();
     authStore.fetchUser();
     employeeStore.fetchDepartments();
+    
+    // Handle URL Deep Links (from Omni-Search etc)
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('user_id');
+    const rid = urlParams.get('rid');
     const search = urlParams.get('search');
     const adminFileTarget = urlParams.get('admin_file_target');
 
@@ -1062,8 +1221,36 @@ onMounted(async () => {
     
     settingsStore.fetchSettings();
     await fetchRequests();
+    
+    if (rid) {
+        const found = requests.value.find(r => r.id == rid);
+        if (found) viewDetails(found);
+        else fetchSingleRequest(rid);
+    }
+    
     leaveStore.fetchStats();
 });
+
+const fetchSingleRequest = async (id) => {
+    try {
+        const res = await axios.get(`/api/leave-requests/${id}`);
+        if (res.data) viewDetails(res.data);
+    } catch (e) {
+        console.error("Deep link RID fetch failed", e);
+    }
+};
+
+watch(() => route.query, (newQuery) => {
+    if (newQuery.user_id) {
+        filters.value.user_id = newQuery.user_id;
+        fetchRequests();
+    }
+    if (newQuery.rid) {
+        const found = requests.value.find(r => r.id == newQuery.rid);
+        if (found) viewDetails(found);
+        else fetchSingleRequest(newQuery.rid);
+    }
+}, { deep: true });
 
 const fetchRequests = async () => {
     loading.value = true;

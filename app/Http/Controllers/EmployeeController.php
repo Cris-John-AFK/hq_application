@@ -43,17 +43,40 @@ class EmployeeController extends Controller
 
         // Filter based on specific leave types (having balance > 0)
         if ($request->filled('has_balance')) {
-            $type = $request->has_balance; // e.g. 'vl', 'pl', 'sp', 'bl', 'vawc'
+            $col = $request->has_balance;
+            // Support legacy shortcodes just in case
             $columnMap = [
                 'vl' => 'vacation_leave',
+                'sl' => 'sick_leave',
                 'pl' => 'paternity_leave',
                 'sp' => 'solo_parent_leave',
                 'bl' => 'bereavement_leave',
-                'vawc' => 'vawc_leave'
+                'vawc' => 'vawc_leave',
+                'ml' => 'maternity_leave',
+                'mc' => 'magna_carta_leave',
+                'el' => 'emergency_leave'
             ];
-            $col = $columnMap[$type] ?? null;
-            if ($col) {
-                $query->where($col, '>', 0);
+
+            $dbCol = $columnMap[$col] ?? $col;
+
+            // Allow only valid leave columns to prevent SQL injection
+            $validCols = [
+                'vacation_leave',
+                'sick_leave',
+                'paternity_leave',
+                'solo_parent_leave',
+                'bereavement_leave',
+                'vawc_leave',
+                'maternity_leave',
+                'magna_carta_leave',
+                'emergency_leave'
+            ];
+
+            if (in_array($dbCol, $validCols) || str_ends_with($dbCol, '_leave')) {
+                // We use Schema check dynamically for safety if extending types
+                if (\Illuminate\Support\Facades\Schema::hasColumn('employees', $dbCol)) {
+                    $query->where($dbCol, '>', 0);
+                }
             }
         }
 
@@ -163,6 +186,9 @@ class EmployeeController extends Controller
                 'solo_parent_leave',
                 'bereavement_leave',
                 'vawc_leave',
+                'maternity_leave',
+                'magna_carta_leave',
+                'emergency_leave',
                 'working_hours'
             ]));
 
@@ -286,8 +312,14 @@ class EmployeeController extends Controller
 
         $employee = Employee::findOrFail($id);
 
+        $validLeaveCols = array_filter(
+            \Illuminate\Support\Facades\Schema::getColumnListing('employees'),
+            fn($col) => str_ends_with($col, '_leave')
+        );
+        $validLeaveColsStr = implode(',', $validLeaveCols);
+
         $validated = $request->validate([
-            'leave_type' => 'required|string|in:vacation_leave,sick_leave,paternity_leave,solo_parent_leave,bereavement_leave,vawc_leave',
+            'leave_type' => 'required|string|in:' . $validLeaveColsStr,
             'action' => 'required|in:add,deduct',
             'amount' => 'required|numeric|min:0.5',
             'justification' => 'required|string|min:5'
@@ -352,10 +384,16 @@ class EmployeeController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
+        $validLeaveCols = array_filter(
+            \Illuminate\Support\Facades\Schema::getColumnListing('employees'),
+            fn($col) => str_ends_with($col, '_leave')
+        );
+        $validLeaveColsStr = implode(',', $validLeaveCols);
+
         $validated = $request->validate([
             'employee_ids' => 'required|array',
             'employee_ids.*' => 'exists:employees,id',
-            'leave_type' => 'required|string|in:vacation_leave,sick_leave,paternity_leave,solo_parent_leave,bereavement_leave,vawc_leave',
+            'leave_type' => 'required|string|in:' . $validLeaveColsStr,
             'amount' => 'required|numeric',
             'mode' => 'required|in:set,add',
             'reason' => 'nullable|string'
@@ -372,6 +410,7 @@ class EmployeeController extends Controller
             $count = 0;
 
             foreach ($employees as $employee) {
+                /** @var \App\Models\Employee $employee */
                 $oldValue = $employee->$field;
                 if ($mode === 'set') {
                     $employee->$field = $amount;

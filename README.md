@@ -12,6 +12,9 @@ A professional, enterprise-grade human capital management application built with
 - **Production-Ready Stability**: All previously "experimental" features (Attendance, Reports) have been promoted to core modules, and the temporary Settings panel has been deprecated for a cleaner, focused administrative experience.
 - **Mistake-Proof Employee Records**: Clicking an employee opens a beautiful, read-only "Details Modal" to prevent accidental data overwrites. Explicit "Edit" modes ensure purposeful updates.
 - **Cyberpunk Admin Experience**: The "Review Leave" terminal features a **Sticky Neural Sidebar** optimized for high-performance scrolling.
+- **Bulk Action Command Center**: A sleek, floating "Glassmorphism" toolbar in the Leave Management grid allows administrators to select dozens of requests and Approve/Reject them in a single click with automated progress tracking.
+- **Omni-Search Hub**: A high-performance global search bar in the topbar (accessible with a "Command Palette" feel) to instantly teleport to any Employee Profile or Leave RID from anywhere in the app.
+- **Surgical Deep-Linking**: The system now supports `rid` and `user_id` URL parameters, allowing search results to instantly open the targeted administrative context automatically.
 - **Reactive Visual Effects**: Integrated neon "Neural Trails" that animate based on scroll direction (Up/Down) and an ambient "Neural Pulse" aura to signify sticky focus.
 - **GPU-Accelerated Silk-Scroll**: Leverages `requestAnimationFrame` and hardware acceleration (`will-change: transform`) to ensure a smooth, lag-free experience even with complex visual effects.
 
@@ -31,6 +34,7 @@ A professional, enterprise-grade human capital management application built with
 - **Frictionless Employee Portal**: A standalone, high-security portal for field staff to file leaves and track their detailed multi-leave balances without requiring a full system account.
 - **Clean UI Logic**: The employee filing form intelligently hides redundant leave balances (already visible in the portal sidebar) while retaining them for HR filing-on-behalf.
 - **Hybrid Data Fetching**: User dashboards dynamically fetch both web-submitted and portal-submitted records by cross-referencing **ID Number** and **Employee ID**.
+- **Service-Oriented Processing**: Critical leave logic (deductions, notifications, audits) is centralized in the **LeaveService** layer, ensuring 100% processing consistency between individual and bulk actions.
 
 ### 🧪 Biometric Attendance Engine & Masterlist Import
 - **Multi-Sheet Universal Excel Parser**: High-performance client-side engine capable of reading 3-sheet formats to import Masterlists, schedule working hours, and initial leave balances.
@@ -66,13 +70,16 @@ The development environment is optimized for maximum "snappiness" by leveraging 
 ---
 
 ## 🛡️ Security & Action Audit Trail
-- **Advanced Action Forensic Index**: A fully searchable Audit Trail that allows filtering by **Module** (Leaves, Auth), **Action Type** (Login, Export, Approval), and **Custom Date Ranges**.
+- **Advanced Action Forensic Index**: A fully searchable Audit Trail featuring a **Visual Diff Analyzer** that highlights precisely which data fields were modified (e.g., "Status: Pending → Approved").
 - **Real-Time Log Search**: Debounced search bar to instantly find activities by **User Name**, **IP Address**, **Description**, or **Device Type**.
 - **Kiosk Session Protection**: The Employee Portal now uses **Session-Only Storage** to prevent credentials from persisting between browser sessions.
 - **History Snarfing Prevention**: Proactive "Login Guard" wipes all session data upon landing on the login terminal, preventing session recovery via the "Back/Forward" browser buttons.
 - **RBAC Hardening**: Unified `AdminMiddleware` protects all HR and Administrative routes, ensuring strict Role-Based Access Control.
 - **Privacy First**: Sensitive employee metadata (e.g., Birthdate PINs) is strictly hidden from API JSON responses and never exposed to the frontend.
-- **Rate Limiting**: Hardened API throttling on the Employee Portal to prevent automated brute-force attacks on employee ID numbers.
+- **Tiered Rate Limiting**: Deployed granular security throttles:
+    - **Admin Critical**: 15-30 requests/min for approvals and bulk updates.
+    - **Global Search**: Throttled to prevent automated data enumeration.
+    - **Portal API**: Strict 10 requests/min to halt brute-force attempts.
 - **Safe Transactions**: Multi-table updates are wrapped in atomic database transactions.
 
 ---

@@ -225,41 +225,10 @@
                     
                     <!-- Leave Balances Mini Grid -->
                     <div class="w-full grid grid-cols-3 gap-1.5 mb-3">
-                        <div class="bg-purple-50 rounded-lg p-2 border border-purple-100/50 text-center">
-                            <span class="block text-[8px] uppercase tracking-widest font-bold text-purple-400">VL</span>
-                            <span class="block text-lg font-black text-purple-700">{{ employee.vacation_leave || 0 }}</span>
-                        </div>
-                        <div class="bg-pink-50 rounded-lg p-2 border border-pink-100/50 text-center">
-                            <span class="block text-[8px] uppercase tracking-widest font-bold text-pink-400">SL</span>
-                            <span class="block text-lg font-black text-pink-700">{{ employee.sick_leave || 0 }}</span>
-                        </div>
-                        <div class="bg-blue-50 rounded-lg p-2 border border-blue-100/50 text-center">
-                            <span class="block text-[8px] uppercase tracking-widest font-bold text-blue-400">PL</span>
-                            <span class="block text-lg font-black text-blue-700">{{ employee.paternity_leave || 0 }}</span>
-                        </div>
-                        <div class="bg-emerald-50 rounded-lg p-2 border border-emerald-100/50 text-center">
-                            <span class="block text-[8px] uppercase tracking-widest font-bold text-emerald-400">Solo</span>
-                            <span class="block text-lg font-black text-emerald-700">{{ employee.solo_parent_leave || 0 }}</span>
-                        </div>
-                        <div class="bg-gray-50 rounded-lg p-2 border border-gray-200/50 text-center">
-                            <span class="block text-[8px] uppercase tracking-widest font-bold text-gray-400">Bereav.</span>
-                            <span class="block text-lg font-black text-gray-700">{{ employee.bereavement_leave || 0 }}</span>
-                        </div>
-                        <div class="bg-rose-50 rounded-lg p-2 border border-rose-100/50 text-center">
-                            <span class="block text-[8px] uppercase tracking-widest font-bold text-rose-400">VAWC</span>
-                            <span class="block text-lg font-black text-rose-700">{{ employee.vawc_leave || 0 }}</span>
-                        </div>
-                        <div class="bg-amber-50 rounded-lg p-2 border border-amber-100/50 text-center">
-                            <span class="block text-[8px] uppercase tracking-widest font-bold text-amber-400">Mat.</span>
-                            <span class="block text-lg font-black text-amber-700">{{ employee.maternity_leave || 0 }}</span>
-                        </div>
-                        <div class="bg-indigo-50 rounded-lg p-2 border border-indigo-100/50 text-center">
-                            <span class="block text-[8px] uppercase tracking-widest font-bold text-indigo-400">MC.</span>
-                            <span class="block text-lg font-black text-indigo-700">{{ employee.magna_carta_leave || 0 }}</span>
-                        </div>
-                        <div class="bg-orange-50 rounded-lg p-2 border border-orange-100/50 text-center">
-                            <span class="block text-[8px] uppercase tracking-widest font-bold text-orange-400">Emg.</span>
-                            <span class="block text-lg font-black text-orange-700">{{ employee.emergency_leave || 0 }}</span>
+                        <div v-for="type in leaveTypesList" :key="type.key" 
+                            :class="[type.bg, type.border, 'rounded-lg p-2 border text-center relative overflow-hidden group']">
+                            <span :class="[type.color.replace('text-', 'text-').replace('-600', '-400'), 'block text-[8px] uppercase tracking-widest font-bold']">{{ type.label }}</span>
+                            <span :class="[type.color.replace('text-', 'text-').replace('-600', '-700'), 'block text-lg font-black']">{{ employee[type.key] || 0 }}</span>
                         </div>
                     </div>
                 </div>
@@ -326,6 +295,63 @@ const leaveHistory = ref([]);
 const birthdateCred = ref('');
 const successMsg = ref('');
 const editData = ref(null);
+const leaveTypesList = ref([]);
+
+const colorThemes = [
+    { color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+    { color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100' },
+    { color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200' },
+    { color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
+    { color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+    { color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
+    { color: 'text-teal-600', bg: 'bg-teal-50', border: 'border-teal-100' },
+];
+
+const loadLeaveSettings = async () => {
+    try {
+        const res = await axios.get('/api/settings/leave_types');
+        const typesList = res.data;
+        leaveTypesList.value = typesList.map((label, idx) => {
+            let abbr = '';
+            const match = label.match(/\(([^)]+)\)/);
+            if (match) {
+                abbr = match[1];
+            } else {
+                const words = label.replace(/leave/i, '').trim().split(' ');
+                if (words.length > 1) {
+                    abbr = (words[0][0] + words[1][0]).toUpperCase();
+                } else {
+                    abbr = words[0].substring(0, 2).toUpperCase();
+                }
+            }
+            
+            // Generate valid DB column
+            const typeLower = label.toLowerCase();
+            let col = '';
+            if (typeLower.includes('paternity')) col = 'paternity_leave';
+            else if (typeLower.includes('solo')) col = 'solo_parent_leave';
+            else if (typeLower.includes('bereavement')) col = 'bereavement_leave';
+            else if (typeLower.includes('vawc') || typeLower.includes('vaws')) col = 'vawc_leave';
+            else if (typeLower.includes('maternity')) col = 'maternity_leave';
+            else if (typeLower.includes('magna') || typeLower.includes('carta')) col = 'magna_carta_leave';
+            else if (typeLower.includes('emergency')) col = 'emergency_leave';
+            else if (typeLower.includes('sick') || typeLower === 'sl') col = 'sick_leave';
+            else if (typeLower.includes('vacation') || typeLower === 'vl') col = 'vacation_leave';
+            else {
+                col = typeLower.replace(/ *\([^)]*\) */g, "").trim().replace(/ /g, '_');
+                if (!col.endsWith('_leave')) col += '_leave';
+            }
+            
+            const theme = colorThemes[idx % colorThemes.length];
+            return { key: col, label: abbr, fullLabel: label, color: theme.color, bg: theme.bg, border: theme.border };
+        });
+    } catch (error) {
+        console.error('Failed to load leave types settings', error);
+    }
+};
 
 const showArchiveModal = ref(false);
 const archiveTarget = ref(null);
@@ -399,6 +425,7 @@ const fetchPortalData = async () => {
 };
 
 onMounted(async () => {
+    await loadLeaveSettings();
     const success = await fetchPortalData();
     if (success) {
         startCountdown();

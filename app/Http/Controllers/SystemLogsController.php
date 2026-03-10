@@ -23,14 +23,19 @@ class SystemLogsController extends Controller
             });
         }
 
-        // Filter by Module
+        // Filter by Module (Case-insensitive)
         if ($request->filled('module')) {
-            $query->where('module', $request->get('module'));
+            $query->where('module', 'ILIKE', $request->get('module'));
         }
 
-        // Filter by Action
+        // Filter by Action (Case-insensitive)
         if ($request->filled('action')) {
-            $query->where('action', $request->get('action'));
+            $query->where('action', 'ILIKE', $request->get('action'));
+        }
+
+        // Filter by specific Date
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->get('date'));
         }
 
         // Filter by Date Range

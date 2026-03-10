@@ -109,8 +109,80 @@
                     <i class="pi pi-bars text-xl cursor-pointer"></i>
                 </button>
 
-                <!-- Breadcrumbs -->
-                <div class="hidden md:flex items-center gap-2 text-sm text-gray-500">
+                <!-- Omni-Search Bar -->
+                <div class="hidden lg:flex flex-1 max-w-xl mx-8 relative group">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="pi pi-search text-gray-400 group-focus-within:text-teal-500 transition-colors"></i>
+                    </div>
+                    <input 
+                        type="search" 
+                        v-model="omniSearchQuery"
+                        @focus="isOmniSearchOpen = true"
+                        @blur="closeSearch"
+                        @keydown.enter="handleEnter"
+                        placeholder="Jump to Employee or Request (e.g. 'RID-0001' or 'John')..." 
+                        class="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/10 focus:border-teal-500 focus:bg-white transition-all placeholder:text-gray-400 font-medium"
+                    >
+                    
+                    <!-- Search Results Dropdown -->
+                    <transition name="slide-down">
+                        <div v-if="isOmniSearchOpen && omniSearchQuery.length >= 2" class="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div class="max-h-[70vh] overflow-y-auto">
+                                <!-- Loading State -->
+                                <div v-if="isSearching" class="p-8 text-center border-b border-gray-50 bg-gray-50/20">
+                                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-teal-50 mb-3 border border-teal-100/50">
+                                        <i class="pi pi-spin pi-spinner text-teal-500 text-xl"></i>
+                                    </div>
+                                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Scanning Records...</p>
+                                </div>
+
+                                <!-- Empty State -->
+                                <div v-else-if="omniResults.length === 0" class="p-8 text-center border-b border-gray-50">
+                                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-50 mb-3 border border-gray-100">
+                                        <i class="pi pi-search-minus text-gray-300 text-xl"></i>
+                                    </div>
+                                    <p class="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">No matches found</p>
+                                    <p class="text-[9px] font-bold text-gray-400/60 uppercase tracking-widest leading-relaxed px-6">
+                                        Try searching for an Employee Name, ID Number, or Leave RID
+                                    </p>
+                                </div>
+
+                                <!-- Results List -->
+                                <div v-else class="p-2">
+                                    <div v-for="group in groupedResults" :key="group.type" class="mb-2 last:mb-0">
+                                        <div class="px-3 py-2 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 mb-1 flex items-center justify-between">
+                                            {{ group.type }} 
+                                            <span class="bg-gray-100 px-1.5 py-0.5 rounded text-[8px]">{{ group.items.length }}</span>
+                                        </div>
+                                        <div v-for="item in group.items" :key="item.id" @mousedown="navigateToResult(item)" class="flex items-center gap-3 p-3 rounded-xl hover:bg-teal-50/50 transition-all cursor-pointer group/item">
+                                            <div v-if="item.type === 'Employee'" class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold overflow-hidden shadow-sm shrink-0">
+                                                <img v-if="item.avatar" :src="item.avatar" class="w-full h-full object-cover">
+                                                <span v-else>{{ item.initials }}</span>
+                                            </div>
+                                            <div v-else class="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 shrink-0 shadow-sm border border-purple-200">
+                                                <i class="pi pi-calendar-times"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-xs font-bold text-gray-800 line-clamp-1 group-hover/item:text-teal-700 transition-colors">{{ item.title }}</p>
+                                                <div class="flex items-center gap-2 mt-0.5">
+                                                    <span class="text-[9px] font-mono text-gray-400 group-hover/item:text-teal-500">{{ item.subtitle }}</span>
+                                                    <span v-if="item.status" :class="['text-[8px] font-black uppercase px-1.5 rounded-full border', 
+                                                        item.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                                                        item.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                                                        'bg-gray-50 text-gray-400 border-gray-100']">
+                                                        {{ item.status }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </transition>
+                </div>
+
+                <div v-if="!isOmniSearchOpen" class="hidden md:flex items-center gap-2 text-sm text-gray-500">
                     <span>{{ title }}</span>
                 </div>
 
@@ -310,7 +382,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useSettingsStore } from '../stores/settings';
 import { useAuthStore } from '../stores/auth';
 import { useRoute, useRouter } from 'vue-router';
@@ -338,9 +410,89 @@ const title = computed(() => route.meta.title?.split(' - ').pop() || '');
 const settings = useSettingsStore();
 const isSidebarOpen = ref(false);
 const isCalendarOpen = ref(false);
-const showLeaveModal = ref(false);
 const unreadEventsCount = ref(0);
 const currentTime = ref('');
+const showLeaveModal = ref(false);
+
+// Omni-Search State
+const isOmniSearchOpen = ref(false);
+const omniSearchQuery = ref('');
+const omniResults = ref([]);
+const isSearching = ref(false);
+
+const groupedResults = computed(() => {
+    const groups = {};
+    omniResults.value.forEach(item => {
+        if (!groups[item.type]) groups[item.type] = [];
+        groups[item.type].push(item);
+    });
+    return Object.entries(groups).map(([type, items]) => ({ type, items }));
+});
+
+let searchTimeout;
+let abortController = null;
+watch(omniSearchQuery, (val) => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    
+    // Abort pending request if still in flight
+    if (abortController) {
+        abortController.abort();
+        abortController = null;
+    }
+
+    if (!val || val.length < 2) {
+        omniResults.value = [];
+        return;
+    }
+    
+    searchTimeout = setTimeout(performSearch, 300);
+});
+
+const performSearch = async () => {
+    // New controller for this specific request
+    abortController = new AbortController();
+    isSearching.value = true;
+    try {
+        const res = await axios.get(`/api/omni-search?q=${encodeURIComponent(omniSearchQuery.value)}`, {
+            signal: abortController.signal
+        });
+        omniResults.value = res.data;
+    } catch (e) {
+        if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') {
+            return; // Ignore aborted requests
+        }
+        console.error('Search failed', e);
+    } finally {
+        isSearching.value = false;
+        abortController = null;
+    }
+};
+
+const closeSearch = () => {
+    setTimeout(() => {
+        isOmniSearchOpen.value = false;
+    }, 200);
+};
+
+const handleEnter = () => {
+    if (omniResults.value.length > 0) {
+        navigateToResult(omniResults.value[0]);
+    }
+};
+
+const navigateToResult = (item) => {
+    isOmniSearchOpen.value = false;
+    omniSearchQuery.value = '';
+    
+    if (item.type === 'Employee') {
+        // Route to the Employees management page for that specific employee
+        // The Employees.vue component contains EmployeeList.vue which has a search filter
+        router.push(`/employees?search=${item.employee_code || item.id}`);
+    } else if (item.type === 'Request') {
+        // Go to manage leaves and open the detail for this specific request
+        router.push(`/manage-leaves?rid=${item.id}`);
+    }
+};
 
 // Portal indicator logic
 const navContainer = ref(null);
@@ -554,7 +706,6 @@ const menuItems = computed(() => {
 
     items.push(
         { label: 'Manage Leaves', icon: 'pi-calendar-times', href: '/manage-leaves' },
-        { label: 'Leave Setup', icon: 'pi-cog', href: '/leave-credits' },
         { label: 'Assets', icon: 'pi-box', href: '/inventory' },
         { label: 'Activity Logs', icon: 'pi-list', href: '/activity-logs' },
         { label: 'Archive Registry', icon: 'pi-folder', href: '/archive-leaves' },

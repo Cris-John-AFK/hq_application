@@ -51,26 +51,15 @@
                                         </select>
                                     </div>
 
-                                    <!-- Date From -->
+                                    <!-- Single Date Filter -->
                                     <div class="relative group">
                                         <input 
                                             type="date" 
-                                            v-model="filters.date_from" 
+                                            v-model="filters.date" 
                                             @change="fetchLogs(1)"
                                             class="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-wider focus:border-teal-500 outline-none transition-all cursor-pointer"
                                         >
-                                        <span class="absolute -top-2 left-4 bg-white px-1 text-[8px] font-bold text-gray-400 uppercase tracking-widest leading-none">From</span>
-                                    </div>
-
-                                    <!-- Date To -->
-                                    <div class="relative group">
-                                        <input 
-                                            type="date" 
-                                            v-model="filters.date_to" 
-                                            @change="fetchLogs(1)"
-                                            class="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-wider focus:border-teal-500 outline-none transition-all cursor-pointer"
-                                        >
-                                        <span class="absolute -top-2 left-4 bg-white px-1 text-[8px] font-bold text-gray-400 uppercase tracking-widest leading-none">To</span>
+                                        <span class="absolute -top-2 left-4 bg-white px-1 text-[8px] font-bold text-gray-400 uppercase tracking-widest leading-none">Selected Date</span>
                                     </div>
                                 </div>
                             </div>
@@ -197,10 +186,11 @@
                                 <i class="pi pi-code text-xl"></i>
                             </div>
                             <div>
-                                <h2 class="text-lg font-black text-gray-800 uppercase tracking-tight">Technical Data Analysis</h2>
-                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
-                                    Log ID: {{ selectedLogForDiff.id }} • {{ formatDate(selectedLogForDiff.created_at) }}
-                                </p>
+                                <h2 class="text-lg font-black text-gray-800 uppercase tracking-tight">Audit Log Analysis</h2>
+                                <div class="flex items-center gap-3 mt-1">
+                                    <button @click="diffMode = 'visual'" :class="[diffMode === 'visual' ? 'bg-teal-600 text-white' : 'text-gray-400 hover:text-teal-600 font-bold']" class="text-[9px] uppercase tracking-widest px-3 py-1 rounded-full transition-all">Visual Diff</button>
+                                    <button @click="diffMode = 'technical'" :class="[diffMode === 'technical' ? 'bg-teal-600 text-white' : 'text-gray-400 hover:text-teal-600 font-bold']" class="text-[9px] uppercase tracking-widest px-3 py-1 rounded-full transition-all">Raw JSON</button>
+                                </div>
                             </div>
                         </div>
                         <button @click="selectedLogForDiff = null" class="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors cursor-pointer">
@@ -208,8 +198,42 @@
                         </button>
                     </div>
 
-                    <div class="p-8 overflow-y-auto bg-slate-50">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="p-8 overflow-y-auto bg-slate-50 min-h-[400px]">
+                        <!-- Visual Diff Mode -->
+                        <div v-if="diffMode === 'visual'" class="space-y-6">
+                            <div v-if="getDiffEntries(selectedLogForDiff).length === 0" class="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
+                                <i class="pi pi-search text-4xl text-gray-200 mb-2"></i>
+                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">No field differences detected</p>
+                            </div>
+                            <div v-else class="grid grid-cols-1 gap-4">
+                                <div v-for="entry in getDiffEntries(selectedLogForDiff)" :key="entry.key" class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm transition-all hover:shadow-md">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <span class="text-[10px] font-black text-teal-600 uppercase tracking-[0.2em]">{{ entry.label }}</span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-black text-[8px] uppercase tracking-widest">MODIFIED</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col md:flex-row items-center gap-4 md:gap-8">
+                                        <div class="flex-1 w-full bg-rose-50 border border-rose-100 rounded-xl p-4 relative overflow-hidden group">
+                                            <div class="absolute -right-2 -top-2 w-16 h-16 bg-white/20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+                                            <p class="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Was</p>
+                                            <p class="text-sm font-bold text-rose-700 break-words">{{ formatValue(entry.oldValue) }}</p>
+                                        </div>
+                                        <div class="hidden md:flex text-gray-300">
+                                            <i class="pi pi-arrow-right text-xl"></i>
+                                        </div>
+                                        <div class="flex-1 w-full bg-emerald-50 border border-emerald-100 rounded-xl p-4 relative overflow-hidden group">
+                                            <div class="absolute -right-2 -top-2 w-16 h-16 bg-white/20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+                                            <p class="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Became</p>
+                                            <p class="text-sm font-bold text-emerald-700 break-words">{{ formatValue(entry.newValue) }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Technical Mode -->
+                        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <!-- Old Data -->
                             <div class="space-y-4">
                                 <h3 class="text-xs font-black text-rose-500 uppercase tracking-widest flex items-center gap-2">
@@ -281,18 +305,54 @@ const page = ref(1);
 const lastPage = ref(1);
 const total = ref(0);
 const selectedLogForDiff = ref(null);
+const diffMode = ref('visual'); // 'visual' or 'technical'
+
+const getDiffEntries = (log) => {
+    if (!log || !log.old_data || !log.new_data) return [];
+    
+    const entries = [];
+    const keys = new Set([...Object.keys(log.old_data), ...Object.keys(log.new_data)]);
+    
+    // Fields to ignore in visual diff
+    const ignoredKeys = ['created_at', 'updated_at', 'id', 'user_id', 'employee_id', 'hr_approved_at', 'dept_reviewed_at', 'archived_at'];
+    
+    keys.forEach(key => {
+        if (ignoredKeys.includes(key)) return;
+        
+        const oldVal = log.old_data[key];
+        const newVal = log.new_data[key];
+        
+        // Deep equality check for types
+        if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+            entries.push({
+                key,
+                label: key.replace(/_/g, ' ').toUpperCase(),
+                oldValue: oldVal,
+                newValue: newVal
+            });
+        }
+    });
+    
+    return entries;
+};
+
+const formatValue = (val) => {
+    if (val === null || val === undefined) return '—';
+    if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
+    if (typeof val === 'object') return JSON.stringify(val);
+    return String(val);
+};
 
 const showFilters = ref(true);
 const filters = ref({
     search: '',
     module: '',
     action: '',
-    date_from: '',
-    date_to: ''
+    date: new Date().toISOString().split('T')[0]
 });
 
-const modulesList = ['AUTHENTICATION', 'LEAVES', 'USERS', 'EMPLOYEES', 'DEPARTMENTS', 'INVENTORY', 'NOTIFICATIONS', 'CALENDAR', 'SYSTEM'];
-const actionsList = ['LOGIN (PORTAL)', 'UPDATED', 'CREATED', 'DELETED', 'ARCHIVED', 'EXPORTED', 'APPROVED', 'REJECTED', 'CANCELLED', 'LOGOUT', 'EXPIRED'];
+const modulesList = ['Authentication', 'Leaves', 'Users', 'Employees', 'Departments', 'Inventory', 'Notifications', 'Calendar', 'System'];
+const actionsList = ['Login', 'Logout', 'Updated', 'Created', 'Deleted', 'Archived', 'Approved', 'Rejected', 'Cancelled', 'Expired'];
 
 let debounceTimer = null;
 const debounceFetch = () => {
@@ -307,8 +367,7 @@ const resetFilters = () => {
         search: '',
         module: '',
         action: '',
-        date_from: '',
-        date_to: ''
+        date: new Date().toISOString().split('T')[0]
     };
     fetchLogs(1);
 };
@@ -326,8 +385,7 @@ const fetchLogs = async (p = 1) => {
         if (filters.value.search) params.append('search', filters.value.search);
         if (filters.value.module) params.append('module', filters.value.module);
         if (filters.value.action) params.append('action', filters.value.action);
-        if (filters.value.date_from) params.append('date_from', filters.value.date_from);
-        if (filters.value.date_to) params.append('date_to', filters.value.date_to);
+        if (filters.value.date) params.append('date', filters.value.date);
 
         const response = await axios.get(`/api/system-logs?${params.toString()}`);
         logs.value = response.data.data;

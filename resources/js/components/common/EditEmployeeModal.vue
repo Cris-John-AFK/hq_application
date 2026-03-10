@@ -371,13 +371,15 @@ const fetchDetails = async (id) => {
         form.email = data.email;
         form.working_hours = data.working_hours;
         
-        // Leaves
-        form.vacation_leave = data.vacation_leave ?? 0;
-        form.sick_leave = data.sick_leave ?? 0;
-        form.paternity_leave = data.paternity_leave ?? 0;
-        form.solo_parent_leave = data.solo_parent_leave ?? 0;
-        form.bereavement_leave = data.bereavement_leave ?? 0;
-        form.vawc_leave = data.vawc_leave ?? 0;
+        // Clear existing dynamic leaves
+        Object.keys(form).forEach(key => {
+            if (key.endsWith('_leave')) delete form[key];
+        });
+
+        // Leaves based on active leaveTypes
+        for (const typeKey of Object.keys(leaveTypes.value)) {
+            form[typeKey] = data[typeKey] ?? 0;
+        }
 
         form.last_name = data.last_name;
         form.first_name = data.first_name;
@@ -402,9 +404,12 @@ const fetchDetails = async (id) => {
     }
 };
 
-watch(() => props.modelValue, (isOpen) => {
+watch(() => props.modelValue, async (isOpen) => {
     if (isOpen && props.employee) {
         isEditMode.value = false;
+        if (Object.keys(leaveTypes.value).length === 0) {
+            await loadLeaveSettings();
+        }
         fetchDetails(props.employee.id);
     }
 });
@@ -440,12 +445,39 @@ const handleSubmit = () => {
 };
 
 // Leave Adjustment Logic
-const leaveTypes = {
-    'vacation_leave': 'Vacation Leave',
-    'paternity_leave': 'Paternity Leave',
-    'solo_parent_leave': 'Solo Parent',
-    'bereavement_leave': 'Bereavement',
-    'vawc_leave': 'VAWC'
+const leaveTypes = ref({});
+
+const loadLeaveSettings = async () => {
+    try {
+        const res = await axios.get('/api/settings/leave_types');
+        const typesList = res.data;
+        const newLeaveTypes = {};
+        
+        typesList.forEach(label => {
+            // Generate valid DB column
+            const typeLower = label.toLowerCase();
+            let col = '';
+            if (typeLower.includes('paternity')) col = 'paternity_leave';
+            else if (typeLower.includes('solo')) col = 'solo_parent_leave';
+            else if (typeLower.includes('bereavement')) col = 'bereavement_leave';
+            else if (typeLower.includes('vawc') || typeLower.includes('vaws')) col = 'vawc_leave';
+            else if (typeLower.includes('maternity')) col = 'maternity_leave';
+            else if (typeLower.includes('magna') || typeLower.includes('carta')) col = 'magna_carta_leave';
+            else if (typeLower.includes('emergency')) col = 'emergency_leave';
+            else if (typeLower.includes('sick') || typeLower === 'sl') col = 'sick_leave';
+            else if (typeLower.includes('vacation') || typeLower === 'vl') col = 'vacation_leave';
+            else {
+                col = typeLower.replace(/ *\([^)]*\) */g, "").trim().replace(/ /g, '_');
+                if (!col.endsWith('_leave')) col += '_leave';
+            }
+            
+            newLeaveTypes[col] = label;
+        });
+        
+        leaveTypes.value = newLeaveTypes;
+    } catch (error) {
+        console.error('Failed to load leave types settings', error);
+    }
 };
 
 const adjustingLeave = ref(false);

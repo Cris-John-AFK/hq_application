@@ -13,23 +13,23 @@ use Illuminate\Support\Facades\URL;
 class LeaveRequestController extends Controller
 {
     protected $leavePatternService;
-
     protected $complianceService;
-
     protected $impactService;
-
     protected $creditForecastingService;
+    protected $leaveService;
 
     public function __construct(
         \App\Services\LeavePatternService $leavePatternService,
         \App\Services\ComplianceService $complianceService,
         \App\Services\ImpactService $impactService,
-        \App\Services\CreditForecastingService $creditForecastingService
+        \App\Services\CreditForecastingService $creditForecastingService,
+        \App\Services\LeaveService $leaveService
     ) {
         $this->leavePatternService = $leavePatternService;
         $this->complianceService = $complianceService;
         $this->impactService = $impactService;
         $this->creditForecastingService = $creditForecastingService;
+        $this->leaveService = $leaveService;
     }
 
     public function index(Request $request)
@@ -124,19 +124,26 @@ class LeaveRequestController extends Controller
         }
 
         if ($request->filled('user_id')) {
-            $requestedId = (int) $request->user_id;
-            if ($user->role === 'admin' || $requestedId === $user->id) {
-                // Find the employee record linked to this user (matched by id_number ↔ employee_id)
-                $linkedEmployee = \App\Models\Employee::where('employee_id', $user->id_number)->first();
+            $requestedId = $request->user_id;
 
-                $query->where(function ($q) use ($requestedId, $linkedEmployee) {
-                    // user_id match (web form submissions)
-                    $q->where('user_id', $requestedId);
-                    // Also include portal submissions (employee_id only, no user_id)
-                    if ($linkedEmployee) {
-                        $q->orWhere(function ($eq) use ($linkedEmployee) {
-                            $eq->where('employee_id', $linkedEmployee->id)
-                                ->whereNull('user_id');
+            if ($user->role === 'admin' || $user->role === 'dept_head' || $requestedId == $user->id) {
+                $query->where(function ($q) use ($requestedId) {
+                    if (is_numeric($requestedId)) {
+                        $q->where('user_id', (int) $requestedId);
+
+                        // Also check if this user has a linked employee record for portal leaves
+                        $linkedEmp = User::find($requestedId)?->employee;
+                        if ($linkedEmp) {
+                            $q->orWhere(function ($sub) use ($linkedEmp) {
+                                $sub->where('employee_id', $linkedEmp->id)->whereNull('user_id');
+                            });
+                        }
+                    } else {
+                        // Treat as employee_id string (e.g. "HQI-0001")
+                        $q->whereHas('employee', function ($eq) use ($requestedId) {
+                            $eq->where('employee_id', $requestedId);
+                        })->orWhereHas('user', function ($uq) use ($requestedId) {
+                            $uq->where('id_number', $requestedId);
                         });
                     }
                 });
@@ -155,6 +162,34 @@ class LeaveRequestController extends Controller
         $results = $query->latest($orderBy)->paginate(10);
 
         return response()->json($results);
+    }
+
+    public function show($id)
+    {
+        $user = Auth::user();
+        $leaveRequest = LeaveRequest::with([
+            'user.employee',
+            'employee.department',
+            'deptHead:id,name',
+            'hrApprover:id,name',
+        ])->findOrFail($id);
+
+        if (!in_array($user->role, ['admin', 'hr'])) {
+            if ($user->role === 'dept_head') {
+                $isDeptHeadOfRequest = false;
+                if ($leaveRequest->user && $leaveRequest->user->department_id == $user->department_id) {
+                    $isDeptHeadOfRequest = true;
+                } elseif ($leaveRequest->employee && $leaveRequest->employee->department_id == $user->department_id) {
+                    $isDeptHeadOfRequest = true;
+                }
+                if (!$isDeptHeadOfRequest)
+                    return response()->json(['message' => 'Unauthorized'], 403);
+            } elseif ($leaveRequest->user_id !== $user->id) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+        }
+
+        return response()->json($leaveRequest);
     }
 
     public function store(Request $request)
@@ -561,6 +596,44 @@ class LeaveRequestController extends Controller
         $leaveRequest->update($validated);
         \App\Utils\AuditLogger::log('Leaves', 'Updated', "{$user->name} edited leave request #{$leaveRequest->id}.");
         return response()->json($leaveRequest);
+    }
+
+    public function bulkAction(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:leave_requests,id',
+            'status' => 'required|in:Approved,Rejected,Cancelled,Pending,Dept Approved',
+            'remarks' => 'nullable|string'
+        ]);
+
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'hr'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $ids = $request->ids;
+        $newStatus = $request->status;
+        $remarks = $request->remarks ?: 'Bulk action performed by Admin';
+
+        $processedCount = 0;
+        foreach ($ids as $id) {
+            $leaveRequest = LeaveRequest::find($id);
+            if (!$leaveRequest || $leaveRequest->status === $newStatus)
+                continue;
+
+            $this->leaveService->processAction($leaveRequest, [
+                'status' => $newStatus,
+                'remarks' => $remarks
+            ], $user);
+
+            $processedCount++;
+        }
+
+        return response()->json([
+            'message' => "Successfully processed {$processedCount} requests.",
+            'processed' => $processedCount
+        ]);
     }
 
     // New Endpoints for Decision Support
