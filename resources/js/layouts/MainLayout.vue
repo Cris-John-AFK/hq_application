@@ -2,8 +2,8 @@
     <div class="flex h-screen bg-gray-50">
         <!-- Sidebar -->
         <aside 
-            class="w-72 bg-[#0f172a] text-slate-300 flex flex-col transition-all duration-300 transform fixed md:relative z-30 h-full border-r border-slate-800 shadow-xl" 
-            :class="{ '-translate-x-full md:translate-x-0': !isSidebarOpen }"
+            class="w-72 shrink-0 bg-[#0f172a] text-slate-300 flex flex-col transition-all duration-300 transform fixed md:relative z-30 h-full border-r border-slate-800 shadow-xl" 
+            :class="{ '-translate-x-full md:-ml-72': !isSidebarOpen, 'translate-x-0 md:ml-0': isSidebarOpen }"
         >
             <!-- Logo Area -->
             <router-link to="/dashboard" class="group flex items-center px-6 py-6 border-b border-slate-800 hover:bg-slate-800/10 transition-all duration-500">
@@ -105,12 +105,12 @@
         <div class="flex-1 flex flex-col h-screen overflow-hidden">
             <!-- Topbar -->
             <header class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 shadow-sm z-20">
-                <button @click="isSidebarOpen = !isSidebarOpen" class="md:hidden text-gray-500 hover:text-gray-700">
+                <button @click="isSidebarOpen = !isSidebarOpen" class="text-gray-500 hover:text-gray-700 md:mr-4 shrink-0 transition-transform active:scale-95">
                     <i class="pi pi-bars text-xl cursor-pointer"></i>
                 </button>
 
                 <!-- Omni-Search Bar -->
-                <div class="hidden lg:flex flex-1 max-w-xl mx-8 relative group">
+                <div v-if="user?.role === 'admin'" class="hidden lg:flex flex-1 max-w-xl mx-8 relative group">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i class="pi pi-search text-gray-400 group-focus-within:text-teal-500 transition-colors"></i>
                     </div>
@@ -408,7 +408,7 @@ const { events: allEvents } = storeToRefs(calendarStore);
 const title = computed(() => route.meta.title?.split(' - ').pop() || '');
 
 const settings = useSettingsStore();
-const isSidebarOpen = ref(false);
+const isSidebarOpen = ref(window.innerWidth >= 768);
 const isCalendarOpen = ref(false);
 const unreadEventsCount = ref(0);
 const currentTime = ref('');

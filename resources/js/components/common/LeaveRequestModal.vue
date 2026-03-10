@@ -1086,20 +1086,34 @@ const loadLeaveSettings = async () => {
         const typesList = res.data;
         leaveTypesList.value = typesList.map((label, idx) => {
             let abbr = '';
-            const match = label.match(/\(([^)]+)\)/);
-            if (match) {
-                abbr = match[1];
-            } else {
-                const words = label.replace(/leave/i, '').trim().split(' ');
-                if (words.length > 1) {
-                    abbr = (words[0][0] + words[1][0]).toUpperCase();
+            const typeLower = label.toLowerCase();
+
+            // Explicit PH standard abbreviations to avoid duplicates (VA vs VAWC, SL vs SIL)
+            if (typeLower.includes('sick')) abbr = 'SL';
+            else if (typeLower.includes('vacation')) abbr = 'VL';
+            else if (typeLower.includes('sil')) abbr = 'SI';
+            else if (typeLower.includes('vawc')) abbr = 'VW';
+            else if (typeLower.includes('solo parent')) abbr = 'SP';
+            else if (typeLower.includes('maternity')) abbr = 'ML';
+            else if (typeLower.includes('paternity')) abbr = 'PL';
+            else if (typeLower.includes('emergency')) abbr = 'EL';
+            else if (typeLower.includes('bereavement')) abbr = 'BL';
+            else if (typeLower.includes('magna carta')) abbr = 'MC';
+            else {
+                const match = label.match(/\(([^)]+)\)/);
+                if (match) {
+                    abbr = match[1];
                 } else {
-                    abbr = words[0].substring(0, 2).toUpperCase();
+                    const words = label.replace(/leave/i, '').trim().split(' ');
+                    if (words.length > 1) {
+                        abbr = (words[0][0] + words[1][0]).toUpperCase();
+                    } else {
+                        abbr = words[0].substring(0, 2).toUpperCase();
+                    }
                 }
             }
             
             // Generate valid DB column
-            const typeLower = label.toLowerCase();
             let col = '';
             if (typeLower.includes('paternity')) col = 'paternity_leave';
             else if (typeLower.includes('solo')) col = 'solo_parent_leave';
@@ -1586,9 +1600,14 @@ const getAvailableBalance = (typeString) => {
     const ts = (typeString || '').toLowerCase();
     
     // Normalize user object depending on if it's the raw auth user or imported employee
-    const u = displayUser.value;
+    let u = displayUser.value;
+
+    // Check if we are dealing with a User model that has an 'employee' relationship
+    if (u.employee) {
+        u = u.employee;
+    }
     
-    // The exact matches based on default seeding
+    // Find the mapping key from our list
     let dbCol = leaveTypesList.value.find(t => ts === t.label.toLowerCase() || t.fullLabel.toLowerCase().includes(ts))?.key;
     if (dbCol) return u[dbCol] || 0;
     

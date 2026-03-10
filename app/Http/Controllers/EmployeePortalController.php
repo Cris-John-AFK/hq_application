@@ -91,7 +91,7 @@ class EmployeePortalController extends Controller
             'is_paid' => 'nullable',
             'days_paid' => 'nullable|numeric',
             'additional_details' => 'nullable',
-            'attachment' => 'nullable|file|max:5120' // 5MB limit
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120' // 5MB limit
         ]);
 
         if ($validator->fails()) {
@@ -186,7 +186,7 @@ class EmployeePortalController extends Controller
             'is_paid' => 'nullable',
             'days_paid' => 'nullable|numeric',
             'additional_details' => 'nullable',
-            'attachment' => 'nullable|file|max:5120'
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120'
         ]);
 
         if ($validator->fails()) {
