@@ -21,6 +21,10 @@ class EmployeeDetail extends Model
         'tin_number',
     ];
 
+    protected $hidden = [
+        'birthdate',
+    ];
+
     public function employee()
     {
         return $this->belongsTo(Employee::class);

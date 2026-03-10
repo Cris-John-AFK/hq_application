@@ -3,16 +3,78 @@
         <MainLayout :user="user">
             <div class="max-w-7xl mx-auto space-y-6">
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="p-6 border-b border-gray-100 flex items-center justify-between">
-                        <div>
-                            <h3 class="text-lg font-bold text-gray-800">Action Audit Trail</h3>
-                            <p class="text-sm text-gray-500">Historical record of all administrative leave actions and decisions.</p>
+                    <div class="p-6 border-b border-gray-100">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-800 uppercase tracking-tight">Action Audit Trail</h3>
+                                <p class="text-[11px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Historical record of all administrative leave actions and decisions.</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button @click="showFilters = !showFilters" :class="[showFilters ? 'bg-teal-600 text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100']" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm border border-transparent">
+                                    <i class="pi" :class="showFilters ? 'pi-filter-slash' : 'pi-filter'"></i>
+                                    {{ showFilters ? 'Hide Filters' : 'Toggle Filters' }}
+                                </button>
+                                <button @click="resetFilters" class="p-2.5 text-gray-400 hover:text-teal-600 transition-colors bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-100" title="Clear & Refresh">
+                                    <i class="pi pi-refresh"></i>
+                                </button>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <button @click="fetchLogs" class="p-2 text-gray-400 hover:text-teal-600 transition-colors">
-                                <i class="pi pi-refresh"></i>
-                            </button>
-                        </div>
+
+                        <!-- Search and Filters Section -->
+                        <transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0 -translate-y-4" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition duration-200 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-4">
+                            <div v-if="showFilters" class="mt-8 space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                    <!-- Global Search -->
+                                    <div class="md:col-span-2 relative group">
+                                        <i class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-teal-500 transition-colors"></i>
+                                        <input 
+                                            v-model="filters.search" 
+                                            @input="debounceFetch"
+                                            placeholder="Search by User, Description, IP, or Device..." 
+                                            class="w-full pl-11 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-2xl text-[12px] font-bold focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all placeholder:text-gray-300"
+                                        >
+                                    </div>
+                                    
+                                    <!-- Module Filter -->
+                                    <div>
+                                        <select v-model="filters.module" @change="fetchLogs(1)" class="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-wider focus:border-teal-500 outline-none transition-all cursor-pointer">
+                                            <option value="">All Modules</option>
+                                            <option v-for="mod in modulesList" :key="mod" :value="mod">{{ mod }}</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Action Filter -->
+                                    <div>
+                                        <select v-model="filters.action" @change="fetchLogs(1)" class="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-wider focus:border-teal-500 outline-none transition-all cursor-pointer">
+                                            <option value="">All Actions</option>
+                                            <option v-for="act in actionsList" :key="act" :value="act">{{ act }}</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Date From -->
+                                    <div class="relative group">
+                                        <input 
+                                            type="date" 
+                                            v-model="filters.date_from" 
+                                            @change="fetchLogs(1)"
+                                            class="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-wider focus:border-teal-500 outline-none transition-all cursor-pointer"
+                                        >
+                                        <span class="absolute -top-2 left-4 bg-white px-1 text-[8px] font-bold text-gray-400 uppercase tracking-widest leading-none">From</span>
+                                    </div>
+
+                                    <!-- Date To -->
+                                    <div class="relative group">
+                                        <input 
+                                            type="date" 
+                                            v-model="filters.date_to" 
+                                            @change="fetchLogs(1)"
+                                            class="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-wider focus:border-teal-500 outline-none transition-all cursor-pointer"
+                                        >
+                                        <span class="absolute -top-2 left-4 bg-white px-1 text-[8px] font-bold text-gray-400 uppercase tracking-widest leading-none">To</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </transition>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -220,6 +282,37 @@ const lastPage = ref(1);
 const total = ref(0);
 const selectedLogForDiff = ref(null);
 
+const showFilters = ref(true);
+const filters = ref({
+    search: '',
+    module: '',
+    action: '',
+    date_from: '',
+    date_to: ''
+});
+
+const modulesList = ['AUTHENTICATION', 'LEAVES', 'USERS', 'EMPLOYEES', 'DEPARTMENTS', 'INVENTORY', 'NOTIFICATIONS', 'CALENDAR', 'SYSTEM'];
+const actionsList = ['LOGIN (PORTAL)', 'UPDATED', 'CREATED', 'DELETED', 'ARCHIVED', 'EXPORTED', 'APPROVED', 'REJECTED', 'CANCELLED', 'LOGOUT', 'EXPIRED'];
+
+let debounceTimer = null;
+const debounceFetch = () => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        fetchLogs(1);
+    }, 400);
+};
+
+const resetFilters = () => {
+    filters.value = {
+        search: '',
+        module: '',
+        action: '',
+        date_from: '',
+        date_to: ''
+    };
+    fetchLogs(1);
+};
+
 const viewTechnicalDetails = (log) => {
     selectedLogForDiff.value = log;
 };
@@ -228,7 +321,15 @@ const fetchLogs = async (p = 1) => {
     loading.value = true;
     page.value = p;
     try {
-        const response = await axios.get(`/api/system-logs?page=${p}`);
+        const params = new URLSearchParams();
+        params.append('page', p);
+        if (filters.value.search) params.append('search', filters.value.search);
+        if (filters.value.module) params.append('module', filters.value.module);
+        if (filters.value.action) params.append('action', filters.value.action);
+        if (filters.value.date_from) params.append('date_from', filters.value.date_from);
+        if (filters.value.date_to) params.append('date_to', filters.value.date_to);
+
+        const response = await axios.get(`/api/system-logs?${params.toString()}`);
         logs.value = response.data.data;
         lastPage.value = response.data.last_page;
         total.value = response.data.total;

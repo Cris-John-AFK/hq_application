@@ -22,13 +22,13 @@ Route::middleware(['guest', 'throttle:5,1'])->group(function () {
 // Allow logging expiry even if unauthenticated (called when session dies)
 Route::post('/api/log-expiry', [AuthController::class, 'logExpiry']);
 
-// Employee Portal (Public)
-Route::middleware('throttle:5,1')->group(function () {
+// Employee Portal (Protected with Throttling)
+Route::middleware('throttle:10,1')->group(function () {
     Route::post('/api/employee-portal/login', [\App\Http\Controllers\EmployeePortalController::class, 'login']);
+    Route::post('/api/employee-portal/submit-leave', [\App\Http\Controllers\EmployeePortalController::class, 'submitLeave']);
+    Route::put('/api/employee-portal/update-leave/{id}', [\App\Http\Controllers\EmployeePortalController::class, 'updateLeave']);
+    Route::put('/api/employee-portal/archive-leave/{id}', [\App\Http\Controllers\EmployeePortalController::class, 'archiveLeave']);
 });
-Route::post('/api/employee-portal/submit-leave', [\App\Http\Controllers\EmployeePortalController::class, 'submitLeave']);
-Route::put('/api/employee-portal/update-leave/{id}', [\App\Http\Controllers\EmployeePortalController::class, 'updateLeave']);
-Route::put('/api/employee-portal/archive-leave/{id}', [\App\Http\Controllers\EmployeePortalController::class, 'archiveLeave']);
 
 // Serve the app shell for the employee portal route without strictly matching auth middleware
 Route::get('/portal', function () {

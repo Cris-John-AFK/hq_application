@@ -11,6 +11,9 @@ A professional, enterprise-grade human capital management application built with
 - **Universal Topbar**: Features a live 12-hour synchronized clock and dynamic breadcrumb navigation.
 - **Production-Ready Stability**: All previously "experimental" features (Attendance, Reports) have been promoted to core modules, and the temporary Settings panel has been deprecated for a cleaner, focused administrative experience.
 - **Mistake-Proof Employee Records**: Clicking an employee opens a beautiful, read-only "Details Modal" to prevent accidental data overwrites. Explicit "Edit" modes ensure purposeful updates.
+- **Cyberpunk Admin Experience**: The "Review Leave" terminal features a **Sticky Neural Sidebar** optimized for high-performance scrolling.
+- **Reactive Visual Effects**: Integrated neon "Neural Trails" that animate based on scroll direction (Up/Down) and an ambient "Neural Pulse" aura to signify sticky focus.
+- **GPU-Accelerated Silk-Scroll**: Leverages `requestAnimationFrame` and hardware acceleration (`will-change: transform`) to ensure a smooth, lag-free experience even with complex visual effects.
 
 ### 📊 Enterprise Analytics & Reporting
 - **Executive Stats Grid**: Real-time monitoring of **Total Employees**, **Daily Presence**, **Absences**, **Lateness**, and **On-Leave** staff.
@@ -26,6 +29,7 @@ A professional, enterprise-grade human capital management application built with
 - **Role-Specific Queues**: HR/Admin view now defaults to **"Forwarded to HR"** (Dept Approved), ensuring a streamlined workflow focused on final-stage actions.
 - **Dept Head Empowerment**: Department heads have a specialized dashboard to view, review, and add remarks to staff requests within their own department scope.
 - **Frictionless Employee Portal**: A standalone, high-security portal for field staff to file leaves and track their detailed multi-leave balances without requiring a full system account.
+- **Clean UI Logic**: The employee filing form intelligently hides redundant leave balances (already visible in the portal sidebar) while retaining them for HR filing-on-behalf.
 - **Hybrid Data Fetching**: User dashboards dynamically fetch both web-submitted and portal-submitted records by cross-referencing **ID Number** and **Employee ID**.
 
 ### 🧪 Biometric Attendance Engine & Masterlist Import
@@ -62,9 +66,13 @@ The development environment is optimized for maximum "snappiness" by leveraging 
 ---
 
 ## 🛡️ Security & Action Audit Trail
-- **Comprehensive Action Logging**: Every administrative move—including **Excel Exports**, **Bulk Imports**, and **Setting Changes**—is recorded in the Audit Trail.
-- **Native Automated Backups**: Integrated `php artisan backup:daily` system with 7-day automated rotation.
-- **Global API Protection**: Built-in **Rate Limiting** (`throttle:120,1`) to prevent abuse.
+- **Advanced Action Forensic Index**: A fully searchable Audit Trail that allows filtering by **Module** (Leaves, Auth), **Action Type** (Login, Export, Approval), and **Custom Date Ranges**.
+- **Real-Time Log Search**: Debounced search bar to instantly find activities by **User Name**, **IP Address**, **Description**, or **Device Type**.
+- **Kiosk Session Protection**: The Employee Portal now uses **Session-Only Storage** to prevent credentials from persisting between browser sessions.
+- **History Snarfing Prevention**: Proactive "Login Guard" wipes all session data upon landing on the login terminal, preventing session recovery via the "Back/Forward" browser buttons.
+- **RBAC Hardening**: Unified `AdminMiddleware` protects all HR and Administrative routes, ensuring strict Role-Based Access Control.
+- **Privacy First**: Sensitive employee metadata (e.g., Birthdate PINs) is strictly hidden from API JSON responses and never exposed to the frontend.
+- **Rate Limiting**: Hardened API throttling on the Employee Portal to prevent automated brute-force attacks on employee ID numbers.
 - **Safe Transactions**: Multi-table updates are wrapped in atomic database transactions.
 
 ---
