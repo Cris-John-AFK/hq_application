@@ -1,10 +1,10 @@
 <template>
-    <div v-if="modelValue || isPortalMode" :class="isPortalMode ? 'w-full h-full' : 'fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in'" @click.self="!isPortalMode && closeModal()">
+    <div v-if="modelValue || isPortalMode" :class="isPortalMode ? 'w-full h-full' : 'fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in'" @mousedown.self="!isPortalMode && closeModal()">
         <!-- Backdrop -->
         <div v-if="!isPortalMode" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
         
         <!-- Modal Container -->
-        <div :class="['relative z-10 w-full flex flex-col rounded-xl overflow-hidden shadow-2xl bg-[#f0f2f5]', isPortalMode ? 'min-h-full' : 'wrapper max-w-2xl max-h-[90vh]']" @click.stop>
+        <div :class="['relative z-10 w-full flex flex-col rounded-xl overflow-hidden shadow-2xl bg-[#f0f2f5]', isPortalMode ? 'min-h-full' : 'wrapper max-w-4xl max-h-[90vh]']" @click.stop>
             <!-- Purple Top Bar & Admin Tools -->
             <div class="h-2.5 bg-[#673ab7] w-full shrink-0 relative">
                 <button v-if="isAdminMode" 
@@ -54,8 +54,11 @@
                 </div>
             </transition>
             
+            <!-- Main Flex Layout -->
+            <div class="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0 w-full">
+            
             <!-- Scrollable Content -->
-            <div class="overflow-y-auto p-6 space-y-4">
+            <div class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar lg:pr-8">
                 <!-- Design Mode Welcome -->
                 <div v-if="isDesignMode" class="bg-blue-600 p-6 rounded-xl border border-blue-400 shadow-xl overflow-hidden relative text-white animate-in slide-in-from-top-4 duration-300">
                     <div class="flex items-center gap-4">
@@ -213,21 +216,7 @@
                         </div>
                     </div>
 
-                    <!-- Leave Credits Preview (Admin Only to avoid redundancy in Portal) -->
-                    <div v-if="displayUser && isAdminMode" class="mt-4 p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5 leading-none">
-                            <i class="pi pi-wallet text-teal-600"></i> Available Leave Credits
-                        </p>
-                        <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
-                             <div v-for="type in leaveTypesList" :key="type.key" 
-                                class="bg-white p-2 rounded-xl border border-gray-100 text-center transition-all hover:border-teal-200 group relative">
-                                <p class="text-[8px] font-black uppercase text-gray-400 leading-none mb-1">{{ type.label }}</p>
-                                <p :class="[type.color, 'text-sm font-black leading-none']">
-                                    {{ (displayUser?.employee?.[type.key] ?? displayUser?.[type.key]) ?? '0' }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+
 
                     <div class="text-xs text-[#d93025]" v-if="formError">* {{ formError }}</div>
                     <div class="text-xs text-gray-500" v-else>* Indicates required fields</div>
@@ -479,12 +468,6 @@
                                     <input type="radio" v-model="form.leaveType" :value="lType" name="leaveType" class="peer h-4 w-4 cursor-pointer text-purple-600 focus:ring-purple-500 border-gray-300">
                                     <span class="ml-2 text-sm text-gray-700 group-hover:text-purple-700 font-medium transition-colors">{{ lType }}</span>
                                 </div>
-                                <!-- NEW: Show exact balance if applicable -->
-                                <span v-if="displayUser && getAvailableBalance(lType) !== null" 
-                                    class="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
-                                    :class="getAvailableBalance(lType) > 0 ? 'bg-purple-100 text-purple-700' : 'bg-rose-100 text-rose-500'">
-                                    {{ getAvailableBalance(lType) }} left
-                                </span>
                             </label>
                             
                             <div class="col-span-1 md:col-span-2 mt-2">
@@ -1008,21 +991,50 @@
                 </template>
             </div>
 
-            <!-- Footer Actions -->
-            <div class="bg-[#f0f2f5] p-4 flex justify-between items-center shrink-0 border-t border-gray-200">
-                <div v-if="!isPortalMode" @click="closeModal" class="btn-text cursor-pointer text-[#673ab7] text-sm font-bold uppercase hover:bg-[#673ab7]/10 px-4 py-2 rounded transition-colors tracking-wide">
-                    Cancel
+            <!-- Right Sidebar Panel -->
+            <div class="w-full md:w-72 bg-white border-l border-gray-200 shrink-0 flex flex-col z-20 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                
+                <div :class="['flex-1 overflow-y-auto p-5 custom-scrollbar', isAdminMode ? 'pt-16' : '']">
+                    <!-- Available Leave Credits Box -->
+                    <div v-if="displayUser" class="bg-gray-50/50 rounded-xl border border-gray-100 p-4 mb-4">
+                        <p class="text-[9px] font-black text-purple-600 uppercase tracking-widest mb-4 flex items-center gap-1.5 leading-none">
+                            <i class="pi pi-wallet"></i> Available Credits
+                        </p>
+                        <div class="space-y-2">
+                            <div v-for="type in leaveTypesList" :key="type.key" 
+                                v-show="getAvailableBalance(type.fullLabel || type.label) > 0"
+                                class="flex justify-between items-center bg-white px-3 py-2.5 rounded-lg border border-gray-100 shadow-sm transition-all"
+                            >
+                                <span class="text-[10px] font-black uppercase text-gray-500">{{ type.label }}</span>
+                                <span :class="[type.color, 'text-base font-black leading-none']">{{ Number(getAvailableBalance(type.fullLabel || type.label)).toString() }}</span>
+                            </div>
+                            <div v-if="!leaveTypesList.some(t => getAvailableBalance(t.fullLabel || t.label) > 0)" class="flex flex-col items-center justify-center py-6 bg-rose-50 rounded-xl border-2 border-dashed border-rose-200 text-rose-500 shadow-inner">
+                                <i class="pi pi-folder-open text-3xl mb-2 opacity-60"></i>
+                                <span class="text-[10px] font-black uppercase tracking-widest text-center px-2 leading-relaxed">No Available Credits</span>
+                                <span class="text-[8px] font-bold text-rose-400 mt-1 uppercase text-center w-full block">0 Balance Remaining</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div v-else></div> <!-- Spacer for portal mode -->
-                <button 
-                    @click="submitForm" 
-                    :disabled="loading"
-                    class="cursor-pointer bg-[#673ab7] text-white px-8 py-2.5 rounded shadow-md text-sm font-bold uppercase hover:bg-[#5e35b1] hover:shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                    <i v-if="loading" class="pi pi-spin pi-spinner"></i>
-                    <span>{{ isEdit ? 'Update Request' : 'Submit Request' }}</span>
-                </button>
+
+                <!-- Footer Actions -->
+                <div class="p-5 border-t border-gray-100 bg-gray-50/50 flex flex-col gap-3 shrink-0">
+                    <button 
+                        @click="submitForm" 
+                        :disabled="loading"
+                        class="w-full cursor-pointer bg-[#673ab7] text-white px-4 py-3.5 rounded-xl shadow-md text-xs font-black uppercase tracking-widest hover:bg-[#5e35b1] hover:shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                        <i v-if="loading" class="pi pi-spin pi-spinner"></i>
+                        <span>{{ isEdit ? 'Update Request' : 'Submit Request' }}</span>
+                    </button>
+                    <div v-if="!isPortalMode" @click="closeModal" class="w-full text-center cursor-pointer text-gray-500 text-[11px] font-bold uppercase hover:bg-gray-200 px-4 py-3 rounded-xl transition-colors tracking-wide">
+                        Cancel
+                    </div>
+                </div>
+
             </div>
+            
+            </div> <!-- End Main Flex Layout -->
         </div>
     </div>
 </template>

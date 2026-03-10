@@ -650,12 +650,12 @@
                                              <!-- Step 2: Dept Head -->
                                              <div class="relative mb-4">
                                                  <div class="absolute -left-5 top-0.5 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm"
-                                                     :class="selectedRequest.dept_head ? 'bg-teal-500' : 'bg-amber-300'"></div>
+                                                     :class="selectedRequest.dept_head ? 'bg-teal-500' : (selectedRequest.status === 'Pending' ? 'bg-amber-300' : 'bg-gray-200')"></div>
                                                  <div class="bg-white rounded-lg border p-3 shadow-sm"
-                                                     :class="selectedRequest.dept_head ? 'border-teal-100/50' : 'border-amber-100'">
+                                                     :class="selectedRequest.dept_head ? 'border-teal-100/50' : (selectedRequest.status === 'Pending' ? 'border-amber-100' : 'border-gray-100')">
                                                      <p class="text-[10px] font-black uppercase tracking-widest"
-                                                         :class="selectedRequest.dept_head ? 'text-teal-600' : 'text-amber-500'">
-                                                         {{ selectedRequest.dept_head ? 'Dept Head Reviewed' : 'Awaiting Dept Head Review' }}
+                                                         :class="selectedRequest.dept_head ? 'text-teal-600' : (selectedRequest.status === 'Pending' ? 'text-amber-500' : 'text-gray-400')">
+                                                         {{ selectedRequest.dept_head ? 'Dept Head Reviewed' : (selectedRequest.status === 'Pending' ? 'Awaiting Dept Head Review' : 'Dept Head Review Bypassed') }}
                                                      </p>
                                                      <template v-if="selectedRequest.dept_head">
                                                          <div class="flex items-center justify-between mt-1">
@@ -668,8 +668,11 @@
                                                              "{{ selectedRequest.dept_head_remarks }}"
                                                          </p>
                                                      </template>
-                                                     <template v-else>
+                                                     <template v-else-if="selectedRequest.status === 'Pending'">
                                                          <p class="text-[10px] text-amber-500 mt-1 animate-pulse font-medium">Pending review by department head</p>
+                                                     </template>
+                                                     <template v-else>
+                                                         <p class="text-[10px] text-gray-400 mt-1 font-medium">Bypassed or fast-tracked</p>
                                                      </template>
                                                  </div>
                                              </div>
@@ -677,17 +680,17 @@
                                              <!-- Step 3: HR/Admin Final -->
                                              <div class="relative">
                                                  <div class="absolute -left-5 top-0.5 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm"
-                                                     :class="selectedRequest.hr_approver ? 'bg-emerald-500' : (selectedRequest.status === 'Dept Approved' ? 'bg-blue-400 animate-pulse' : 'bg-gray-200')"></div>
+                                                     :class="(selectedRequest.hr_approver || selectedRequest.status === 'Approved' || selectedRequest.status === 'Rejected') ? 'bg-emerald-500' : (selectedRequest.status === 'Dept Approved' ? 'bg-blue-400 animate-pulse' : 'bg-gray-200')"></div>
                                                  <div class="bg-white rounded-lg border p-3 shadow-sm"
-                                                     :class="selectedRequest.hr_approver ? 'border-emerald-100' : (selectedRequest.status === 'Dept Approved' ? 'border-blue-200 shadow-blue-50' : 'border-gray-100')">
+                                                     :class="(selectedRequest.hr_approver || selectedRequest.status === 'Approved' || selectedRequest.status === 'Rejected') ? 'border-emerald-100' : (selectedRequest.status === 'Dept Approved' ? 'border-blue-200 shadow-blue-50' : 'border-gray-100')">
                                                      <p class="text-[10px] font-black uppercase tracking-widest"
-                                                         :class="selectedRequest.hr_approver ? 'text-emerald-600' : (selectedRequest.status === 'Dept Approved' ? 'text-blue-500' : 'text-gray-400')">
-                                                         {{ selectedRequest.hr_approver ? 'HR / Admin Final Decision' : (selectedRequest.status === 'Dept Approved' ? 'Ready for HR Final Approval' : 'Awaiting HR / Admin') }}
+                                                         :class="(selectedRequest.hr_approver || selectedRequest.status === 'Approved' || selectedRequest.status === 'Rejected') ? 'text-emerald-600' : (selectedRequest.status === 'Dept Approved' ? 'text-blue-500' : 'text-gray-400')">
+                                                         {{ (selectedRequest.hr_approver || selectedRequest.status === 'Approved' || selectedRequest.status === 'Rejected') ? 'HR / Admin Final Decision' : (selectedRequest.status === 'Dept Approved' ? 'Ready for HR Final Approval' : 'Awaiting HR / Admin') }}
                                                      </p>
-                                                     <template v-if="selectedRequest.hr_approver">
+                                                     <template v-if="selectedRequest.hr_approver || selectedRequest.status === 'Approved' || selectedRequest.status === 'Rejected'">
                                                          <div class="flex items-center justify-between mt-1">
-                                                            <p class="text-xs font-bold text-gray-700">{{ selectedRequest.hr_approver.name }}</p>
-                                                            <p class="text-[9px] text-gray-400 font-bold">
+                                                            <p class="text-xs font-bold text-gray-700">{{ selectedRequest.hr_approver?.name || 'System / Auto-Approved' }}</p>
+                                                            <p class="text-[9px] text-gray-400 font-bold" v-if="selectedRequest.hr_approved_at">
                                                                 {{ new Date(selectedRequest.hr_approved_at).toLocaleDateString('en-US', {month:'short',day:'numeric'}) }}
                                                             </p>
                                                          </div>
@@ -695,8 +698,8 @@
                                                              :class="selectedRequest.status === 'Approved' ? 'text-emerald-600' : 'text-rose-600'">
                                                              {{ selectedRequest.status === 'Approved' ? 'Approved ✓' : 'Rejected ✗' }}
                                                          </p>
-                                                         <p v-if="selectedRequest.hr_remarks" class="text-[10px] text-gray-500 italic mt-1.5 border-l-2 border-emerald-200 pl-2 bg-emerald-50/30 py-1">
-                                                             "{{ selectedRequest.hr_remarks }}"
+                                                         <p v-if="selectedRequest.hr_remarks || selectedRequest.admin_remarks" class="text-[10px] text-gray-500 italic mt-1.5 border-l-2 border-emerald-200 pl-2 bg-emerald-50/30 py-1">
+                                                             "{{ selectedRequest.hr_remarks || selectedRequest.admin_remarks }}"
                                                          </p>
                                                      </template>
                                                      <template v-else-if="selectedRequest.status === 'Dept Approved'">

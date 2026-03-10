@@ -38,12 +38,18 @@
             </div>
         </div>
         
-        <div class="px-5 py-3 bg-gray-50/50 border-t border-gray-50 flex justify-between items-center">
+        <div class="px-5 py-3 bg-gray-50/50 border-t border-gray-50 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-2">
             <div class="flex items-center gap-2">
                 <div class="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></div>
                 <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wide">Live Presence Sync</span>
             </div>
-            <span class="text-[10px] font-black text-teal-600">{{ totalRecords }} Records</span>
+            <div class="flex items-center gap-3 bg-white px-2 py-0.5 rounded-md border border-gray-100 shadow-sm">
+                <span class="text-[10px] font-black text-teal-600">{{ totalPresent }} Present</span>
+                <span class="text-gray-200">|</span>
+                <span class="text-[10px] font-black text-amber-500">{{ totalLate }} Lates</span>
+                <span class="text-gray-200">|</span>
+                <span class="text-[10px] font-black text-rose-500">{{ totalAbsent }} Absences</span>
+            </div>
         </div>
     </div>
 </template>
@@ -56,7 +62,9 @@ const currentType = ref('daily');
 const loading = ref(false);
 const series = ref([]);
 const chartOptions = ref(null);
-const totalRecords = ref(0);
+const totalPresent = ref(0);
+const totalLate = ref(0);
+const totalAbsent = ref(0);
 
 const fetchStats = async () => {
     loading.value = true;
@@ -65,15 +73,20 @@ const fetchStats = async () => {
             params: { type: currentType.value }
         });
         
-        totalRecords.value = data.reduce((acc, curr) => acc + parseInt(curr.count), 0);
+        totalPresent.value = data.reduce((acc, curr) => acc + parseInt(curr.count || 0), 0);
+        totalLate.value = data.reduce((acc, curr) => acc + parseInt(curr.late_count || 0), 0);
+        totalAbsent.value = data.reduce((acc, curr) => acc + parseInt(curr.absent_count || 0), 0);
         
         const categories = data.map(d => d.label || d.date);
-        const values = data.map(d => d.count);
+        const presentValues = data.map(d => parseFloat(d.count));
+        const absentValues = data.map(d => parseFloat(d.absent_count));
+        const lateValues = data.map(d => parseFloat(d.late_count));
         
-        series.value = [{
-            name: 'Employees Present',
-            data: values
-        }];
+        series.value = [
+            { name: 'Present', data: presentValues },
+            { name: 'Lates', data: lateValues },
+            { name: 'Absences', data: absentValues }
+        ];
         
         chartOptions.value = {
             chart: {
@@ -83,8 +96,8 @@ const fetchStats = async () => {
             },
             stroke: {
                 curve: 'smooth',
-                width: 3,
-                colors: ['#0d9488']
+                width: [3, 2, 2],
+                colors: ['#0d9488', '#f59e0b', '#e11d48']
             },
             fill: {
                 type: 'gradient',
@@ -94,12 +107,13 @@ const fetchStats = async () => {
                     opacityTo: 0.05,
                     stops: [20, 100],
                     colorStops: [
-                        { offset: 0, color: '#0d9488', opacity: 0.4 },
-                        { offset: 100, color: '#ffffff', opacity: 0.1 }
+                        [ { offset: 0, color: '#0d9488', opacity: 0.4 }, { offset: 100, color: '#ffffff', opacity: 0.1 } ],
+                        [ { offset: 0, color: '#f59e0b', opacity: 0.3 }, { offset: 100, color: '#ffffff', opacity: 0.05 } ],
+                        [ { offset: 0, color: '#e11d48', opacity: 0.3 }, { offset: 100, color: '#ffffff', opacity: 0.05 } ]
                     ]
                 }
             },
-            colors: ['#0d9488'],
+            colors: ['#0d9488', '#f59e0b', '#e11d48'],
             xaxis: {
                 categories: categories,
                 labels: {
@@ -125,7 +139,7 @@ const fetchStats = async () => {
             },
             markers: {
                 size: 4,
-                colors: ['#0d9488'],
+                colors: ['#0d9488', '#f59e0b', '#e11d48'],
                 strokeWidth: 2,
                 hover: { size: 6 }
             },
@@ -135,12 +149,18 @@ const fetchStats = async () => {
                 padding: { top: 0, bottom: 0 }
             },
             dataLabels: { enabled: false },
+            legend: {
+                show: true,
+                position: 'top',
+                horizontalAlign: 'right',
+                fontSize: '10px',
+                fontWeight: 700,
+                markers: { width: 8, height: 8, radius: 12 },
+                itemMargin: { horizontal: 10, vertical: 0 }
+            },
             tooltip: {
                 theme: 'light',
-                x: { show: true },
-                y: {
-                    formatter: (val) => `${val} Present`
-                }
+                x: { show: true }
             }
         };
     } catch (error) {

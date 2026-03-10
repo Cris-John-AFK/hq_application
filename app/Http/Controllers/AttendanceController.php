@@ -159,27 +159,38 @@ class AttendanceController extends Controller
         if ($type === 'daily') {
             $startDate = now()->subDays(6)->startOfDay();
             $results = AttendanceRecord::where('date', '>=', $startDate)
-                ->where('status', '!=', 'Absent')
-                ->select(\DB::raw('date, count(*) as count'))
+                ->select(\DB::raw("
+                    date,
+                    SUM(CASE WHEN status != 'Absent' THEN 1 ELSE 0 END) as present_count,
+                    SUM(CASE WHEN status = 'Absent' THEN 1 ELSE 0 END) as absent_count,
+                    SUM(CASE WHEN status = 'Late' THEN 1 ELSE 0 END) as late_count
+                "))
                 ->groupBy('date')
                 ->get()
-                ->pluck('count', 'date');
+                ->keyBy('date');
 
             for ($i = 6; $i >= 0; $i--) {
                 $date = now()->subDays($i)->toDateString();
+                $stats = $results->get($date);
                 $data[] = [
                     'label' => date('M d', strtotime($date)),
-                    'count' => $results->get($date, 0)
+                    'count' => $stats ? $stats->present_count : 0,
+                    'absent_count' => $stats ? $stats->absent_count : 0,
+                    'late_count' => $stats ? $stats->late_count : 0,
                 ];
             }
         } elseif ($type === 'weekly') {
             $startDate = now()->subWeeks(3)->startOfWeek();
             $results = AttendanceRecord::where('date', '>=', $startDate)
-                ->where('status', '!=', 'Absent')
-                ->select(\DB::raw("to_char(date, 'IYYY-IW') as week, count(*) as count"))
+                ->select(\DB::raw("
+                    to_char(date, 'IYYY-IW') as week,
+                    SUM(CASE WHEN status != 'Absent' THEN 1 ELSE 0 END) as present_count,
+                    SUM(CASE WHEN status = 'Absent' THEN 1 ELSE 0 END) as absent_count,
+                    SUM(CASE WHEN status = 'Late' THEN 1 ELSE 0 END) as late_count
+                "))
                 ->groupBy('week')
                 ->get()
-                ->pluck('count', 'week');
+                ->keyBy('week');
 
             for ($i = 3; $i >= 0; $i--) {
                 $dt = now()->subWeeks($i);
@@ -187,26 +198,37 @@ class AttendanceController extends Controller
                 $start = $dt->copy()->startOfWeek();
                 $end = $dt->copy()->endOfWeek();
 
+                $stats = $results->get($weekKey);
                 $data[] = [
                     'label' => $dt->format('M') . " wk" . (int) $dt->format('W') . " " . (int) $start->format('d') . "-" . (int) $end->format('d'),
-                    'count' => $results->get($weekKey, 0)
+                    'count' => $stats ? $stats->present_count : 0,
+                    'absent_count' => $stats ? $stats->absent_count : 0,
+                    'late_count' => $stats ? $stats->late_count : 0,
                 ];
             }
         } else {
             $startDate = now()->subMonths(5)->startOfMonth();
             $results = AttendanceRecord::where('date', '>=', $startDate)
-                ->where('status', '!=', 'Absent')
-                ->select(\DB::raw("to_char(date, 'YYYY-MM') as month, count(*) as count"))
+                ->select(\DB::raw("
+                    to_char(date, 'YYYY-MM') as month,
+                    SUM(CASE WHEN status != 'Absent' THEN 1 ELSE 0 END) as present_count,
+                    SUM(CASE WHEN status = 'Absent' THEN 1 ELSE 0 END) as absent_count,
+                    SUM(CASE WHEN status = 'Late' THEN 1 ELSE 0 END) as late_count
+                "))
                 ->groupBy('month')
                 ->get()
-                ->pluck('count', 'month');
+                ->keyBy('month');
 
             for ($i = 5; $i >= 0; $i--) {
                 $dt = now()->subMonths($i);
                 $monthKey = $dt->format('Y-m');
+
+                $stats = $results->get($monthKey);
                 $data[] = [
                     'label' => $dt->format('M'),
-                    'count' => $results->get($monthKey, 0)
+                    'count' => $stats ? $stats->present_count : 0,
+                    'absent_count' => $stats ? $stats->absent_count : 0,
+                    'late_count' => $stats ? $stats->late_count : 0,
                 ];
             }
         }
