@@ -345,15 +345,29 @@
                         </h3>
                         <p class="text-[9px] font-bold text-rose-500/60 uppercase tracking-widest pl-3.5 italic">Chronic Lates &amp; Absences</p>
                     </div>
-                    <select
-                        v-model="offenderFilter"
-                        class="px-2 py-1 border border-gray-200 rounded-lg text-[10px] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none text-gray-600 cursor-pointer bg-white font-bold"
-                    >
-                        <option value="all">All Levels</option>
-                        <option value="critical">🔴 Critical (5+)</option>
-                        <option value="notice">🟠 Notice (3–4)</option>
-                        <option value="watch">🟡 Watch (1–2)</option>
-                    </select>
+                    <div class="flex bg-gray-50 p-1 rounded-lg border border-gray-100 shadow-inner">
+                        <button 
+                            @click="offenderFilter = 'all'"
+                            class="px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-md transition-all whitespace-nowrap"
+                            :class="offenderFilter === 'all' ? 'bg-white text-gray-800 shadow-sm border border-gray-200' : 'text-gray-400 hover:text-gray-600'"
+                        >
+                            All
+                        </button>
+                        <button 
+                            @click="offenderFilter = 'critical'"
+                            class="px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-md transition-all whitespace-nowrap flex items-center gap-1"
+                            :class="offenderFilter === 'critical' ? 'bg-rose-500 text-white shadow-sm' : 'text-rose-400 hover:text-rose-600'"
+                        >
+                            Critical
+                        </button>
+                        <button 
+                            @click="offenderFilter = 'other'"
+                            class="px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-md transition-all whitespace-nowrap"
+                            :class="offenderFilter === 'other' ? 'bg-white text-gray-800 shadow-sm border border-gray-200' : 'text-gray-400 hover:text-gray-600'"
+                        >
+                            Other
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Legend -->
@@ -617,6 +631,7 @@
 
     const filteredOffenders = computed(() => {
         if (offenderFilter.value === 'all') return chronicalOffenders.value;
+        if (offenderFilter.value === 'other') return chronicalOffenders.value.filter(o => o.level !== 'critical');
         return chronicalOffenders.value.filter(o => o.level === offenderFilter.value);
     });
 
