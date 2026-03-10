@@ -244,12 +244,19 @@
                             </thead>
                             <tbody class="divide-y divide-gray-50">
                                 <tr v-if="loading" class="animate-pulse">
-                                    <td colspan="7" class="p-8 text-center text-gray-400">Loading leave records...</td>
+                                    <td colspan="8" class="p-8 text-center text-gray-400">Loading leave records...</td>
                                 </tr>
                                 <tr v-else-if="requests.length === 0">
-                                    <td colspan="7" class="p-8 text-center text-gray-400 flex flex-col items-center">
-                                        <i class="pi pi-inbox text-4xl mb-2 opacity-50"></i>
-                                        <span>No leave requests found matching your filters.</span>
+                                    <td colspan="8" class="p-16">
+                                        <div class="flex flex-col items-center justify-center text-center">
+                                            <div class="w-24 h-24 mb-6 rounded-full bg-teal-50 flex items-center justify-center ring-8 ring-teal-50/30">
+                                                <i class="pi pi-folder-open text-4xl text-teal-500"></i>
+                                            </div>
+                                            <h3 class="text-lg font-black text-gray-800 mb-2">No Requests Found</h3>
+                                            <p class="text-sm text-gray-500 max-w-sm">
+                                                We couldn't find any leave requests matching your current filters. Try adjusting your search or clearing the filters.
+                                            </p>
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr 

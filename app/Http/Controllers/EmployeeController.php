@@ -427,4 +427,12 @@ class EmployeeController extends Controller
             return response()->json(['message' => "Successfully updated credits for {$count} employees.", 'updated_count' => $count]);
         });
     }
+
+    public function export()
+    {
+        if (Auth::user()->role !== 'admin' && Auth::user()->role !== 'hr') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\EmployeeExport, 'employee_masterlist_' . date('Y_m_d_His') . '.xlsx');
+    }
 }

@@ -55,6 +55,7 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
         Route::post('/api/users/reset-all-credits', [\App\Http\Controllers\UserController::class, 'resetAllCredits']);
         Route::post('/api/users/create-from-employee', [\App\Http\Controllers\UserController::class, 'createFromEmployee']);
 
+        Route::get('/api/employees/export', [\App\Http\Controllers\EmployeeController::class, 'export']);
         Route::post('/api/employees/import', [\App\Http\Controllers\EmployeeController::class, 'import']);
         Route::post('/api/employees', [\App\Http\Controllers\EmployeeController::class, 'store']);
         Route::put('/api/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'update']);

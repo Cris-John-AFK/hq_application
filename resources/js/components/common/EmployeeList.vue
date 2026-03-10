@@ -31,6 +31,14 @@
                         @change="handleImport"
                     >
                 </button>
+
+                <button 
+                    @click="handleExport"
+                    class="cursor-pointer h-10 px-4 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
+                >
+                    <i class="pi pi-download text-teal-600"></i>
+                    Export Masterlist
+                </button>
                 
                 <!-- Department Filter -->
                 <div class="relative w-full md:w-auto">
@@ -631,6 +639,11 @@ const archiveEmployee = async (id) => {
     } catch (e) {
         alert('Failed to archive employee.');
     }
+};
+
+// Export Logic
+const handleExport = () => {
+    window.open('/api/employees/export', '_blank');
 };
 
 // Import Logic

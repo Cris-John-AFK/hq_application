@@ -91,7 +91,15 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 border border-gray-200">
-                                    <tr class="hover:bg-gray-50 border-b border-gray-200" title="Total number of unique dates where at least one attendance record was logged.">
+                                    <template v-if="isLoadingAnnual">
+                                        <tr v-for="i in 6" :key="i" class="animate-pulse bg-gray-50/50">
+                                            <td class="px-4 py-3 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-3/4"></div></td>
+                                            <td class="px-4 py-3 border-r border-gray-200"><div class="h-3 bg-gray-200 rounded w-full"></div></td>
+                                            <td v-for="m in 12" :key="m" class="px-3 py-3 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-8 mx-auto"></div></td>
+                                        </tr>
+                                    </template>
+                                    <template v-else>
+                                        <tr class="hover:bg-gray-50 border-b border-gray-200" title="Total number of unique dates where at least one attendance record was logged.">
                                         <td class="px-4 py-3 font-bold text-gray-800 border-r border-gray-200 bg-gray-100/50">Total Working Days</td>
                                         <td class="px-4 py-3 text-gray-600 text-xs border-r border-gray-200 bg-gray-100/50">Calendar working days - official holidays</td>
                                         <td v-for="m in months" :key="m" class="px-3 py-3 text-center border-r border-gray-200">
@@ -133,6 +141,7 @@
                                             {{ annualData.find(d => d.month === m)?.total_undertime_mins || '' }}
                                         </td>
                                     </tr>
+                                    </template>
                                 </tbody>
                             </table>
                         </div>
@@ -152,13 +161,32 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 border border-gray-200">
-                                    <tr v-for="row in departmentData" :key="row.department" class="hover:bg-gray-50">
+                                    <template v-if="isLoadingDepartment">
+                                        <tr v-for="i in 5" :key="i" class="animate-pulse bg-gray-50/50">
+                                            <td class="px-6 py-3 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-48"></div></td>
+                                            <td class="px-4 py-3 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-12 mx-auto"></div></td>
+                                            <td class="px-4 py-3 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-12 mx-auto"></div></td>
+                                            <td class="px-4 py-3 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-12 mx-auto"></div></td>
+                                            <td class="px-4 py-3 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-12 mx-auto"></div></td>
+                                        </tr>
+                                    </template>
+                                    <template v-else-if="departmentData.length === 0">
+                                        <tr>
+                                            <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                                                <i class="pi pi-box mb-2 text-3xl opacity-50"></i>
+                                                <p>No departmental data found for this period.</p>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template v-else>
+                                        <tr v-for="row in departmentData" :key="row.department" class="hover:bg-gray-50">
                                         <td class="px-6 py-3 font-medium text-gray-800 border-r border-gray-200">{{ row.department }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-200">{{ row.total_employees }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-200">{{ row.total_working_days }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-200 text-gray-500">{{ row.total_scheduled_hours }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-200 font-bold text-teal-600">{{ row.total_actual_hours }}</td>
                                     </tr>
+                                    </template>
                                 </tbody>
                             </table>
                         </div>
@@ -189,7 +217,14 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 border border-gray-200">
-                                <tr v-for="m in months" :key="m" class="hover:bg-gray-50 border-b border-gray-200 text-center">
+                                <template v-if="isLoadingAnnual">
+                                    <tr v-for="i in 12" :key="i" class="animate-pulse bg-gray-50/50 text-center">
+                                        <td class="px-4 py-2 border-r border-gray-200 text-left bg-gray-100/30"><div class="h-4 bg-gray-200 rounded w-20"></div></td>
+                                        <td v-for="col in 11" :key="col" class="px-4 py-2 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-8 mx-auto"></div></td>
+                                    </tr>
+                                </template>
+                                <template v-else>
+                                    <tr v-for="m in months" :key="m" class="hover:bg-gray-50 border-b border-gray-200 text-center">
                                     <td class="px-4 py-2 font-medium text-gray-800 border-r border-gray-200 text-left bg-gray-100/30">{{ m }}</td>
                                     
                                     <td class="px-4 py-2 border-r border-gray-200">
@@ -227,6 +262,7 @@
                                         {{ annualData.find(d => d.month === m)?.total_working_days ? annualData.find(d => d.month === m).undertime_frequency : '-' }}
                                     </td>
                                 </tr>
+                                </template>
                             </tbody>
                         </table>
                     </div>
@@ -257,6 +293,8 @@ const activeTab = ref('annual');
 const selectedYear = ref(new Date().getFullYear());
 const selectedMonth = ref(new Date().getMonth() + 1); // current month
 const isExporting = ref(false);
+const isLoadingAnnual = ref(false);
+const isLoadingDepartment = ref(false);
 
 const months = [
     'January', 'February', 'March', 'April', 'May', 'June', 
@@ -326,20 +364,26 @@ const calculateDividendPerZero = (a, b) => {
 };
 
 const fetchAnnualReport = async () => {
+    isLoadingAnnual.value = true;
     try {
         const response = await axios.get(`/api/reports/annual?year=${selectedYear.value}`);
         annualData.value = response.data;
     } catch (error) {
         console.error('Failed to fetch annual report:', error);
+    } finally {
+        isLoadingAnnual.value = false;
     }
 };
 
 const fetchDepartmentReport = async () => {
+    isLoadingDepartment.value = true;
     try {
         const response = await axios.get(`/api/reports/monthly-department?year=${selectedYear.value}&month=${selectedMonth.value}`);
         departmentData.value = response.data;
     } catch (error) {
         console.error('Failed to fetch department report:', error);
+    } finally {
+        isLoadingDepartment.value = false;
     }
 };
 
