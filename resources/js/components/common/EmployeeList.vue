@@ -64,11 +64,21 @@
                     >
                 </div>
 
+                <!-- Manage Accounts Toggle -->
+                <button 
+                    @click="filterHasAccount = !filterHasAccount"
+                    :class="filterHasAccount ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'"
+                    class="cursor-pointer h-10 px-4 border rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
+                >
+                    <i :class="filterHasAccount ? 'pi-users' : 'pi-id-card'" class="pi"></i>
+                    <span>{{ filterHasAccount ? 'All Staff' : 'Manage Accounts' }}</span>
+                </button>
+
                 <!-- Filter Toggle -->
                 <button 
                     @click="showFilters = !showFilters"
                     :class="showFilters ? 'bg-teal-50 text-teal-600 border-teal-200' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'"
-                    class="cursor-pointer h-10 px-4 border rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
+                    class="cursor-pointer h-10 px-4 border rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
                 >
                     <i class="pi pi-filter"></i>
                     <span>Filters</span>
@@ -147,21 +157,6 @@
                         <option value="All">Any / All</option>
                         <option v-for="col in activeLeaveColumns" :key="col.col" :value="col.col">{{ col.label }}</option>
                     </select>
-                </div>
-
-                <!-- Account Status Filter -->
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">System Access</label>
-                    <div class="flex items-center h-9">
-                        <button 
-                            @click="filterHasAccount = !filterHasAccount"
-                            :class="filterHasAccount ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-gray-400 border-gray-200'"
-                            class="w-full h-full border rounded-lg text-[9px] font-black uppercase tracking-tight transition-all flex items-center justify-center gap-2 px-3 shadow-inner"
-                        >
-                            <i :class="filterHasAccount ? 'pi-users' : 'pi-id-card'" class="pi text-[10px]"></i>
-                            {{ filterHasAccount ? 'Hide Non-Users' : 'Show All Staff' }}
-                        </button>
-                    </div>
                 </div>
             </div>
             

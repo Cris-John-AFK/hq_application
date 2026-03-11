@@ -701,7 +701,7 @@ const menuItems = computed(() => {
         const items = [
             { label: 'Dashboard', icon: 'pi-home', href: '/dashboard' },
             { label: 'Leave Requests', icon: 'pi-calendar-times', href: '/leave-requests' },
-            { label: 'Security', icon: 'pi-lock', href: '#', onClick: () => showChangePasswordModal.value = true },
+            { label: 'Security', icon: 'pi-lock', href: '/security' },
         ];
         if (props.user?.role === 'dept_head') {
             items.push({ label: 'Analytics', icon: 'pi-chart-line', href: '/dept-analytics' });
@@ -725,7 +725,7 @@ const menuItems = computed(() => {
         { label: 'Assets', icon: 'pi-box', href: '/inventory' },
         { label: 'Activity Logs', icon: 'pi-list', href: '/activity-logs' },
         { label: 'Archive Registry', icon: 'pi-folder', href: '/archive-leaves' },
-        { label: 'Security', icon: 'pi-lock', href: '#', onClick: () => showChangePasswordModal.value = true },
+        { label: 'Security', icon: 'pi-lock', href: '/security' },
     );
 
     return items;

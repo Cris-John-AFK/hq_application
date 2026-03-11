@@ -177,8 +177,20 @@ class AttendanceReportService
             $overtimeHours = 0;
             $excessOtHours = 0;
             $excessOtEmpIds = [];
+            
+            $totalLateMins = 0;
+            $lateEmpIds = [];
 
             foreach ($records as $record) {
+                // Check Lateness Separately
+                if ($this->isLate($record->time_in, $record->status, $record->employee_id_number, $record)) {
+                    $lateMins = $this->calculateLatenessMinutes($record->time_in, $record->employee_id_number, $record);
+                    if ($lateMins > 0) {
+                        $totalLateMins += $lateMins;
+                        $lateEmpIds[] = $record->employee_id_number;
+                    }
+                }
+
                 $emp = $record->employee;
                 $shiftHours = 8;
                 if ($record->applied_shift_start && $record->applied_shift_end) {
@@ -227,9 +239,104 @@ class AttendanceReportService
                 'overtime_actual_hours' => round($overtimeHours, 2),
                 'excess_hours_worked' => round($excessOtHours, 2),
                 'employees_with_excess_ot' => $employeesWithExcessOt,
+                'total_late_mins' => $totalLateMins,
+                'total_late_employees' => count(array_unique($lateEmpIds)),
                 'avg_daily_working_hours' => $totalPossibleDays > 0
                     ? round($actualHours / $totalPossibleDays, 2)
                     : 0
+            ];
+        }
+
+        return $data;
+    }
+
+    public function getDailyDepartmentReport($date)
+    {
+        $departments = Department::all();
+        $data = [];
+        $targetDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
+
+        foreach ($departments as $dept) {
+            $records = AttendanceRecord::where('date', $targetDate)
+                ->whereHas('employee', function ($query) use ($dept) {
+                    $query->where('department_id', $dept->id);
+                })
+                ->with('employee')
+                ->get();
+
+            $employees = Employee::where('department_id', $dept->id)
+                ->where('date_hired', '<=', $targetDate)
+                ->where(function ($query) use ($targetDate) {
+                    $query->where('is_archived', false)
+                        ->orWhere('archived_at', '>=', $targetDate . ' 00:00:00');
+                })
+                ->get();
+
+            $empCount = $employees->count();
+            
+            $presentCount = 0;
+            $overtimeHours = 0;
+            $totalLateMins = 0;
+            $lateEmpIds = [];
+
+            foreach ($records as $record) {
+                if ($record->status && $record->status !== 'Absent' && $record->time_in !== '-' && $record->time_out !== '-') {
+                    $presentCount++;
+                }
+                
+                if ($this->isLate($record->time_in, $record->status, $record->employee_id_number, $record)) {
+                    $lateMins = $this->calculateLatenessMinutes($record->time_in, $record->employee_id_number, $record);
+                    if ($lateMins > 0) {
+                        $totalLateMins += $lateMins;
+                        $lateEmpIds[] = $record->employee_id_number;
+                    }
+                }
+
+                $emp = $record->employee;
+                $shiftHours = 8;
+                if ($record->applied_shift_start && $record->applied_shift_end) {
+                    try {
+                        $s = \Carbon\Carbon::parse($record->applied_shift_start);
+                        $e = \Carbon\Carbon::parse($record->applied_shift_end);
+                        if ($e->lt($s)) $e->addDay();
+                        $shiftHours = round($s->diffInMinutes($e) / 60, 2);
+                    } catch (\Exception $ex) {}
+                } elseif ($emp && $emp->working_hours) {
+                    $parts = explode('-', $emp->working_hours);
+                    if (count($parts) === 2) {
+                        try {
+                            $s = \Carbon\Carbon::parse(trim($parts[0]));
+                            $e = \Carbon\Carbon::parse(trim($parts[1]));
+                            if ($e->lt($s)) $e->addDay();
+                            $shiftHours = round($s->diffInMinutes($e) / 60, 2);
+                        } catch (\Exception $ex) {}
+                    }
+                }
+                $worked = (float) $record->hours_worked;
+                $excess = max(0, $worked - $shiftHours);
+                $overtimeHours += $excess;
+            }
+
+            $actualHours = $records->sum('hours_worked');
+            $regularActualHours = max(0, $actualHours - $overtimeHours);
+            
+            // Absences inferred
+            $explicitAbsences = $records->where('status', 'Absent')->count();
+            $recordedCount = $records->count();
+            $inferredAbsences = max(0, $empCount - $recordedCount);
+            
+            $totalAbsent = $explicitAbsences + $inferredAbsences;
+
+            $data[] = [
+                'department' => $dept->name,
+                'total_employees' => $empCount,
+                'total_present' => $presentCount,
+                'total_absent' => $totalAbsent,
+                'total_actual_hours' => round($actualHours, 2),
+                'regular_actual_hours' => round($regularActualHours, 2),
+                'overtime_actual_hours' => round($overtimeHours, 2),
+                'total_late_mins' => $totalLateMins,
+                'total_late_employees' => count(array_unique($lateEmpIds))
             ];
         }
 

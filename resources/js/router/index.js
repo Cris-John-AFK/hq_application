@@ -12,6 +12,7 @@ import Settings from '../components/admin/Settings.vue';
 import LoginForm from '../components/login/loginForm.vue';
 import SystemLogs from '../pages/SystemLogs.vue';
 import EmployeePortal from '../pages/EmployeePortal.vue';
+import Security from '../pages/Security.vue';
 
 // User Components
 import UserDashboard from '../components/user/UserDashboard.vue';
@@ -97,6 +98,13 @@ const routes = [
         name: 'DeptAnalytics',
         component: () => import('../components/user/DeptAnalytics.vue'),
         meta: { title: 'HQ Inc. - Department Analytics', requiresAuth: true }
+    },
+    // Common Routes
+    {
+        path: '/security',
+        name: 'Security',
+        component: Security,
+        meta: { title: 'HQ Inc. - Security Settings', requiresAuth: true }
     }
 ];
 

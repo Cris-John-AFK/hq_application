@@ -39,6 +39,13 @@
                             <option v-for="(m, i) in months" :key="i" :value="i + 1">{{ m }}</option>
                         </select>
                     </div>
+
+                    <div v-if="activeTab === 'daily'" class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-gray-600">Date:</span>
+                        <select v-model="selectedDate" class="h-9 px-3 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-teal-500">
+                            <option v-for="(date, i) in availableDates" :key="i" :value="date">{{ new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) }}</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Tabs -->
@@ -60,6 +67,15 @@
                         ]"
                     >
                         Monthly Department Report
+                    </button>
+                    <button 
+                        @click="activeTab = 'daily'"
+                        :class="[
+                            'cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                            activeTab === 'daily' ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                        ]"
+                    >
+                        Daily Report
                     </button>
                     <button 
                         @click="activeTab = 'yearly'"
@@ -156,8 +172,12 @@
                                         <th class="px-6 py-4 font-semibold w-48 border-r border-gray-800 text-center">Department</th>
                                         <th class="px-4 py-4 text-center border-r border-gray-800 text-center" title="Count of regular employees hired on or before the end of this month inside this department.">Total Employees</th>
                                         <th class="px-4 py-4 text-center border-r border-gray-800 text-center" title="Total number of unique dates where at least one attendance record was logged.">Actual Working Days</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center" title="Formula: (Total Employees × Actual Working Days) × 8 Hours">Total Scheduled Hrs</th>
-                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center" title="Sum of all actual hours rendered by employees via time records.">Total Actual Hrs</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center" title="Employees' scheduled shift length × Actual Working Days">Total Scheduled Hrs</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center" title="Count of employees who were late at least once">Late Employees</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center" title="Sum of minutes late">Total Late (mins)</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center" title="Standard hours worked (excluding overtime)">Regular Hrs</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center" title="Hours worked beyond scheduled shifts">Overtime Hrs</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center" title="Sum of all actual hours rendered (Regular + Overtime)">Total Actual Hrs</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 border border-gray-200">
@@ -168,11 +188,15 @@
                                             <td class="px-4 py-3 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-12 mx-auto"></div></td>
                                             <td class="px-4 py-3 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-12 mx-auto"></div></td>
                                             <td class="px-4 py-3 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-12 mx-auto"></div></td>
+                                            <td class="px-4 py-3 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-12 mx-auto"></div></td>
+                                            <td class="px-4 py-3 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-12 mx-auto"></div></td>
+                                            <td class="px-4 py-3 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-12 mx-auto"></div></td>
+                                            <td class="px-4 py-3 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-12 mx-auto"></div></td>
                                         </tr>
                                     </template>
                                     <template v-else-if="departmentData.length === 0">
                                         <tr>
-                                            <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                                            <td colspan="9" class="px-6 py-8 text-center text-gray-500">
                                                 <i class="pi pi-box mb-2 text-3xl opacity-50"></i>
                                                 <p>No departmental data found for this period.</p>
                                             </td>
@@ -183,7 +207,60 @@
                                         <td class="px-6 py-3 font-medium text-gray-800 border-r border-gray-200">{{ row.department }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-200">{{ row.total_employees }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-200">{{ row.total_working_days }}</td>
-                                        <td class="px-4 py-3 text-center border-r border-gray-200 text-gray-500">{{ row.total_scheduled_hours }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200 font-medium text-gray-600">{{ row.total_scheduled_hours }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200 text-orange-600">{{ row.total_late_employees }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200 text-orange-600 font-bold">{{ row.total_late_mins }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200">{{ row.regular_actual_hours }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200 text-indigo-600 font-semibold">+ {{ row.overtime_actual_hours }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200 font-bold text-teal-600">{{ row.total_actual_hours }}</td>
+                                    </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Daily Report Table -->
+                    <div v-else-if="activeTab === 'daily'" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in fade-in duration-300">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-gray-900 text-white uppercase tracking-wider text-xs border border-gray-800">
+                                        <th class="px-6 py-4 font-semibold w-48 border-r border-gray-800 text-center">Department</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center">Total Employees</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center text-teal-300">Employees Present</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center text-red-300">Employees Absent</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center text-orange-300">Late Employees</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center text-orange-300">Total Late (mins)</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center">Regular Hrs</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center text-indigo-300">Overtime Hrs</th>
+                                        <th class="px-4 py-4 text-center border-r border-gray-800 text-center text-teal-300">Total Actual Hrs</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 border border-gray-200">
+                                    <template v-if="isLoadingDaily">
+                                        <tr v-for="i in 5" :key="i" class="animate-pulse bg-gray-50/50">
+                                            <td colspan="9" class="px-6 py-3 border-r border-gray-200"><div class="h-4 bg-gray-200 rounded w-full"></div></td>
+                                        </tr>
+                                    </template>
+                                    <template v-else-if="dailyData.length === 0">
+                                        <tr>
+                                            <td colspan="9" class="px-6 py-8 text-center text-gray-500">
+                                                <i class="pi pi-box mb-2 text-3xl opacity-50"></i>
+                                                <p>No departmental data found for this date.</p>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template v-else>
+                                        <tr v-for="row in dailyData" :key="row.department" class="hover:bg-gray-50">
+                                        <td class="px-6 py-3 font-medium text-gray-800 border-r border-gray-200">{{ row.department }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200">{{ row.total_employees }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200 text-teal-600 font-bold">{{ row.total_present }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200 text-red-600 font-bold">{{ row.total_absent }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200 text-orange-600">{{ row.total_late_employees }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200 text-orange-600 font-bold">{{ row.total_late_mins }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200">{{ row.regular_actual_hours }}</td>
+                                        <td class="px-4 py-3 text-center border-r border-gray-200 text-indigo-600 font-semibold">+ {{ row.overtime_actual_hours }}</td>
                                         <td class="px-4 py-3 text-center border-r border-gray-200 font-bold text-teal-600">{{ row.total_actual_hours }}</td>
                                     </tr>
                                     </template>
@@ -292,9 +369,12 @@ const { user } = storeToRefs(authStore);
 const activeTab = ref('annual');
 const selectedYear = ref(new Date().getFullYear());
 const selectedMonth = ref(new Date().getMonth() + 1); // current month
+const selectedDate = ref(new Date().toISOString().split('T')[0]);
 const isExporting = ref(false);
 const isLoadingAnnual = ref(false);
 const isLoadingDepartment = ref(false);
+const isLoadingDaily = ref(false);
+const availableDates = ref([]);
 
 const months = [
     'January', 'February', 'March', 'April', 'May', 'June', 
@@ -303,6 +383,7 @@ const months = [
 
 const annualData = ref([]);
 const departmentData = ref([]);
+const dailyData = ref([]);
 
 
 // Computed property for yearly summary / totals
@@ -387,10 +468,36 @@ const fetchDepartmentReport = async () => {
     }
 };
 
+const fetchDailyReport = async () => {
+    isLoadingDaily.value = true;
+    try {
+        const response = await axios.get(`/api/reports/daily-department?date=${selectedDate.value}`);
+        dailyData.value = response.data;
+    } catch (error) {
+        console.error('Failed to fetch daily report:', error);
+    } finally {
+        isLoadingDaily.value = false;
+    }
+};
+
+const fetchAvailableDates = async () => {
+    try {
+        const response = await axios.get('/api/attendance-records/dates');
+        availableDates.value = response.data;
+        if (availableDates.value.length > 0) {
+            selectedDate.value = availableDates.value[0];
+        }
+    } catch (error) {
+        console.error('Failed to fetch available dates:', error);
+    }
+};
+
 onMounted(() => {
     authStore.fetchUser();
+    fetchAvailableDates();
     fetchAnnualReport();
     fetchDepartmentReport();
+    fetchDailyReport();
 });
 
 watch([selectedYear, selectedMonth], () => {
@@ -398,9 +505,18 @@ watch([selectedYear, selectedMonth], () => {
     fetchDepartmentReport();
 });
 
+watch(selectedDate, () => {
+    fetchDailyReport();
+});
+
 watch(activeTab, () => {
-    fetchAnnualReport();
-    fetchDepartmentReport();
+    if (activeTab.value === 'annual' || activeTab.value === 'yearly') {
+        fetchAnnualReport();
+    } else if (activeTab.value === 'department') {
+        fetchDepartmentReport();
+    } else if (activeTab.value === 'daily') {
+        fetchDailyReport();
+    }
 });
 
 const getRateColor = (rateStr) => {

@@ -26,6 +26,13 @@ class ReportController extends Controller
         return response()->json($service->getMonthlyDepartmentReport($year, $month));
     }
 
+    public function dailyDepartment(Request $request)
+    {
+        $date = $request->input('date', date('Y-m-d'));
+        $service = new \App\Services\AttendanceReportService();
+        return response()->json($service->getDailyDepartmentReport($date));
+    }
+
     public function exportExcel(Request $request)
     {
         $year = $request->input('year', date('Y'));
