@@ -68,33 +68,66 @@ class AttendanceController extends Controller
         $records = $request->input('records', []);
         $reportService = new \App\Services\AttendanceReportService();
 
-        foreach ($records as $record) {
-            // Calculate exact status based on working hours AND approved leaves
-            $status = $reportService->calculateStatus(
-                $record['time_in'],
-                $record['time_out'],
-                $record['hours_worked'],
-                $record['employee_id_number'],
-                $record['date']
-            );
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            foreach ($records as $record) {
+                if (empty($record['employee_id_number']) || empty($record['date'])) {
+                    continue; // Skip silently if data format is bad
+                }
 
-            AttendanceRecord::updateOrCreate(
-                [
-                    'employee_id_number' => $record['employee_id_number'],
-                    'date' => $record['date']
-                ],
-                [
-                    'employee_name' => $record['employee_name'],
-                    'time_in' => $record['time_in'],
-                    'time_out' => $record['time_out'],
-                    'hours_worked' => $record['hours_worked'],
-                    'status' => $status,
-                    'department' => $record['department']
-                ]
-            );
+                $existing = \App\Models\AttendanceRecord::where('employee_id_number', $record['employee_id_number'])
+                    ->where('date', $record['date'])
+                    ->first();
+
+                $shiftStart = $existing ? $existing->applied_shift_start : null;
+                $shiftEnd = $existing ? $existing->applied_shift_end : null;
+
+                if (!$shiftStart || !$shiftEnd) {
+                    $employee = \App\Models\Employee::where('employee_id', $record['employee_id_number'])->first();
+                    if ($employee && $employee->working_hours) {
+                        $parts = explode('-', $employee->working_hours);
+                        if (count($parts) > 1) {
+                            $shiftStart = trim($parts[0]);
+                            $shiftEnd = trim($parts[1]);
+                        }
+                    }
+                }
+
+                // Calculate exact status based on working hours AND approved leaves
+                $status = $reportService->calculateStatus(
+                    $record['time_in'] ?? '-',
+                    $record['time_out'] ?? '-',
+                    $record['hours_worked'] ?? 0,
+                    $record['employee_id_number'],
+                    $record['date'],
+                    $shiftStart,
+                    $shiftEnd
+                );
+
+                AttendanceRecord::updateOrCreate(
+                    [
+                        'employee_id_number' => $record['employee_id_number'],
+                        'date' => $record['date']
+                    ],
+                    [
+                        'employee_name' => $record['employee_name'] ?? 'Unknown',
+                        'applied_shift_start' => $shiftStart,
+                        'applied_shift_end' => $shiftEnd,
+                        'time_in' => $record['time_in'] ?? '-',
+                        'time_out' => $record['time_out'] ?? '-',
+                        'hours_worked' => $record['hours_worked'] ?? 0,
+                        'status' => $status,
+                        'department' => $record['department'] ?? 'Unassigned'
+                    ]
+                );
+            }
+            \Illuminate\Support\Facades\DB::commit();
+            return response()->json(['message' => 'Successfully imported attendance records.']);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            \Illuminate\Support\Facades\Log::error('Bulk Attendance Import Failed: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to import some records. Verify file formats and try again.'], 500);
         }
-
-        return response()->json(['message' => 'Successfully imported attendance records.']);
     }
 
     public function roster(Request $request)

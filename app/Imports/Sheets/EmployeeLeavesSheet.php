@@ -10,16 +10,6 @@ use Illuminate\Support\Facades\Log;
 
 class EmployeeLeavesSheet implements ToCollection, WithStartRow
 {
-    // The Working Hours schedule mapping defined by the second sheet image
-    // Code A, B, C, D, E
-    private const WORKING_HOURS_MAP = [
-        'A' => '7:00 AM - 3:00 PM',
-        'B' => '7:00 PM - 4:00 AM',
-        'C' => '6:00 AM - 2:00 PM',
-        'D' => '2:00 PM - 10:00 PM',
-        'E' => '8:00 AM - 4:00 PM'
-    ];
-
     public function startRow(): int
     {
         return 9; // Aligning with Masterlist sheet starting row
@@ -27,6 +17,14 @@ class EmployeeLeavesSheet implements ToCollection, WithStartRow
 
     public function collection(Collection $rows)
     {
+        // Fetch Working Hours mapping from Database
+        $setting = \App\Models\SystemSetting::where('key', 'working_hours')->first();
+        $whArray = $setting ? $setting->value : [];
+        $workingHoursMap = [];
+        foreach ($whArray as $wh) {
+            $workingHoursMap[$wh['code']] = $wh['time'];
+        }
+
         foreach ($rows as $row) {
             try {
                 $empId = $row[1] ?? null;
@@ -37,7 +35,7 @@ class EmployeeLeavesSheet implements ToCollection, WithStartRow
 
                 if ($employee) {
                     $workingHoursCode = strtoupper(trim($row[13] ?? ''));
-                    $workingHoursStr = self::WORKING_HOURS_MAP[$workingHoursCode] ?? null;
+                    $workingHoursStr = $workingHoursMap[$workingHoursCode] ?? null;
 
                     $vl = max(0, intval($row[14] ?? 0)); // Vacation Leave
                     $sl = 0;                              // Sick Leave – not in this sheet, always 0

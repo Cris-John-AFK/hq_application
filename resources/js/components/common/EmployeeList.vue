@@ -159,7 +159,14 @@
         </div>
 
         <!-- Shift Legend Section -->
-        <div class="px-6 py-4 bg-slate-50 border-b border-gray-100 grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div class="px-6 py-4 bg-slate-50 border-b border-gray-100">
+            <div class="flex items-center justify-between mb-3">
+                <h4 class="text-[10px] font-black tracking-widest text-slate-400 uppercase">Assigned Shift Deployment</h4>
+                <button @click="showManageShiftsModal = true" class="text-[9px] font-black text-teal-600 hover:text-teal-700 uppercase tracking-widest flex items-center gap-1 cursor-pointer transition-colors border border-teal-100 bg-white px-2 py-1 rounded shadow-sm hover:shadow">
+                    <i class="pi pi-cog text-[8px]"></i> Manage Shifts
+                </button>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div v-for="stat in shiftStats" :key="stat.code" class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between group">
                 <div>
                     <div class="flex items-center gap-2">
@@ -171,6 +178,7 @@
                     <p class="text-[14px] font-black text-teal-600">{{ stat.count }}</p>
                     <p class="text-[8px] font-bold text-slate-400 uppercase">Deployed</p>
                 </div>
+            </div>
             </div>
         </div>
 
@@ -307,6 +315,8 @@
             @submit="handleUpdate"
         />
 
+        <ManageShiftsModal v-model="showManageShiftsModal" @shifts-updated="fetchShiftStats" />
+
         <!-- Account Creation Modal -->
         <div v-if="showAccountModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" @click.self="showAccountModal = false">
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
@@ -340,6 +350,21 @@
                         </div>
                     </div>
 
+                    <!-- Department Assignment (for dept_head / admin) -->
+                    <div v-show="accountRole === 'dept_head' || accountRole === 'admin'" class="animate-in slide-in-from-top-2 duration-300">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Managed Department</label>
+                        <select 
+                            v-model="accountDepartmentId" 
+                            class="w-full text-xs font-bold text-gray-700 p-3 rounded-xl border border-gray-200 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 cursor-pointer bg-white"
+                        >
+                            <option value="">-- No Specific Department --</option>
+                            <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+                                {{ dept.name }}
+                            </option>
+                        </select>
+                        <p class="text-[9px] text-gray-400 mt-1 mb-1 italic">Select the department this account will manage/head.</p>
+                    </div>
+
                     <div class="bg-amber-50 rounded-xl p-3 border border-amber-100">
                         <p class="text-[9px] text-amber-600 font-bold leading-relaxed">
                             <i class="pi pi-info-circle mr-1"></i>
@@ -369,6 +394,7 @@ import { ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 import AddEmployeeModal from './AddEmployeeModal.vue';
 import EditEmployeeModal from './EditEmployeeModal.vue';
+import ManageShiftsModal from './ManageShiftsModal.vue';
 
 // State
 const employees = ref([]);
@@ -398,6 +424,7 @@ let debounceTimer = null;
 // Modals
 const showAddModal = ref(false);
 const showEditModal = ref(false);
+const showManageShiftsModal = ref(false);
 const isCreating = ref(false);
 const isEditing = ref(false);
 const selectedEmployee = ref(null);
@@ -405,11 +432,13 @@ const selectedEmployeeForAccount = ref(null);
 const editEmployeeModalRef = ref(null);
 const showAccountModal = ref(false);
 const accountRole = ref('user');
+const accountDepartmentId = ref('');
 const isCreatingAccount = ref(false);
 
 const openAccountModal = (emp) => {
     selectedEmployeeForAccount.value = emp;
     accountRole.value = 'user';
+    accountDepartmentId.value = emp.department_id || '';
     showAccountModal.value = true;
 };
 
@@ -420,7 +449,8 @@ const handleCreateAccount = async () => {
     try {
         const response = await axios.post('/api/users/create-from-employee', {
             employee_id: selectedEmployeeForAccount.value.id,
-            role: accountRole.value
+            role: accountRole.value,
+            department_id: accountDepartmentId.value || null
         });
         
         alert(`Account created!\nEmail: ${response.data.email}\nPassword: ${response.data.password}`);

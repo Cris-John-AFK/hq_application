@@ -22,7 +22,7 @@ class EmployeeDetail extends Model
     ];
 
     protected $hidden = [
-        'birthdate',
+        // 'birthdate', // Un-hiding so it shows up on the admin forms
     ];
 
     public function employee()

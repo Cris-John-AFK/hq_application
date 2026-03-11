@@ -15,6 +15,8 @@ return new class extends Migration {
             $table->string('employee_id_number')->nullable(); // String ID like HQI-0001
             $table->string('employee_name')->nullable();
             $table->date('date');
+            $table->string('applied_shift_start')->nullable();
+            $table->string('applied_shift_end')->nullable();
             $table->string('time_in')->nullable();
             $table->string('time_out')->nullable();
             $table->decimal('hours_worked', 8, 2)->default(0);

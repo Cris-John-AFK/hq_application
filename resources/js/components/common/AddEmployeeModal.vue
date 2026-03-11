@@ -56,6 +56,13 @@
                                 <label class="block text-xs font-semibold text-gray-600 mb-1">Date Hired <span class="text-red-500">*</span></label>
                                 <input v-model="form.date_hired" type="date" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" required>
                             </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Assigned Shift (Working Hours) <span class="text-red-500">*</span> <span class="text-xs font-normal text-gray-400 ml-1">(Format: 07:00 AM - 03:00 PM)</span></label>
+                                <input v-model="form.working_hours" list="addWorkingHoursList" type="text" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none font-mono" placeholder="e.g. 07:00 AM - 03:00 PM" required>
+                                <datalist id="addWorkingHoursList">
+                                    <option v-for="shift in shifts" :key="shift.code" :value="shift.time">{{ shift.code }} - {{ shift.time }}</option>
+                                </datalist>
+                            </div>
 
 
                         </div>
@@ -150,7 +157,8 @@
 </template>
 
 <script setup>
-import { reactive, watch } from 'vue';
+import { reactive, watch, ref, onMounted } from 'vue';
+import axios from 'axios';
 
 const props = defineProps({
     modelValue: Boolean,
@@ -163,6 +171,21 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'submit']);
 
+const shifts = ref([]);
+
+const loadShifts = async () => {
+    try {
+        const res = await axios.get('/api/settings/working_hours');
+        shifts.value = res.data || [];
+    } catch (e) {
+        console.error("Failed to load shifts", e);
+    }
+};
+
+onMounted(() => {
+    loadShifts();
+});
+
 const form = reactive({
     // Core
     employee_id: '',
@@ -170,6 +193,7 @@ const form = reactive({
     position: '',
     employment_status: 'Probationary',
     date_hired: '',
+    working_hours: '08:00 AM - 04:00 PM',
     email: '',
     leave_credits: 5,
     
@@ -196,6 +220,12 @@ watch(() => props.modelValue, (newVal) => {
         form.gender = 'Male';
         form.civil_status = 'Single';
         form.leave_credits = 5;
+        if(shifts.value.length > 0) {
+            form.working_hours = shifts.value[0].time;
+        } else {
+            form.working_hours = '08:00 AM - 04:00 PM';
+        }
+        loadShifts(); // Refresh in case it was modified
     }
 });
 

@@ -36,16 +36,26 @@ A professional, enterprise-grade human capital management application built with
 - **Hybrid Data Fetching**: User dashboards dynamically fetch both web-submitted and portal-submitted records by cross-referencing **ID Number** and **Employee ID**.
 - **Service-Oriented Processing**: Critical leave logic (deductions, notifications, audits) is centralized in the **LeaveService** layer, ensuring 100% processing consistency between individual and bulk actions.
 
-### 🧪 Biometric Attendance Engine & Masterlist Import
+### 🧪 Biometric Attendance Engine & Historical Snapshots
+- **Shift Integrity Snapshots**: The system now implements a "Snapshot" pattern for working hours. When biometric data is imported, the employee's **current** shift times (e.g., 07:00 AM - 03:00 PM) are permanently stamped onto the attendance record. 
+    - **Previous Data Safety**: If you change an employee's shift to 06:00 AM next month, their past attendance from this month will **not** turn "Late." The system remembers they were originally on a 07:00 AM shift for those specific dates.
 - **Multi-Sheet Universal Excel Parser**: High-performance client-side engine capable of reading 3-sheet formats to import Masterlists, schedule working hours, and initial leave balances.
-- **Dual-Log Reconciliation**: Advanced logic that automatically groups separate **IN** and **OUT** rows, identifies the earliest/latest timestamps, and calculates exact work hours.
-- **Live Progress UI**: Real-time visual feedback during mass imports, showing parsing stages and calculation status with a synchronized progress bar.
-- **Dynamic Lateness Classification**: Automatically determines **Present**, **Late**, **Half-Day**, or **Absent** statuses based on the individualized working hours assigned to the employee rather than a single hardcoded cutoff.
+- **Robust Transactional Imports**: All bulk imports (Attendance & Masterlist) are wrapped in **Database Transactions**. If a single row is malformed or has an error, the system skips it safely or rolls back to prevent partial data corruption.
+- **Dynamic Lateness Classification**: Automatically determines **Present**, **Late**, **Half-Day**, or **Absent** statuses based on the snapshot working hours stored at the time of import.
 
-### 📅 Advanced Scheduling & Calendar
-- **Continuous Multi-Day Visualization**: Sophisticated logic that renders multi-day events as single, unbroken visual bars for clarity.
+### 📅 Advanced Scheduling & Shift Management
+- **Dynamic Shift Registry**: Administrators can now manage the organization's shift library via the **"⚙️ Manage Shifts"** command center in the Masterlist.
+    - **Custom Codes**: Create codes like `SHIFT_A`, `GY_SHIFT`, or `FLEX_1`.
+    - **Global Sync**: Once a shift code is added, it becomes available in all dropdowns (Add/Edit Employee) and is automatically recognized by the Excel Import engine.
+- **Editable Working Hours**: Employee working hours are no longer read-only. You can manually tweak an individual's schedule directly from their "Edit Profile" modal.
 - **Philippine Compliance**: Pre-loaded with Philippine Public Holidays integrated into the dynamic organizational calendar.
-- **One-Click Planning**: Full-screen schedule management module for organizational planning.
+
+### 👤 System Account Management & Promotion
+- **One-Click Promotion**: Easily "Promote" any employee in the Masterlist to a System User (Admin, Dept Head, or User) using the **"Create Account"** action.
+- **Department Overrides (Managers Layer)**: Solves the "Manager Managing Managers" conflict.
+    - **The Problem**: Top-level managers often belong to a "Managers" department in the masterlist.
+    - **The Solution**: When promoting a Manager to a `Dept Head`, the system now provides a **"Managed Department"** dropdown. You can select "Accounting" or "HR" as their managed scope, even if their personal profile stays in the "Managers" list.
+- **Automatic Name Sync**: Importing a Masterlist update for an employee will automatically sync their corrected name to their linked System Account.
 
 ### 📦 Advanced Resource Auditing (Inventory)
 - **High-Density Data Grid**: Resources are presented in a clean, professional spreadsheet-like data table structure to maximize visibility of critical organization assets.
@@ -70,6 +80,7 @@ The development environment is optimized for maximum "snappiness" by leveraging 
 ---
 
 ## 🛡️ Security & Action Audit Trail
+- **Birthdate Transparency**: The `birthdate` field is now visible and editable in employee profiles to ensure HR can verify age-based compliance and records.
 - **Advanced Action Forensic Index**: A fully searchable Audit Trail featuring a **Visual Diff Analyzer** that highlights precisely which data fields were modified (e.g., "Status: Pending → Approved").
 - **Real-Time Log Search**: Debounced search bar to instantly find activities by **User Name**, **IP Address**, **Description**, or **Device Type**.
 - **Kiosk Session Protection**: The Employee Portal now uses **Session-Only Storage** to prevent credentials from persisting between browser sessions.
@@ -169,15 +180,28 @@ npm run dev -- --host
 
 ## 📖 Operational Procedures & Calculation Logic
 
-This section defines the strict mathematical rules and processing workflows used by the HatQ HQ-App to ensure "1:1 Data Accuracy" vs. actual employee records.
+This section defines the strict workflows and processing rules used by the HatQ HQ-App.
 
-### 🛡️ 1. Masterlist & Headcount Rules
+### ⚙️ 1. Managing Working Hours & Shifts
+To ensure flawless attendance tracking, follow these steps:
+1. **Define your Shifts**: Go to **Employee Masterlist** → click the **"⚙️ Manage Shifts"** button. Add your standard shift codes (e.g., "A", "7-3", "B") and their exact times.
+2. **Assign to Employees**: Open an employee's profile and select the shift from the dropdown. This is the **Source of Truth** for their lateness.
+3. **Importing Attendance**: When you import the Biometric Excel, the system looks at this assigned shift and "snapshots" it into the attendance record. Even if you change their shift later, the system remembers what they were assigned *at the time* of the record.
+
+### 🛡️ 2. Transferring Dept Heads
+When a Dept Head is replaced or promoted:
+1. **Demote Previous**: Edit the old user's account and change their role back to `User`.
+2. **Promote New**: Find the new employee in the Masterlist → Click **"Create Account"** → Select **Role: Dept Head**.
+3. **Set the Scope**: In the **"Managed Department"** dropdown, select the actual department they will lead (e.g., "Production").
+4. **Data Retention**: All previous leave approvals and remarks from the *old* head are permanently stored. The *new* head will immediately inherit access to all current pending requests for that specific department's scope.
+
+### 📊 3. Masterlist & Headcount Rules
 The "Total Employees" (Headcount) in any report is not a static number. It is a **historically accurate** calculation that "time travels" based on your data:
 - **Hiring Gatekeeper**: An employee only appears in a report if their `date_hired` is on or before the last day of that reporting month.
 - **Archive Memory**: If you archive an employee on March 1st, they **will still appear** in the February headcount (because they were active in February), but they will vanish from the March headcount.
 - **Dynamic Sync**: Headcount updates automatically every time you view a report—no manual refresh needed.
 
-### ⏱️ 2. Attendance & Absence Logic
+### ⏱️ 4. Attendance & Absence Logic
 The system follows a "Cold Fact" rule for every workday (dates with at least one record captured):
 - **Present**: Recorded when an employee has BOTH a valid `Time-In` and `Time-Out`.
 - **Strict Absence Rule**: An employee is automatically flagged as **Absent** if:
@@ -185,7 +209,7 @@ The system follows a "Cold Fact" rule for every workday (dates with at least one
     2. They have a `Time-In` but **NO `Time-Out`** (or vice versa). Missing half the log equates to a failed shift.
 - **Half-Day Status**: Triggered if the `Hours Worked` is greater than 0 but less than 5.0 hours. This is automatically capped at **240 minutes** of lost time (Undertime).
 
-### 🚨 3. Tardiness (Lateness) Process
+### 🚨 5. Tardiness (Lateness) Process
 Lately, the system treats every minute as a fact based on **Individualized Working Hours**:
 - **The Comparison**: `Actual Time-In` vs. `Expected Start Time` (from the Masterlist).
 - **Grace Period**: There is **0 minutes** of grace. 07:01 AM is 1 minute late for a 07:00 AM shift.
@@ -193,7 +217,7 @@ Lately, the system treats every minute as a fact based on **Individualized Worki
 - **Anomaly Protection (8-Hour Cap)**: To prevent night-shift workers or data errors from creating 700+ minute spikes, any single instance of lateness is **capped at 480 minutes (8 hours)**.
 - **Formula**: `(Actual Time - Scheduled Start) = Tardiness Mins`.
 
-### 📉 4. Report Formula Definitions
+### 📉 6. Report Formula Definitions
 You can hover over any header in the web reports to see these, but here is the technical breakdown:
 - **Attendance Rate (%)**: `(Present Days + Undertimes) ÷ (Headcount × Working Days)`.
 - **Absenteeism Rate (%)**: `(Total Absent Days) ÷ (Headcount × Working Days)`.
@@ -201,12 +225,13 @@ You can hover over any header in the web reports to see these, but here is the t
 - **Undertime Frequency (%)**: `(Number of Undertime/Half-Day Instances) ÷ (Headcount × Working Days)`.
 - **Total Scheduled Hrs**: `Σ (Employee Shift Length × Working Days)`. (Example: A 9-hour shift employee scheduled for 20 days = 180 scheduled hours).
 
-### 🏢 5. Departmental Performance
+### 🏢 7. Departmental Performance
 The **Monthly Department Report** compares the performance of specific teams:
 - **Actual Working Days**: Counts the unique dates where **that specific department** had at least one employee on site.
 - **Actual vs. Scheduled**: Tracks how many hours were rendered vs. how many were expected based on the unique shifts of that team's personnel.
 
 ---
 
+*Updated March 2026*
 *Created by Cris John M. Cañales & Jessica Roque*
 *Support: crisjohn.canales@gmail.com | jessicaroque12@gmail.com*

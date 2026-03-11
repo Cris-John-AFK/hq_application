@@ -61,18 +61,17 @@ class AttendanceReportService
                     continue; // Skip tardiness and undertime points if absent
                 }
 
-                // They are present and have valid times
                 if (in_array($record->status, ['Half Day', 'Undertime'])) {
                     $undertimesCount++;
-                    $totalUndertimeMins += $this->calculateUndertimeMinutes($record->time_out, $record->hours_worked, $record->employee_id_number);
+                    $totalUndertimeMins += $this->calculateUndertimeMinutes($record->time_out, $record->hours_worked, $record->employee_id_number, $record);
                 } elseif (in_array($record->status, ['Present', 'Late']) || $record->hours_worked > 0) {
                     $presentDays++;
                 }
 
                 // Check Lateness Separately
-                if ($this->isLate($record->time_in, $record->status, $record->employee_id_number)) {
+                if ($this->isLate($record->time_in, $record->status, $record->employee_id_number, $record)) {
                     $latesCount++;
-                    $totalLateMins += $this->calculateLatenessMinutes($record->time_in, $record->employee_id_number);
+                    $totalLateMins += $this->calculateLatenessMinutes($record->time_in, $record->employee_id_number, $record);
                 }
             }
 
@@ -182,7 +181,16 @@ class AttendanceReportService
             foreach ($records as $record) {
                 $emp = $record->employee;
                 $shiftHours = 8;
-                if ($emp && $emp->working_hours) {
+                if ($record->applied_shift_start && $record->applied_shift_end) {
+                    try {
+                        $s = \Carbon\Carbon::parse($record->applied_shift_start);
+                        $e = \Carbon\Carbon::parse($record->applied_shift_end);
+                        if ($e->lt($s))
+                            $e->addDay();
+                        $shiftHours = round($s->diffInMinutes($e) / 60, 2);
+                    } catch (\Exception $ex) {
+                    }
+                } elseif ($emp && $emp->working_hours) {
                     $parts = explode('-', $emp->working_hours);
                     if (count($parts) === 2) {
                         try {
@@ -228,7 +236,7 @@ class AttendanceReportService
         return $data;
     }
 
-    public function calculateLatenessMinutes($timeIn, $employeeIdNumber)
+    public function calculateLatenessMinutes($timeIn, $employeeIdNumber, $record = null, $shiftStartOverride = null)
     {
         if (!$timeIn || $timeIn === '-')
             return 0;
@@ -237,7 +245,11 @@ class AttendanceReportService
             $time = \Carbon\Carbon::parse($timeIn);
             $cutoff = null;
 
-            if ($employeeIdNumber) {
+            if ($shiftStartOverride) {
+                $cutoff = \Carbon\Carbon::parse($shiftStartOverride);
+            } elseif ($record && $record->applied_shift_start) {
+                $cutoff = \Carbon\Carbon::parse($record->applied_shift_start);
+            } elseif ($employeeIdNumber) {
                 $employee = Employee::where('employee_id', $employeeIdNumber)->first();
                 if ($employee && $employee->working_hours) {
                     $parts = explode('-', $employee->working_hours);
@@ -264,7 +276,7 @@ class AttendanceReportService
         return 0;
     }
 
-    public function calculateUndertimeMinutes($timeOut, $hoursWorked, $employeeIdNumber)
+    public function calculateUndertimeMinutes($timeOut, $hoursWorked, $employeeIdNumber, $record = null, $shiftEndOverride = null)
     {
         // If they worked 0 hours, it's 8 hours (480 mins) orhandled as absence? 
         // Image logic: "Undertimes/Half day (mins)" usually refers to the lost time.
@@ -282,7 +294,11 @@ class AttendanceReportService
             $time = \Carbon\Carbon::parse($timeOut);
             $finish = null;
 
-            if ($employeeIdNumber) {
+            if ($shiftEndOverride) {
+                $finish = \Carbon\Carbon::parse($shiftEndOverride);
+            } elseif ($record && $record->applied_shift_end) {
+                $finish = \Carbon\Carbon::parse($record->applied_shift_end);
+            } elseif ($employeeIdNumber) {
                 $employee = Employee::where('employee_id', $employeeIdNumber)->first();
                 if ($employee && $employee->working_hours) {
                     $parts = explode('-', $employee->working_hours);
@@ -309,12 +325,12 @@ class AttendanceReportService
         return 0;
     }
 
-    public function isLate($timeIn, $status, $employeeIdNumber = null)
+    public function isLate($timeIn, $status, $employeeIdNumber = null, $record = null, $shiftStartOverride = null)
     {
-        return $this->calculateLatenessMinutes($timeIn, $employeeIdNumber) > 0;
+        return $this->calculateLatenessMinutes($timeIn, $employeeIdNumber, $record, $shiftStartOverride) > 0;
     }
 
-    public function calculateStatus($timeIn, $timeOut, $hoursWorked, $employeeIdNumber, $date)
+    public function calculateStatus($timeIn, $timeOut, $hoursWorked, $employeeIdNumber, $date, $shiftStartOverride = null, $shiftEndOverride = null)
     {
         $employee = Employee::where('employee_id', $employeeIdNumber)->first();
         $hoursWorked = (float) $hoursWorked;
@@ -347,7 +363,7 @@ class AttendanceReportService
         if ($hoursWorked > 0 && $hoursWorked < 5.0) {
             return 'Half Day';
         }
-        if ($this->calculateLatenessMinutes($timeIn, $employeeIdNumber) > 0) {
+        if ($this->calculateLatenessMinutes($timeIn, $employeeIdNumber, null, $shiftStartOverride) > 0) {
             return 'Late';
         }
 

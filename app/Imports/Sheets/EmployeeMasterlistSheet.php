@@ -91,6 +91,13 @@ class EmployeeMasterlistSheet implements ToCollection, WithStartRow
                         'employment_status' => $status,
                         'date_hired' => $dateHired,
                     ]);
+
+                    // Sync user name if account exists to prevent mismatch issues when masterlist is imported
+                    if ($employee->user) {
+                        $employee->user->update([
+                            'name' => trim("{$firstName} {$lastName}")
+                        ]);
+                    }
                 } else {
                     $employee = Employee::create([
                         'employee_id' => $empId,

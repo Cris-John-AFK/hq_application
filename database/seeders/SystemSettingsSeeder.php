@@ -48,5 +48,17 @@ class SystemSettingsSeeder extends Seeder
                 ]
             ]
         );
+        \App\Models\SystemSetting::updateOrCreate(
+            ['key' => 'working_hours'],
+            [
+                'value' => [
+                    ['code' => 'A', 'time' => '07:00 AM - 03:00 PM'],
+                    ['code' => 'B', 'time' => '07:00 PM - 04:00 AM'],
+                    ['code' => 'C', 'time' => '06:00 AM - 02:00 PM'],
+                    ['code' => 'D', 'time' => '02:00 PM - 10:00 PM'],
+                    ['code' => 'E', 'time' => '08:00 AM - 04:00 PM'],
+                ]
+            ]
+        );
     }
 }

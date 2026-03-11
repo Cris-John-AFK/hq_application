@@ -73,9 +73,13 @@ class UserController extends Controller
         $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'role' => 'required|string|in:admin,user,dept_head',
+            'department_id' => 'nullable|exists:departments,id',
         ]);
 
         $employee = \App\Models\Employee::with('department')->findOrFail($request->employee_id);
+
+        $targetDepartmentId = $request->department_id ?? $employee->department_id;
+        $targetDepartment = \App\Models\Department::find($targetDepartmentId);
 
         // Check if user already exists
         if (User::where('id_number', $employee->employee_id)->exists()) {
@@ -102,8 +106,8 @@ class UserController extends Controller
             'role' => $request->role,
             'id_number' => $employee->employee_id,
             'position' => $employee->position,
-            'department' => $employee->department?->name,
-            'department_id' => $employee->department_id,
+            'department' => $targetDepartment?->name,
+            'department_id' => $targetDepartmentId,
             'employment_status' => $employee->employment_status,
             'status' => 'Available',
         ]);

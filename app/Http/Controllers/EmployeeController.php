@@ -101,6 +101,7 @@ class EmployeeController extends Controller
             'employment_status' => 'required|string',
             'date_hired' => 'required|date',
             'email' => 'nullable|email',
+            'working_hours' => 'required|string',
             'leave_credits' => 'nullable|numeric',
 
             // Details
@@ -129,6 +130,7 @@ class EmployeeController extends Controller
                 'position' => $validated['position'],
                 'employment_status' => $validated['employment_status'],
                 'date_hired' => $validated['date_hired'],
+                'working_hours' => $validated['working_hours'],
                 'email' => $validated['email'] ?? null,
                 'vacation_leave' => $validated['vacation_leave'] ?? 0,
                 'avatar' => $avatarPath ? '/storage/' . $avatarPath : null,
@@ -358,16 +360,13 @@ class EmployeeController extends Controller
 
     public function getShiftStats()
     {
-        $shifts = [
-            'A' => '7:00 AM - 3:00 PM',
-            'B' => '7:00 PM - 4:00 AM',
-            'C' => '6:00 AM - 2:00 PM',
-            'D' => '2:00 PM - 10:00 PM',
-            'E' => '8:00 AM - 4:00 PM'
-        ];
+        $setting = \App\Models\SystemSetting::where('key', 'working_hours')->first();
+        $shifts = $setting ? $setting->value : [];
 
         $stats = [];
-        foreach ($shifts as $code => $time) {
+        foreach ($shifts as $shift) {
+            $code = $shift['code'];
+            $time = $shift['time'];
             $stats[] = [
                 'code' => $code,
                 'time' => $time,

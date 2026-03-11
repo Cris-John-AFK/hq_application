@@ -58,10 +58,13 @@
                                 <label class="block text-xs font-semibold text-gray-600 mb-1">Date Hired <span class="text-red-500">*</span></label>
                                 <input v-model="form.date_hired" type="date" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" required>
                             </div>
-                            <!-- Working Hours Display Only (Updated via Import) -->
+                            <!-- Assigned Shift / Working Hours -->
                             <div class="md:col-span-2">
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Assigned Shift (Working Hours) <span class="text-xs text-gray-400 font-normal">(Via Import)</span></label>
-                                <input v-model="form.working_hours" type="text" class="w-full px-3 py-2 border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed rounded-lg text-sm outline-none font-mono" readonly placeholder="e.g. 7:00 AM - 3:00 PM">
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Assigned Shift (Working Hours) <span class="text-red-500">*</span> <span class="text-xs font-normal text-gray-400 ml-1">(Format: 07:00 AM - 03:00 PM)</span></label>
+                                <input v-model="form.working_hours" list="editWorkingHoursList" type="text" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none font-mono" placeholder="e.g. 07:00 AM - 03:00 PM" required>
+                                <datalist id="editWorkingHoursList">
+                                    <option v-for="shift in shifts" :key="shift.code" :value="shift.time">{{ shift.code }} - {{ shift.time }}</option>
+                                </datalist>
                             </div>
                         </div>
                     </div>
@@ -296,10 +299,24 @@
 </template>
 
 <script setup>
-import { reactive, watch, ref } from 'vue';
+import { reactive, watch, ref, onMounted } from 'vue';
 import axios from 'axios';
 
 const isEditMode = ref(false);
+
+const shifts = ref([]);
+const loadShifts = async () => {
+    try {
+        const res = await axios.get('/api/settings/working_hours');
+        shifts.value = res.data || [];
+    } catch (e) {
+        console.error("Failed to load shifts", e);
+    }
+};
+
+onMounted(() => {
+    loadShifts();
+});
 
 const props = defineProps({
     modelValue: Boolean,
@@ -428,6 +445,7 @@ const handleSubmit = () => {
         position: form.position,
         employment_status: form.employment_status,
         date_hired: form.date_hired,
+        working_hours: form.working_hours,
         role: form.role,
         
         details: {
