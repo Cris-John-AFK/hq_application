@@ -35,25 +35,27 @@
                     </div>
                     <ul class="space-y-2 px-4 pb-12">
                         <li v-for="item in menuItems" :key="item.label">
-                            <router-link 
-                                :to="item.href" 
-                                class="relative flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 group font-medium text-sm" 
-                                active-class="bg-gradient-to-r from-teal-600/10 to-transparent text-teal-400"
+                            <component 
+                                :is="item.onClick ? 'button' : 'router-link'"
+                                :to="item.onClick ? null : item.href" 
+                                @click="item.onClick ? item.onClick() : null"
+                                class="w-full relative flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 group font-medium text-sm text-left border-none bg-transparent cursor-pointer" 
+                                :active-class="!item.onClick ? 'bg-gradient-to-r from-teal-600/10 to-transparent text-teal-400' : ''"
                                 :class="[
-                                    $route.path === item.href 
-                                        ? '' 
-                                        : 'hover:bg-slate-800/50 hover:text-white'
+                                    $route.path === item.href && !item.onClick
+                                        ? 'text-teal-400' 
+                                        : 'hover:bg-slate-800/50 hover:text-white text-slate-300'
                                 ]"
                             >
                                 <!-- Active Indicator Border -->
                                 <span 
-                                    v-if="$route.path === item.href" 
+                                    v-if="$route.path === item.href && !item.onClick" 
                                     class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-teal-500 rounded-r-full shadow-[0_0_10px_rgba(20,184,166,0.5)]"
                                 ></span>
                                 
-                                <i :class="[`pi ${item.icon} text-lg transition-colors`, $route.path === item.href ? 'text-teal-400' : 'text-slate-500 group-hover:text-teal-400']"></i>
+                                <i :class="[`pi ${item.icon} text-lg transition-colors`, $route.path === item.href && !item.onClick ? 'text-teal-400' : 'text-slate-500 group-hover:text-teal-400']"></i>
                                 <span class="relative z-10">{{ item.label }}</span>
-                            </router-link>
+                            </component>
                         </li>
                     </ul>
                 </nav>
@@ -97,6 +99,13 @@
                             {{ user?.role }}
                         </p>
                     </div>
+                    <button 
+                        @click="showChangePasswordModal = true"
+                        class="w-8 h-8 rounded-lg bg-slate-700/50 hover:bg-teal-600/20 hover:text-teal-400 flex items-center justify-center transition-all cursor-pointer group/btn"
+                        title="Change Password"
+                    >
+                        <i class="pi pi-lock text-xs group-hover/btn:rotate-12 transition-transform"></i>
+                    </button>
                 </div>
             </div>
         </aside>
@@ -378,6 +387,10 @@
             @submit="handleLeaveSubmit"
         />
 
+        <ChangePasswordModal 
+            v-model="showChangePasswordModal"
+        />
+
     </div>
 </template>
 
@@ -391,6 +404,7 @@ import { storeToRefs } from 'pinia';
 import EventCalendar from '../components/common/EventCalendar.vue';
 import ScrollIndicator from '../components/common/ScrollIndicator.vue';
 import LeaveRequestModal from '../components/common/LeaveRequestModal.vue';
+import ChangePasswordModal from '../components/common/ChangePasswordModal.vue';
 import { useLeaveStore } from '../stores/leaves';
 import axios from 'axios';
 
@@ -413,6 +427,7 @@ const isCalendarOpen = ref(false);
 const unreadEventsCount = ref(0);
 const currentTime = ref('');
 const showLeaveModal = ref(false);
+const showChangePasswordModal = ref(false);
 
 // Omni-Search State
 const isOmniSearchOpen = ref(false);
@@ -686,6 +701,7 @@ const menuItems = computed(() => {
         const items = [
             { label: 'Dashboard', icon: 'pi-home', href: '/dashboard' },
             { label: 'Leave Requests', icon: 'pi-calendar-times', href: '/leave-requests' },
+            { label: 'Security', icon: 'pi-lock', href: '#', onClick: () => showChangePasswordModal.value = true },
         ];
         if (props.user?.role === 'dept_head') {
             items.push({ label: 'Analytics', icon: 'pi-chart-line', href: '/dept-analytics' });
@@ -709,6 +725,7 @@ const menuItems = computed(() => {
         { label: 'Assets', icon: 'pi-box', href: '/inventory' },
         { label: 'Activity Logs', icon: 'pi-list', href: '/activity-logs' },
         { label: 'Archive Registry', icon: 'pi-folder', href: '/archive-leaves' },
+        { label: 'Security', icon: 'pi-lock', href: '#', onClick: () => showChangePasswordModal.value = true },
     );
 
     return items;

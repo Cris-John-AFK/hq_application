@@ -218,9 +218,32 @@ class UserController extends Controller
         ]);
 
         // Audit Log
-        \App\Utils\AuditLogger::log('Employees', 'Security', "Reset password for employee: {$user->name} (#{$user->id}).");
+        \App\Utils\AuditLogger::log('Employees', 'Security', "Reset password (forced) for employee: {$user->name} (#{$user->id}).");
 
         return response()->json(['message' => 'Password updated successfully']);
+    }
+
+    public function changeOwnPassword(Request $request)
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            return response()->json(['message' => 'The provided password does not match your current password.'], 422);
+        }
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        // Audit Log
+        \App\Utils\AuditLogger::log('Security', 'Updated', "User changed their own password.");
+
+        return response()->json(['message' => 'Password changed successfully.']);
     }
 
     public function bulkAddCredits(Request $request)

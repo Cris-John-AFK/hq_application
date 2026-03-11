@@ -28,6 +28,8 @@ class SystemSettingsController extends Controller
             ['value' => $request->value]
         );
 
+        \App\Utils\AuditLogger::log('Settings', 'Updated', "Updated system configuration for key: {$key}.", null, ['new_value' => $request->value]);
+
         return response()->json($setting->value);
     }
 

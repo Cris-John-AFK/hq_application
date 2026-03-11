@@ -25,7 +25,21 @@
                         <div v-if="editIndex !== index" class="w-8 h-8 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center font-black shrink-0 border border-teal-100">
                             {{ shift.code }}
                         </div>
-                        <input v-else v-model="editForm.code" type="text" placeholder="Cd" class="w-12 h-8 rounded-lg bg-teal-50 text-teal-700 text-center font-black border border-teal-200 outline-none uppercase px-1 focus:ring-2 focus:ring-teal-500" maxlength="3">
+                        <div v-else class="flex flex-col gap-2 p-1">
+                            <p class="text-[8px] font-black text-teal-600 uppercase tracking-widest pl-1">Pick Code</p>
+                            <div class="flex flex-wrap gap-1 max-w-[120px]">
+                                <button 
+                                    v-for="char in 'ABCDEFGHIJKLMN'.split('')" 
+                                    :key="char"
+                                    @click="editForm.code = char"
+                                    type="button"
+                                    :class="editForm.code === char ? 'bg-teal-600 text-white' : 'bg-teal-50 text-teal-700 hover:bg-teal-100'"
+                                    class="w-6 h-6 rounded flex items-center justify-center text-[9px] font-black transition-all cursor-pointer"
+                                >
+                                    {{ char }}
+                                </button>
+                            </div>
+                        </div>
                         
                         <div v-if="editIndex !== index" class="flex-1">
                             <p class="text-sm font-bold text-gray-800 tracking-tight">{{ shift.time }}</p>
@@ -54,16 +68,37 @@
                     </div>
 
                     <!-- Add New -->
-                    <div v-if="isAdding" class="bg-teal-50/50 p-3 rounded-xl border border-teal-200 border-dashed flex items-center gap-3">
-                        <input v-model="newForm.code" type="text" placeholder="Cd" class="w-12 h-8 rounded-lg bg-white text-teal-700 text-center font-black border border-teal-200 outline-none uppercase px-1 focus:ring-2 focus:ring-teal-500" maxlength="3">
-                        <input v-model="newForm.time" type="text" placeholder="e.g. 07:00 AM - 03:00 PM" class="flex-1 px-3 h-8 rounded-lg bg-white text-gray-800 text-sm font-bold border border-teal-200 outline-none focus:ring-2 focus:ring-teal-500">
-                        <div class="flex items-center gap-1">
-                            <button @click="submitAdd" :disabled="!newForm.code || !newForm.time" class="w-8 h-8 rounded flex items-center justify-center text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50">
-                                <i class="pi pi-check text-xs font-bold"></i>
-                            </button>
-                            <button @click="cancelAdd" class="w-8 h-8 rounded flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors">
-                                <i class="pi pi-times text-xs"></i>
-                            </button>
+                    <div v-if="isAdding" class="bg-teal-50/50 p-4 rounded-xl border border-teal-200 border-dashed space-y-4">
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-teal-600 uppercase tracking-widest">Select Shift Code</label>
+                            <div class="flex flex-wrap gap-2">
+                                <button 
+                                    v-for="char in 'ABCDEFGHIJKLMN'.split('')" 
+                                    :key="char"
+                                    @click="newForm.code = char"
+                                    type="button"
+                                    :class="newForm.code === char ? 'bg-teal-600 text-white shadow-md ring-2 ring-teal-500 ring-offset-1' : 'bg-white text-gray-400 hover:bg-teal-50 hover:text-teal-600'"
+                                    class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black transition-all cursor-pointer border border-teal-100"
+                                >
+                                    {{ char }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-teal-600 uppercase tracking-widest">Set Time Range</label>
+                            <div class="flex items-center gap-2">
+                                <input v-model="newForm.time" type="text" placeholder="e.g. 07:00 AM - 03:00 PM" class="flex-1 px-3 h-10 rounded-xl bg-white text-gray-800 text-sm font-bold border border-teal-200 outline-none focus:ring-2 focus:ring-teal-500 placeholder:text-gray-300">
+                                <div class="flex items-center gap-1">
+                                    <button @click="submitAdd" :disabled="!newForm.code || !newForm.time" class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 transition-colors disabled:opacity-50 cursor-pointer shadow-lg shadow-emerald-200">
+                                        <i class="pi pi-check font-bold"></i>
+                                    </button>
+                                    <button @click="cancelAdd" class="w-10 h-10 rounded-xl bg-white text-gray-400 flex items-center justify-center hover:bg-gray-100 transition-colors border border-gray-200 cursor-pointer">
+                                        <i class="pi pi-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="text-[9px] text-teal-600/70 font-medium italic pl-1">Must follow format: 00:00 AM - 00:00 PM</p>
                         </div>
                     </div>
                     

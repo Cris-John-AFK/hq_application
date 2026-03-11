@@ -56,12 +56,43 @@
                                 <label class="block text-xs font-semibold text-gray-600 mb-1">Date Hired <span class="text-red-500">*</span></label>
                                 <input v-model="form.date_hired" type="date" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" required>
                             </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Assigned Shift (Working Hours) <span class="text-red-500">*</span> <span class="text-xs font-normal text-gray-400 ml-1">(Format: 07:00 AM - 03:00 PM)</span></label>
-                                <input v-model="form.working_hours" list="addWorkingHoursList" type="text" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none font-mono" placeholder="e.g. 07:00 AM - 03:00 PM" required>
-                                <datalist id="addWorkingHoursList">
-                                    <option v-for="shift in shifts" :key="shift.code" :value="shift.time">{{ shift.code }} - {{ shift.time }}</option>
-                                </datalist>
+                            <div class="md:col-span-3">
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                    <i class="pi pi-clock text-teal-600"></i>
+                                    Assigned Shift (Working Hours) <span class="text-red-500">*</span>
+                                </label>
+                                
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <button 
+                                        v-for="shift in shifts" 
+                                        :key="shift.code"
+                                        type="button"
+                                        @click="form.working_hours = shift.time"
+                                        :class="form.working_hours === shift.time ? 'border-teal-600 bg-teal-600 text-white shadow-xl shadow-teal-100 scale-[1.05] z-10' : 'border-gray-200 bg-white text-gray-600 hover:border-teal-400 hover:text-teal-700'"
+                                        class="flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer group relative overflow-hidden"
+                                    >
+                                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-black shrink-0 transition-all shadow-sm" :class="form.working_hours === shift.time ? 'bg-white text-teal-600' : 'bg-teal-50 text-teal-700 group-hover:scale-110'">
+                                            {{ shift.code }}
+                                        </div>
+                                        <div class="flex flex-col items-start min-w-0">
+                                            <p class="text-[10px] font-black uppercase tracking-widest opacity-60 mb-0.5" :class="form.working_hours === shift.time ? 'text-white' : 'text-gray-400'">Assigned Time</p>
+                                            <span class="text-sm font-black tracking-tight whitespace-nowrap">{{ shift.time }}</span>
+                                        </div>
+                                    </button>
+                                    
+                                    <!-- Custom / Other Option -->
+                                    <div class="relative group-focus-within:ring-2 ring-teal-500 rounded-2xl bg-slate-50 border border-slate-200 p-1 flex items-center">
+                                        <div class="w-10 h-10 flex items-center justify-center shrink-0 text-slate-400">
+                                            <i class="pi pi-pencil"></i>
+                                        </div>
+                                        <input 
+                                            v-model="form.working_hours" 
+                                            type="text" 
+                                            placeholder="Manual Edit"
+                                            class="w-full h-12 bg-transparent text-xs font-bold font-mono outline-none pr-4"
+                                        >
+                                    </div>
+                                </div>
                             </div>
 
 

@@ -140,13 +140,28 @@
                     </select>
                 </div>
 
-                 <!-- Leave Type Filter -->
+                <!-- Leave Type Filter -->
                  <div>
                     <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">With Balance In</label>
                     <select v-model="filterHasBalance" class="w-full h-9 px-3 border border-gray-200 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-teal-500">
                         <option value="All">Any / All</option>
                         <option v-for="col in activeLeaveColumns" :key="col.col" :value="col.col">{{ col.label }}</option>
                     </select>
+                </div>
+
+                <!-- Account Status Filter -->
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">System Access</label>
+                    <div class="flex items-center h-9">
+                        <button 
+                            @click="filterHasAccount = !filterHasAccount"
+                            :class="filterHasAccount ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-gray-400 border-gray-200'"
+                            class="w-full h-full border rounded-lg text-[9px] font-black uppercase tracking-tight transition-all flex items-center justify-center gap-2 px-3 shadow-inner"
+                        >
+                            <i :class="filterHasAccount ? 'pi-users' : 'pi-id-card'" class="pi text-[10px]"></i>
+                            {{ filterHasAccount ? 'Hide Non-Users' : 'Show All Staff' }}
+                        </button>
+                    </div>
                 </div>
             </div>
             
@@ -282,6 +297,14 @@
                                 >
                                     <i class="pi pi-folder text-xs"></i>
                                 </button>
+                                <button 
+                                    v-if="employee.user"
+                                    @click.stop="openResetPasswordModal(employee)" 
+                                    class="w-8 h-8 rounded-full bg-slate-100 text-slate-800 hover:bg-slate-200 flex items-center justify-center transition-colors cursor-pointer border border-slate-200 shadow-sm"
+                                    title="Force Password Reset"
+                                >
+                                    <i class="pi pi-lock text-xs"></i>
+                                </button>
                              </div>
                         </td>
                     </tr>
@@ -316,6 +339,11 @@
         />
 
         <ManageShiftsModal v-model="showManageShiftsModal" @shifts-updated="fetchShiftStats" />
+
+        <ResetPasswordModal 
+            v-model="showResetModal"
+            :employee="selectedEmployeeForReset"
+        />
 
         <!-- Account Creation Modal -->
         <div v-if="showAccountModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" @click.self="showAccountModal = false">
@@ -395,6 +423,7 @@ import axios from 'axios';
 import AddEmployeeModal from './AddEmployeeModal.vue';
 import EditEmployeeModal from './EditEmployeeModal.vue';
 import ManageShiftsModal from './ManageShiftsModal.vue';
+import ResetPasswordModal from './ResetPasswordModal.vue';
 
 // State
 const employees = ref([]);
@@ -416,6 +445,7 @@ const filterMissingId = ref('All');
 const filterHiredYear = ref('All');
 const filterWorkingHours = ref('All');
 const filterHasBalance = ref('All');
+const filterHasAccount = ref(false);
 const availableYears = ref([]);
 const shiftStats = ref([]);
 
@@ -431,9 +461,16 @@ const selectedEmployee = ref(null);
 const selectedEmployeeForAccount = ref(null);
 const editEmployeeModalRef = ref(null);
 const showAccountModal = ref(false);
+const showResetModal = ref(false);
 const accountRole = ref('user');
 const accountDepartmentId = ref('');
 const isCreatingAccount = ref(false);
+const selectedEmployeeForReset = ref(null);
+
+const openResetPasswordModal = (emp) => {
+    selectedEmployeeForReset.value = emp;
+    showResetModal.value = true;
+};
 
 const openAccountModal = (emp) => {
     selectedEmployeeForAccount.value = emp;
@@ -527,6 +564,7 @@ const resetFilters = () => {
     filterHiredYear.value = 'All';
     filterWorkingHours.value = 'All';
     filterHasBalance.value = 'All';
+    filterHasAccount.value = false;
     searchQuery.value = '';
 };
 
@@ -553,6 +591,7 @@ const fetchEmployees = async (page = 1) => {
             hired_year: filterHiredYear.value === 'All' ? null : filterHiredYear.value,
             working_hours: filterWorkingHours.value === 'All' ? null : filterWorkingHours.value,
             has_balance: filterHasBalance.value === 'All' ? null : filterHasBalance.value,
+            has_account: filterHasAccount.value ? 1 : 0,
         };
         const response = await axios.get('/api/employees', { params });
         employees.value = response.data.data;
@@ -720,7 +759,8 @@ watch([
     filterMissingId, 
     filterHiredYear,
     filterWorkingHours,
-    filterHasBalance
+    filterHasBalance,
+    filterHasAccount
 ], () => {
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {

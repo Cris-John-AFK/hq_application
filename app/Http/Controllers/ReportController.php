@@ -32,6 +32,9 @@ class ReportController extends Controller
         $month = $request->input('month', date('n'));
 
         $filename = "HQ_Attendance_Report_{$year}.xlsx";
+        
+        \App\Utils\AuditLogger::log('Attendance', 'Exported', "Exported HQ Attendance Report for year {$year}.");
+        
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Exports\AttendanceReportsExport($year, $month),
             $filename

@@ -45,6 +45,7 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     Route::get('/api/omni-search', [\App\Http\Controllers\OmniSearchController::class, 'search'])->middleware('throttle:120,1');
     Route::post('/api/user/avatar', [\App\Http\Controllers\UserController::class, 'uploadAvatar']);
     Route::put('/api/user', [\App\Http\Controllers\UserController::class, 'update']);
+    Route::post('/api/user/change-password', [\App\Http\Controllers\UserController::class, 'changeOwnPassword']);
     // Admin Only Functional Routes
     Route::middleware('admin')->group(function () {
         Route::get('/api/users', [\App\Http\Controllers\UserController::class, 'index']);

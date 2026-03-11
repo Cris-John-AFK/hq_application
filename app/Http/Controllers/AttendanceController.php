@@ -121,6 +121,7 @@ class AttendanceController extends Controller
                     ]
                 );
             }
+            \App\Utils\AuditLogger::log('Attendance', 'Imported', "Imported bulk attendance records.");
             \Illuminate\Support\Facades\DB::commit();
             return response()->json(['message' => 'Successfully imported attendance records.']);
         } catch (\Exception $e) {

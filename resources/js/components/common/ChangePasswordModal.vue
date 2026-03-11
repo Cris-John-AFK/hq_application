@@ -1,63 +1,78 @@
 <template>
-    <div v-if="modelValue" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" @click.self="close">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all">
-            <!-- Header -->
-            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+    <div v-if="modelValue" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" @click.self="$emit('update:modelValue', false)">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-teal-50/30">
                 <div>
-                    <h2 class="text-xl font-bold text-gray-800">Change Password</h2>
-                    <p class="text-sm text-gray-500 mt-1">{{ employeeName }}</p>
+                    <h3 class="text-lg font-black text-teal-600 uppercase tracking-tight">Security Settings</h3>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase mt-1">Change your account password</p>
                 </div>
-                <button 
-                    @click="close" 
-                    class="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                    <i class="pi pi-times text-gray-400"></i>
+                <button @click="$emit('update:modelValue', false)" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="pi pi-times"></i>
                 </button>
             </div>
-
-            <!-- Form -->
+            
             <form @submit.prevent="handleSubmit" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                    <input 
-                        v-model="form.password" 
-                        type="password" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                        required
-                        minlength="8"
-                    >
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Current Password</label>
+                        <div class="relative">
+                            <i class="pi pi-shield absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input 
+                                v-model="form.current_password" 
+                                type="password" 
+                                required
+                                placeholder="Verify current password"
+                                class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all font-bold text-gray-700 text-sm"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-50 pt-4">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">New Password</label>
+                        <div class="relative">
+                            <i class="pi pi-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input 
+                                v-model="form.password" 
+                                type="password" 
+                                required
+                                minlength="8"
+                                placeholder="Minimum 8 characters"
+                                class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all font-bold text-gray-700 text-sm"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Confirm New Password</label>
+                        <div class="relative">
+                            <i class="pi pi-check-circle absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input 
+                                v-model="form.password_confirmation" 
+                                type="password" 
+                                required
+                                placeholder="Repeat new password"
+                                class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all font-bold text-gray-700 text-sm"
+                            >
+                        </div>
+                    </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                    <input 
-                        v-model="form.password_confirmation" 
-                        type="password" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                        required
-                        minlength="8"
-                    >
+                <div class="bg-blue-50 rounded-xl p-3 border border-blue-100 mt-2">
+                    <p class="text-[9px] text-blue-600 font-bold leading-relaxed">
+                        <i class="pi pi-info-circle mr-1"></i>
+                        Strong passwords use a mix of letters, numbers, and symbols. Your session will remain active after change.
+                    </p>
                 </div>
 
-                <div v-if="error" class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-                    {{ error }}
-                </div>
-
-                <!-- Actions -->
-                <div class="flex gap-3 pt-4">
+                <div class="pt-2 flex gap-3">
+                    <button type="button" @click="$emit('update:modelValue', false)" class="flex-1 px-4 py-2 text-xs font-black uppercase text-gray-400 hover:text-gray-600 transition-colors">Cancel</button>
                     <button 
-                        type="button"
-                        @click="close"
-                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                        type="submit" 
+                        :disabled="loading || !form.password"
+                        class="flex-1 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-teal-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                        Cancel
-                    </button>
-                    <button 
-                        type="submit"
-                        :disabled="loading"
-                        class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {{ loading ? 'Updating...' : 'Update Password' }}
+                        <i v-if="loading" class="pi pi-spin pi-spinner"></i>
+                        <span>Update Password</span>
                     </button>
                 </div>
             </form>
@@ -66,67 +81,42 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, reactive } from 'vue';
 import axios from 'axios';
 
 const props = defineProps({
-    modelValue: Boolean,
-    employeeId: Number,
-    employeeName: String
+    modelValue: Boolean
 });
 
 const emit = defineEmits(['update:modelValue', 'success']);
 
-const form = ref({
+const loading = ref(false);
+const form = reactive({
+    current_password: '',
     password: '',
     password_confirmation: ''
 });
 
-const loading = ref(false);
-const error = ref('');
-
-const close = () => {
-    emit('update:modelValue', false);
-    resetForm();
-};
-
-const resetForm = () => {
-    form.value = {
-        password: '',
-        password_confirmation: ''
-    };
-    error.value = '';
-};
-
 const handleSubmit = async () => {
-    error.value = '';
-    
-    if (form.value.password !== form.value.password_confirmation) {
-        error.value = 'Passwords do not match';
-        return;
-    }
-
-    if (form.value.password.length < 8) {
-        error.value = 'Password must be at least 8 characters';
+    if (form.password !== form.password_confirmation) {
+        alert('New passwords do not match');
         return;
     }
 
     loading.value = true;
-
     try {
-        await axios.put(`/api/users/${props.employeeId}/password`, form.value);
+        await axios.post('/api/user/change-password', form);
+        alert('Your password has been changed successfully.');
+        form.current_password = '';
+        form.password = '';
+        form.password_confirmation = '';
         emit('success');
-        close();
-    } catch (err) {
-        error.value = err.response?.data?.message || 'Failed to update password';
+        emit('update:modelValue', false);
+    } catch (e) {
+        console.error(e);
+        alert(e.response?.data?.message || 'Failed to change password. Validate your current password.');
     } finally {
         loading.value = false;
     }
 };
-
-watch(() => props.modelValue, (newVal) => {
-    if (newVal) {
-        resetForm();
-    }
-});
 </script>

@@ -41,6 +41,10 @@ class EmployeeController extends Controller
             $query->where('working_hours', 'like', "%{$request->working_hours}%");
         }
 
+        if ($request->boolean('has_account', false)) {
+            $query->whereHas('user');
+        }
+
         // Filter based on specific leave types (having balance > 0)
         if ($request->filled('has_balance')) {
             $col = $request->has_balance;
@@ -151,7 +155,16 @@ class EmployeeController extends Controller
             AttendanceRecord::syncDepartments();
             \Illuminate\Support\Facades\Cache::flush();
 
-            return response()->json($employee->load('details', 'department'), 201);
+            // Log the creation
+            \App\Utils\AuditLogger::log(
+                'EMPLOYEES',
+                'CREATED',
+                "Registered a new employee: {$employee->name} (#{$employee->employee_id}).",
+                null,
+                $employee->load('details', 'department')->toArray()
+            );
+
+            return response()->json($employee, 201);
         });
     }
 
@@ -209,6 +222,15 @@ class EmployeeController extends Controller
 
             $employee->refresh();
             $newData = $employee->load('details', 'department')->toArray();
+
+            // Log the change
+            \App\Utils\AuditLogger::log(
+                'EMPLOYEES', 
+                'UPDATED', 
+                "Updated personal/employment details for {$employee->name} (#{$employee->employee_id}).",
+                $oldData,
+                $newData
+            );
 
             // Post-action cleanup
             Department::cleanup();
@@ -432,6 +454,9 @@ class EmployeeController extends Controller
         if (Auth::user()->role !== 'admin' && Auth::user()->role !== 'hr') {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
+        
+        \App\Utils\AuditLogger::log('EMPLOYEES', 'EXPORTED', "Exported the employee masterlist to Excel.");
+        
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\EmployeeExport, 'employee_masterlist_' . date('Y_m_d_His') . '.xlsx');
     }
 }
