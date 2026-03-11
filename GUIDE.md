@@ -15,6 +15,7 @@ This guide provides everything you need to set up, run, and maintain the **HatQ 
 9.  [**🔄 Remote Updates**](#remote-updates)
 10. [**🔐 Code Security & Privacy**](#security--privacy)
 11. [**🏗️ Building for Protection**](#building-for-protection)
+12. [**📂 Master Excel Data**](#master-excel-data)
 
 ---
 
@@ -56,19 +57,23 @@ psql --version    # Should show 15.x or 16.x
 
 Since your project is **Private**, a regular `git clone` will fail. You have two options to download it on the central PC:
 
-### Option A: Using a Personal Access Token (Easiest)
+### Option A: Using a Personal Access Token (**RECOMMENDED for Updates**)
 1.  On your GitHub account (at home), go to **Settings** -> **Developer Settings** -> **Personal Access Tokens** -> **Tokens (classic)**.
 2.  Generate a new token with **`repo`** permissions. **Copy it!**
 3.  On the company PC, run:
     ```bash
-    # Replace <TOKEN> with your code and <USER> with your username
+    # Replace <TOKEN> with your token and <USER> with your username
     git clone https://<USER>:<TOKEN>@github.com/Cris-John-AFK/hq_application.git
     ```
+> [!IMPORTANT]
+> **Why use Git?** If you use Git Clone, you can run **`REMOTE HQ-APP.bat`** later to update the code in 1 second. 
 
-### Option B: Manual ZIP (No Git needed)
+### Option B: Manual ZIP (One-Time Only)
 1.  Go to GitHub on your browser.
 2.  Click **Code** -> **Download ZIP**.
 3.  Extract the ZIP folder on the company PC.
+> [!WARNING]
+> If you use the ZIP method, you **cannot** use the automatic update scripts. You would have to download a new ZIP every time you change something!
 
 ---
 
@@ -115,7 +120,10 @@ php artisan migrate --seed
 
 ---
 
-## <a name="how-to-run"></a>🏁 3. How to Run the System (Daily Use)
+## <a name="how-to-run"></a>🏁 4. How to Run the System (Daily Use)
+
+> [!TIP]
+> **No VS Code Needed!** You do NOT need to install VS Code on the central PC. A regular user only needs the **Requirements** (PHP/Node/Postgres) and they can just double-click the `.bat` files to start the app.
 
 To use the app, you MUST open **TWO terminal windows** at the same time:
 
@@ -231,13 +239,10 @@ If you truly reach **Billions of rows**, we recommend:
 ## <a name="remote-updates"></a>🔄 8. Remote Updates & Auto-Deployment
 To update the company PC from home without visiting:
 1.  **Push from Home**: Use `git push origin main`.
-2.  **Automate Pull**: On the company PC, create a `deploy.bat` with:
-    ```batch
-    git pull origin main
-    npm run build
-    php artisan migrate --force
-    ```
-3.  **Scheduled Task**: Use Windows Task Scheduler to run `deploy.bat` every midnight.
+2.  **Run REMOTE HQ-APP.bat**: On the company PC, just double-click that file. It will pull the new code, migrate the DB, and rebuild the security frontend for you!
+
+> [!CAUTION]
+> This requires you to have installed the app using **Git Clone** (Option A in Section 2). It will not work with a ZIP download.
 
 ---
 
@@ -261,5 +266,13 @@ To ensure that staff cannot edit or easily read your frontend logic:
 
 ---
 
-*Updated March 2026*
-*Created by Antigravity for HatQ Inc. 🛡️*
+## <a name="master-excel-data"></a>📂 12. Master Excel Data
+All the standard Excel templates and sample data used for importing into the system are stored in the root folder:
+
+### Location: `MASTER_EXCEL_DATA/`
+*   **`inventory_details.xlsx`**: The master template for your equipment inventory.
+*   **`biometric_attendance_sample.xls`**: A sample of the biometric log format.
+*   **`Attendance_TimeLogs/`**: A folder containing multiple historical biometric data samples (`TimeLogs (12).xlsx`, etc.).
+
+> [!TIP]
+> Use these files as a reference when preparing your own Excel data for upload. Make sure to keep the column headers exactly as they are in these samples!
