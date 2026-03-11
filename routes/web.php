@@ -96,6 +96,12 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
         Route::get('/api/attendance-roster', [\App\Http\Controllers\AttendanceController::class, 'roster']);
         Route::get('/api/attendance-anomalies', [\App\Http\Controllers\AttendanceController::class, 'anomalies']);
         Route::get('/api/attendance-summary', [\App\Http\Controllers\AttendanceController::class, 'summary']);
+
+        // Reports (Now under Admin only for security)
+        Route::get('/api/reports/annual', [\App\Http\Controllers\ReportController::class, 'annualAttendance']);
+        Route::get('/api/reports/monthly-department', [\App\Http\Controllers\ReportController::class, 'monthlyDepartment']);
+        Route::get('/api/reports/daily-department', [\App\Http\Controllers\ReportController::class, 'dailyDepartment']);
+        Route::get('/api/reports/attendance/export', [\App\Http\Controllers\ReportController::class, 'exportExcel']);
     });
 });
 
@@ -112,11 +118,6 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
 
     Route::get('/api/departments', [\App\Http\Controllers\DepartmentController::class, 'index']);
     Route::get('/api/departments/stats', [\App\Http\Controllers\DepartmentController::class, 'getStats']);
-
-    Route::get('/api/reports/annual', [\App\Http\Controllers\ReportController::class, 'annualAttendance']);
-    Route::get('/api/reports/monthly-department', [\App\Http\Controllers\ReportController::class, 'monthlyDepartment']);
-    Route::get('/api/reports/daily-department', [\App\Http\Controllers\ReportController::class, 'dailyDepartment']);
-    Route::get('/api/reports/attendance/export', [\App\Http\Controllers\ReportController::class, 'exportExcel']);
 
     Route::get('/api/leave-requests/export', [\App\Http\Controllers\LeaveRequestController::class, 'export']);
     Route::get('/api/leave-stats', [\App\Http\Controllers\LeaveRequestController::class, 'stats']);

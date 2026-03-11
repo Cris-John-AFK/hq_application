@@ -27,6 +27,18 @@
                             <!-- Target User (Admin Only) -->
                             <div v-if="user?.role === 'admin'">
                                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-2 ml-1">Account Target</label>
+                                
+                                <!-- Search Bar for Accounts -->
+                                <div class="relative mb-3">
+                                    <i class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                    <input 
+                                        v-model="userSearch"
+                                        type="text"
+                                        placeholder="Search by name or email..."
+                                        class="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all font-medium text-slate-700 text-sm"
+                                    >
+                                </div>
+
                                 <div class="relative">
                                     <i class="pi pi-users absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
                                     <select 
@@ -34,10 +46,11 @@
                                         class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all font-medium text-slate-700 appearance-none"
                                     >
                                         <option value="myself">Myself ({{ user?.name }})</option>
-                                        <option v-for="u in otherUsers" :key="u.id" :value="u.id">{{ u.name }} ({{ u.email }})</option>
+                                        <option v-for="u in filteredOtherUsers" :key="u.id" :value="u.id">{{ u.name }} ({{ u.email }})</option>
                                     </select>
                                     <i class="pi pi-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
                                 </div>
+                                <p v-if="userSearch && filteredOtherUsers.length === 0" class="text-[10px] text-rose-500 font-bold mt-2 ml-1 uppercase">No matching accounts found for "{{ userSearch }}"</p>
                             </div>
 
                             <hr v-if="user?.role === 'admin'" class="border-slate-100 my-6">
@@ -137,6 +150,7 @@ const { user } = storeToRefs(authStore);
 const loading = ref(false);
 const users = ref([]);
 const targetUser = ref('myself');
+const userSearch = ref('');
 
 const form = reactive({
     current_password: '',
@@ -144,14 +158,22 @@ const form = reactive({
     password_confirmation: ''
 });
 
-const otherUsers = computed(() => {
-    return users.value.filter(u => u.id !== user.value?.id);
+const filteredOtherUsers = computed(() => {
+    const search = userSearch.value.toLowerCase().trim();
+    return users.value.filter(u => {
+        const isNotMe = u.id !== user.value?.id;
+        if (!search) return isNotMe;
+        
+        const matchesName = u.name?.toLowerCase().includes(search);
+        const matchesEmail = u.email?.toLowerCase().includes(search);
+        return isNotMe && (matchesName || matchesEmail);
+    });
 });
 
 const fetchUsers = async () => {
     if (user.value?.role !== 'admin') return;
     try {
-        const res = await axios.get('/api/users');
+        const res = await axios.get('/api/users?all=true');
         users.value = res.data.data || res.data;
     } catch (e) {
         console.error("Failed to load users for security settings.");
@@ -168,6 +190,7 @@ const resetForm = () => {
     form.password = '';
     form.password_confirmation = '';
     targetUser.value = 'myself';
+    userSearch.value = '';
 };
 
 const handleSubmit = async () => {

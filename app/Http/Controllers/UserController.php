@@ -11,8 +11,13 @@ use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        // Return all if requested (for dropdowns/selection)
+        if ($request->has('all')) {
+            return response()->json(User::orderBy('name')->get());
+        }
+
         // Return paginated users/employees for scalability
         $users = User::orderBy('id')->paginate(20);
         return response()->json($users);
