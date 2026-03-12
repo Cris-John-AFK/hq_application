@@ -246,7 +246,7 @@ const cancelRequest = async (request) => {
     }
 };
 
-const handleLeaveSubmit = async (formData) => {
+const handleLeaveSubmit = async (formData, resolve, reject) => {
     try {
         const payload = new FormData();
         payload.append('date_filed', formData.date_filed);
@@ -268,14 +268,14 @@ const handleLeaveSubmit = async (formData) => {
         });
         
         fetchRequests();
-        alert('Leave request submitted successfully!');
+        resolve(); // Resolve the promise in LeaveRequestModal to show success
     } catch (error) {
         console.error('Submission failed:', error);
-        alert('Failed to submit request. ' + (error.response?.data?.message || 'Please try again.'));
+        reject(error.response?.data?.message || 'Please try again.');
     }
 };
 
-const handleLeaveUpdate = async (formData) => {
+const handleLeaveUpdate = async (formData, resolve, reject) => {
     try {
         // Use PUT for updates. Note: Laravel might need _method for FormData if using PUT, 
         // but here we are not using FormData for update yet (optional).
@@ -295,10 +295,10 @@ const handleLeaveUpdate = async (formData) => {
         await axios.put(`/api/leave-requests/${editingRequest.value.id}`, payload);
         
         fetchRequests();
-        alert('Leave request updated successfully!');
+        resolve(); // Resolve the promise in LeaveRequestModal to show success
     } catch (error) {
         console.error('Update failed:', error);
-        alert('Failed to update request. ' + (error.response?.data?.message || 'Please try again.'));
+        reject(error.response?.data?.message || 'Please try again.');
     }
 };
 

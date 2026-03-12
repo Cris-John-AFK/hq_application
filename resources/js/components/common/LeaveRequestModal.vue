@@ -1000,6 +1000,17 @@
                         <p class="text-[9px] font-black text-purple-600 uppercase tracking-widest mb-4 flex items-center gap-1.5 leading-none">
                             <i class="pi pi-wallet"></i> Available Credits
                         </p>
+
+                        <!-- Assigned Shift -->
+                        <div v-if="displayUser?.employee?.working_hours" class="mb-4 p-3 bg-teal-50/50 rounded-xl border border-teal-100/50 flex items-center gap-3 group hover:bg-teal-50 transition-colors">
+                            <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-teal-600 shadow-sm shrink-0 border border-teal-100 group-hover:scale-105 transition-transform">
+                                <i class="pi pi-clock"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Assigned Shift</p>
+                                <p class="text-xs font-black text-teal-700 truncate leading-tight">{{ displayUser.employee.working_hours }}</p>
+                            </div>
+                        </div>
                         <div class="space-y-2">
                             <div v-for="type in leaveTypesList" :key="type.key" 
                                 v-show="getAvailableBalance(type.fullLabel || type.label) > 0"
@@ -1035,6 +1046,25 @@
             </div>
             
             </div> <!-- End Main Flex Layout -->
+
+            <!-- Success Overlay -->
+            <transition name="fade">
+                <div v-if="successMsg" class="absolute inset-0 z-[200] bg-white flex flex-col items-center justify-center p-8 text-center rounded-xl">
+                    <div class="space-y-6 animate-in zoom-in duration-500">
+                        <div class="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto shadow-lg relative overflow-hidden">
+                            <i class="pi pi-check text-4xl text-emerald-600 relative z-10"></i>
+                            <div class="absolute inset-0 bg-emerald-200/50 animate-ping opacity-20"></div>
+                        </div>
+                        <div class="space-y-2">
+                            <h3 class="text-3xl font-black text-gray-800 uppercase tracking-tighter">Success!</h3>
+                            <p class="text-sm text-gray-500 font-medium max-w-xs">{{ successMsg }}</p>
+                        </div>
+                        <div class="w-48 bg-gray-100 h-1.5 rounded-full overflow-hidden mx-auto mt-4">
+                            <div class="bg-emerald-500 h-full animate-progress"></div>
+                        </div>
+                    </div>
+                </div>
+            </transition>
         </div>
     </div>
 </template>
@@ -1066,6 +1096,7 @@ const { requestTypes, leaveTypes, attendanceCategories } = storeToRefs(settingsS
 import axios from 'axios';
 // State
 const leaveTypesList = ref([]);
+const successMsg = ref('');
 
 const colorThemes = [
     { color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
@@ -1677,11 +1708,18 @@ const submitForm = async () => {
     try {
         if (props.isEdit) {
             await new Promise((resolve, reject) => emit('update', payload, resolve, reject));
+            successMsg.value = 'Your leave request has been updated successfully!';
         } else {
             await new Promise((resolve, reject) => emit('submit', payload, resolve, reject));
+            successMsg.value = 'Your leave request has been submitted successfully!';
         }
-        // Only close on success
-        closeModal();
+        
+        // Show success for 2.5 seconds then close
+        setTimeout(() => {
+            closeModal();
+            successMsg.value = '';
+        }, 2500);
+
     } catch (errMsg) {
         // Show the backend error message in the form
         setError(errMsg || 'Submission failed. Please try again.');
@@ -1785,4 +1823,8 @@ const clearFile = () => {
 
 .slide-down-enter-active, .slide-down-leave-active { transition: all 0.3s ease-out; max-height: 200px; overflow: hidden; }
 .slide-down-enter-from, .slide-down-leave-to { opacity: 0; max-height: 0; transform: translateY(-10px); }
+
+.animate-progress { animation: progress 2.5s linear forwards; }
+@keyframes progress { from { width: 0%; } to { width: 100%; } }
+.animate-spin-slow { animation: spin 3s linear infinite; }
 </style>

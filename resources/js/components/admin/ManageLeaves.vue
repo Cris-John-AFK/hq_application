@@ -481,11 +481,16 @@
                                             <img v-if="selectedRequest.user?.avatar_url" :src="selectedRequest.user.avatar_url" class="w-full h-full object-cover">
                                             <span v-else>{{ getInitials(selectedRequest.user?.name) }}</span>
                                         </div>
-                                        <div>
-                                            <h3 class="font-bold text-gray-800 text-sm">{{ selectedRequest.user?.name || selectedRequest.employee?.name || 'Unknown Employee' }}</h3>
-                                            <p v-if="selectedRequest.user?.position || selectedRequest.user?.department" class="text-xs text-gray-500">
+                                        <div class="flex-1 min-w-0">
+                                            <h3 class="font-bold text-gray-800 text-sm truncate">{{ selectedRequest.user?.name || selectedRequest.employee?.name || 'Unknown Employee' }}</h3>
+                                            <p v-if="selectedRequest.user?.position || selectedRequest.user?.department" class="text-xs text-gray-500 truncate">
                                                 {{ [selectedRequest.user?.position, selectedRequest.user?.department].filter(Boolean).join(' • ') }}
                                             </p>
+                                            <!-- Assigned Shift Display -->
+                                            <div v-if="selectedRequest.user?.employee?.working_hours || selectedRequest.employee?.working_hours" class="mt-2 flex items-center gap-1.5 text-teal-600">
+                                                <i class="pi pi-clock text-[10px]"></i>
+                                                <span class="text-[10px] font-black uppercase tracking-wider">{{ selectedRequest.user?.employee?.working_hours || selectedRequest.employee?.working_hours }}</span>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -1454,7 +1459,7 @@ const handleBulkArchive = async () => {
     }
 };
 
-const handleAdminSubmit = async (payload) => {
+const handleAdminSubmit = async (payload, resolve, reject) => {
     try {
         const formData = new FormData();
         Object.keys(payload).forEach(key => {
@@ -1472,12 +1477,12 @@ const handleAdminSubmit = async (payload) => {
         });
         
         await axios.post('/api/leave-requests', formData);
-        alert('Leave request filed successfully on behalf of employee.');
         fetchRequests();
         leaveStore.fetchStats(true);
+        resolve(); // Show success in modal
     } catch (e) {
         console.error("Admin file failed", e);
-        alert('Failed to file request: ' + (e.response?.data?.message || 'Server error'));
+        reject(e.response?.data?.message || 'Server error');
     }
 };
 

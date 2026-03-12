@@ -726,6 +726,7 @@ const menuItems = computed(() => {
         { label: 'Activity Logs', icon: 'pi-list', href: '/activity-logs' },
         { label: 'Archive Registry', icon: 'pi-folder', href: '/archive-leaves' },
         { label: 'Security', icon: 'pi-lock', href: '/security' },
+        { label: 'System Settings', icon: 'pi-cog', href: '/settings' },
     );
 
     return items;
