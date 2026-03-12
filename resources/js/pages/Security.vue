@@ -63,6 +63,7 @@
                                     <input 
                                         v-model="form.current_password" 
                                         type="password" 
+                                        autocomplete="current-password"
                                         required
                                         placeholder="Enter your current password"
                                         class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all font-medium text-slate-700"
@@ -80,6 +81,7 @@
                                     <input 
                                         v-model="form.password" 
                                         type="password" 
+                                        autocomplete="new-password"
                                         required
                                         minlength="8"
                                         placeholder="Minimum 8 characters"
@@ -96,6 +98,7 @@
                                     <input 
                                         v-model="form.password_confirmation" 
                                         type="password" 
+                                        autocomplete="new-password"
                                         required
                                         placeholder="Repeat your new password"
                                         class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all font-medium text-slate-700"

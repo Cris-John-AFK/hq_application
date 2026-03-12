@@ -459,6 +459,7 @@ const fetchDetails = async (id) => {
 watch(() => props.modelValue, async (isOpen) => {
     if (isOpen && props.employee) {
         isEditMode.value = false;
+        loadShifts(); // Refresh shifts list to reflect any newly added shifts
         if (Object.keys(leaveTypes.value).length === 0) {
             await loadLeaveSettings();
         }
