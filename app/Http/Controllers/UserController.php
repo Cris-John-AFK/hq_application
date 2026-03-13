@@ -248,7 +248,18 @@ class UserController extends Controller
         // Audit Log
         \App\Utils\AuditLogger::log('Security', 'Updated', "User changed their own password.");
 
-        return response()->json(['message' => 'Password changed successfully.']);
+        return response()->json(['message' => 'Password updated successfully']);
+    }
+
+    public function onlineUsers(Request $request)
+    {
+        // Get users who have pinged within the last 5 minutes
+        $onlineUsers = User::whereNotNull('last_seen_at')
+            ->where('last_seen_at', '>=', now()->subMinutes(5))
+            ->orderBy('last_seen_at', 'desc')
+            ->get(['id', 'name', 'email', 'role', 'last_seen_at', 'avatar', 'id_number']);
+
+        return response()->json($onlineUsers);
     }
 
     public function bulkAddCredits(Request $request)

@@ -43,6 +43,10 @@ class AuthController extends Controller
         if ($user) {
             $roleLabel = $user->role === 'admin' ? 'Admin' : 'Employee';
             \App\Utils\AuditLogger::log('Authentication', 'Logout (Manual)', "{$roleLabel} {$user->name} logged out manually.");
+            
+            // Clear online status immediately when logging out
+            $user->last_seen_at = null;
+            $user->save();
         }
 
         Auth::logout();
@@ -63,7 +67,13 @@ class AuthController extends Controller
 
         // Try to get role from DB if possible, or just use naming convention
         $user = \App\Models\User::where('email', $email)->first();
-        $roleLabel = ($user && $user->role === 'admin') ? 'Admin' : 'Employee';
+        
+        $roleLabel = 'Employee';
+        if ($user) {
+            $roleLabel = $user->role === 'admin' ? 'Admin' : 'Employee';
+            $user->last_seen_at = null;
+            $user->save();
+        }
 
         \App\Utils\AuditLogger::log('Authentication', 'Session Expired', "Session for {$roleLabel} {$name} ({$email}) timed out or token expired.");
 
@@ -76,5 +86,18 @@ class AuthController extends Controller
     public function user(Request $request)
     {
         return $request->user()->load('employee');
+    }
+
+    /**
+     * Update the last_seen_at timestamp for the authenticated user.
+     */
+    public function ping(Request $request)
+    {
+        $user = $request->user();
+        if ($user) {
+            $user->last_seen_at = now();
+            $user->save();
+        }
+        return response()->json(['status' => 'ok']);
     }
 }

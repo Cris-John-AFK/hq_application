@@ -42,6 +42,8 @@ Route::get('/portal', function () {
 Route::middleware(['auth', 'throttle:120,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/api/user', [AuthController::class, 'user']);
+    Route::post('/api/user/ping', [AuthController::class, 'ping']);
+    Route::get('/api/users/online', [\App\Http\Controllers\UserController::class, 'onlineUsers']);
     Route::get('/api/omni-search', [\App\Http\Controllers\OmniSearchController::class, 'search'])->middleware('throttle:120,1');
     Route::post('/api/user/avatar', [\App\Http\Controllers\UserController::class, 'uploadAvatar']);
     Route::put('/api/user', [\App\Http\Controllers\UserController::class, 'update']);

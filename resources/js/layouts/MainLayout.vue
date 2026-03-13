@@ -207,16 +207,61 @@
                     <div v-if="user?.role === 'admin'" class="flex items-center gap-4">
                         <button 
                             @click="toggleCalendar"
-                            class="relative p-1 bg-gray-50 border border-gray-200 rounded-lg text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                            class="relative p-1 bg-gray-50 border border-gray-200 rounded-lg text-gray-400 hover:text-gray-600 transition-colors cursor-pointer flex items-center"
                         >
                             <i class="pi pi-calendar text-lg"></i>
-                            <span class="ml-2 text-sm font-medium text-gray-600">Calendar</span>
+                            <span class="ml-2 pr-2 text-sm font-medium text-gray-600">Calendar</span>
                             <span v-if="unreadEventsCount > 0" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse">
                                 {{ unreadEventsCount }}
                             </span>
                         </button>
-                        <div class="w-px h-6 bg-gray-200"></div>
                     </div>
+
+                    <div v-if="user?.role === 'admin'" class="w-px h-6 bg-gray-200"></div>
+
+                    <!-- Online Users Widget (Admin Only) -->
+                    <div v-if="user?.role === 'admin'" class="relative">
+                        <button 
+                            @click="isOnlineDropdownOpen = !isOnlineDropdownOpen"
+                            class="relative p-1 bg-gray-50 border border-gray-200 rounded-lg text-gray-400 hover:text-green-600 transition-colors cursor-pointer flex items-center"
+                        >
+                            <i class="pi pi-users text-lg"></i>
+                            <span class="ml-2 pr-2 text-sm font-medium text-gray-600">Online</span>
+                            <span v-if="onlineUsers.length > 0" class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                                {{ onlineUsers.length }}
+                            </span>
+                        </button>
+
+                        <!-- Online Dropdown -->
+                        <transition name="slide-down">
+                            <div v-if="isOnlineDropdownOpen" class="absolute top-full right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+                                <div class="p-3 border-b border-gray-50 bg-gray-50/50 flex justify-between items-center">
+                                    <h4 class="text-xs font-black text-gray-700 uppercase tracking-widest flex items-center gap-2">
+                                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> Active Now
+                                    </h4>
+                                    <span class="text-[10px] text-gray-400 font-bold bg-gray-200 px-2 py-0.5 rounded-full">{{ onlineUsers.length }}</span>
+                                </div>
+                                <div class="max-h-60 overflow-y-auto p-2">
+                                    <div v-if="onlineUsers.length === 0" class="text-center py-4 text-gray-400 text-xs font-medium">
+                                        Nobody is online right now.
+                                    </div>
+                                    <div v-for="ou in onlineUsers" :key="ou.id" class="flex items-center gap-3 p-2 hover:bg-green-50/50 rounded-xl transition-colors">
+                                        <div class="relative w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold shadow-sm border border-teal-200 shrink-0">
+                                            <img v-if="ou.avatar" :src="ou.avatar" class="w-full h-full object-cover rounded-full">
+                                            <span v-else class="text-xs">{{ (ou.name || 'U').charAt(0) }}</span>
+                                            <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-bold text-gray-800 truncate">{{ ou.name }}</p>
+                                            <p class="text-[9px] text-gray-400 font-medium uppercase tracking-widest truncate">{{ ou.role }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </transition>
+                    </div>
+
+                    <div class="w-px h-6 bg-gray-200 hidden md:block"></div>
 
 
 
@@ -429,6 +474,9 @@ const currentTime = ref('');
 const showLeaveModal = ref(false);
 const showChangePasswordModal = ref(false);
 
+const isOnlineDropdownOpen = ref(false);
+const onlineUsers = ref([]);
+
 // Omni-Search State
 const isOmniSearchOpen = ref(false);
 const omniSearchQuery = ref('');
@@ -530,6 +578,8 @@ const checkNavOverflow = () => {
 let timeInterval;
 let unreadInterval;
 let notifInterval;
+let onlineInterval;
+let pingInterval;
 
 const unreadNotifications = ref([]);
 
@@ -624,6 +674,24 @@ const handleLeaveSubmit = async (payload, resolve, reject) => {
     }
 };
 
+const pingStatus = async () => {
+    try {
+        await axios.post('/api/user/ping');
+    } catch (e) {
+        // silently fail on ping
+    }
+};
+
+const fetchOnlineUsers = async () => {
+    if (props.user?.role !== 'admin') return;
+    try {
+        const res = await axios.get('/api/users/online');
+        onlineUsers.value = res.data;
+    } catch (e) {
+        console.error('Failed to fetch online users', e);
+    }
+};
+
 
 onMounted(() => {
     updateTime();
@@ -634,21 +702,38 @@ onMounted(() => {
         calendarStore.fetchEvents();
         checkNavOverflow();
         
+        // Let server know we're online 
+        pingStatus();
+        pingInterval = setInterval(pingStatus, 60000); // every 1 min
+
         if (props.user?.role === 'admin') {
             fetchUnreadEventsCount();
             fetchNotifications();
+            fetchOnlineUsers();
             unreadInterval = setInterval(fetchUnreadEventsCount, 30000);
             notifInterval = setInterval(fetchNotifications, 15000); // Check every 15s
+            onlineInterval = setInterval(fetchOnlineUsers, 30000); // Check online users every 30s
         }
     }, 1500); // 1.5s delay gives priority to the actual page data (like Inventory)
 
+    // Add click outside handler to close dropdown
+    window.addEventListener('click', closeDropdowns);
     window.addEventListener('resize', handleNavScroll);
 });
+
+const closeDropdowns = (e) => {
+    if (!e.target.closest('.relative')) {
+        isOnlineDropdownOpen.value = false;
+    }
+};
 
 onUnmounted(() => {
     if (timeInterval) clearInterval(timeInterval);
     if (unreadInterval) clearInterval(unreadInterval);
     if (notifInterval) clearInterval(notifInterval);
+    if (onlineInterval) clearInterval(onlineInterval);
+    if (pingInterval) clearInterval(pingInterval);
+    window.removeEventListener('click', closeDropdowns);
     window.removeEventListener('resize', handleNavScroll);
 });
 
